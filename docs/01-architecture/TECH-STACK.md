@@ -32,21 +32,21 @@ Bkz. [ADR-001](../decisions/ADR-001-stack.md).
 
 ## Ses
 
-| Seçim                                                               | Neden                                                                                                                        | Alternatif                                                          |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| **Vapi**                                                            | STT, LLM ve TTS sağlayıcısını ayrı ayrı seçebilme; BYO SIP trunk; `assistant-request` ile dinamik asistan; tool webhook'ları | Retell AI, ElevenLabs Agents, LiveKit Agents (kendimiz host ederiz) |
-| **STT: Deepgram / Azure / ElevenLabs (değerlendirilecek)**          | Türkçe doğruluk ve gecikme ölçülerek seçilecek                                                                               | —                                                                   |
-| **TTS: ElevenLabs Multilingual / Azure Neural (değerlendirilecek)** | Doğal Türkçe ses                                                                                                             | —                                                                   |
-| **LLM: Claude**                                                     | Güçlü Türkçe, güvenilir tool kullanımı, talimata bağlılık                                                                    | —                                                                   |
+| Seçim                                                           | Neden                                                                                                                                                                | Alternatif                                                                           |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Retell AI**                                                   | Yönetilen Türkçe ses pipeline'ı (`tr-TR`); inbound webhook ile arama başına ajan ve değişken; custom function webhook'ları; API ile ajan yönetimi; elastic SIP trunk | ElevenLabs Agents, LiveKit Agents (kendimiz host ederiz). Vapi ürün kararıyla elendi |
+| **STT (Retell içinde): Deepgram / Azure / Soniox / AssemblyAI** | Türkçe doğruluk ve gecikme ölçülerek seçilecek                                                                                                                       | —                                                                                    |
+| **TTS (Retell içinde): ElevenLabs / Cartesia / OpenAI**         | Doğal Türkçe ses                                                                                                                                                     | —                                                                                    |
+| **LLM: Claude (Retell model listesinden)**                      | Güçlü Türkçe, güvenilir tool kullanımı, talimata bağlılık                                                                                                            | —                                                                                    |
 
-Bkz. [ADR-002](../decisions/ADR-002-voice-platform.md), [ADR-003](../decisions/ADR-003-llm-model.md), [VOICE-AND-LANGUAGE.md](../02-voice-agent/VOICE-AND-LANGUAGE.md).
+Bkz. [ADR-004](../decisions/ADR-004-retell-voice-platform.md), [ADR-003](../decisions/ADR-003-llm-model.md), [VOICE-AND-LANGUAGE.md](../02-voice-agent/VOICE-AND-LANGUAGE.md).
 
 ## Telefon ve bildirim
 
-| Seçim                                           | Neden                                                                                  | Alternatif                            |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------- |
-| **Türk operatörü SIP trunk (Netgsm / Verimor)** | Türk numaraları için yerel operatör gerekli; Vapi'nin hazır numaraları ABD ile sınırlı | Twilio (Türkiye numara stoku sınırlı) |
-| **Netgsm SMS**                                  | Türkiye'de yaygın, İYS uyumlu, uygun fiyatlı                                           | İleti Merkezi, Twilio                 |
+| Seçim                                           | Neden                                                                                | Alternatif                            |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------- |
+| **Türk operatörü SIP trunk (Netgsm / Verimor)** | Türk numaraları için yerel operatör gerekli; Retell'e elastic SIP trunk ile bağlanır | Twilio (Türkiye numara stoku sınırlı) |
+| **Netgsm SMS**                                  | Türkiye'de yaygın, İYS uyumlu, uygun fiyatlı                                         | İleti Merkezi, Twilio                 |
 
 ## Kalite ve operasyon
 

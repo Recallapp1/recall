@@ -8,18 +8,45 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04_
+_Son güncelleme: 2026-10-04 (F1 oturumu)_
 
-| Konu                    | Durum                                                                                                                                                                                                                            |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | F1 (Retell geçişi) ve F4 (tasarım sistemi) başlamaya hazır. F3 (auth) `feat/panel-auth` dalında başlatılmış                                                                                                                      |
-| Ses sağlayıcısı         | **Retell AI** ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Kodda hâlâ Vapi adaptörü var, F1.7'de kaldırılacak                                                                                                   |
-| Tasarım                 | **[DESIGN.md](DESIGN.md) tek kaynak** ([ADR-005](docs/decisions/ADR-005-design-system.md)). Kodda hâlâ eski teal + Geist teması var, F4.1'de taşınacak                                                                           |
-| Testler                 | 72 test geçiyor (birim + PGlite entegrasyon)                                                                                                                                                                                     |
-| Lokal DB                | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker)                                                                                                                                                             |
-| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. GitHub reposu ve Neon bekleniyor (F8)                                                                                                                                 |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                   |
-| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar): Recall ekibi klinik açar; e-posta + parola; özelleştirme = roller, modül görünürlüğü, kişisel tercihler (logo yok); Retell hesabı hazır |
+| Konu                    | Durum                                                                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aktif faz               | **F1**: F1.1–F1.7 tamamlandı. **F1.8** (canlı test) ürün ekibinin `RETELL_API_KEY` ve `RETELL_VOICE_ID` girmesini bekliyor: [RETELL-SETUP.md](docs/02-voice-agent/RETELL-SETUP.md) |
+| Sıradaki faz            | **F4** (DESIGN.md tasarım sistemi), ardından F3 (hesaplar)                                                                                                                         |
+| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Vapi kodu tamamen silindi                                               |
+| Tasarım                 | **[DESIGN.md](DESIGN.md) tek kaynak** ([ADR-005](docs/decisions/ADR-005-design-system.md)). Kodda hâlâ eski teal + Geist teması var, F4.1'de taşınacak                             |
+| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                   |
+| Testler                 | **82 test** geçiyor (birim + PGlite entegrasyon). Lint, typecheck, format, `next build` temiz                                                                                      |
+| Lokal DB                | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker)                                                                                                               |
+| GitHub                  | `origin` = https://github.com/recallapp0/recall (`main` push'lu)                                                                                                                   |
+| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                    |
+| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine): kontrast kuralı, kayıt dinleme rolleri                                             |
+| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                            |
+
+### Dallar ve saklanan işler
+
+| Ad          | İçerik                                                                                                                                   | Durum                                                              |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `main`      | F0 + plan + F1                                                                                                                           | Kararlı, `origin/main` ile aynı                                    |
+| `stash@{0}` | "WIP F3 (orphaned session): add better-auth dependency": önceki bir oturumun commit'lenmemiş `package.json`/`pnpm-lock.yaml` değişikliği | F3'e başlarken incelenip uygulanacak veya silinecek (plan F3 notu) |
+
+### Sıradaki işler
+
+1. Ürün ekibi: `.env.local` → `RETELL_API_KEY`, `RETELL_VOICE_ID` ([RETELL-SETUP.md](docs/02-voice-agent/RETELL-SETUP.md) adım 2 ve 4)
+2. F1.8: ilk `pnpm voice:sync --clinic gulus-dis`, web call testleri, model/ses/ASR karşılaştırması, ajan sürümleme davranışının canlı doğrulanması
+3. F4.1: DESIGN.md token'ları, Inter (`next/font/local`, ağdan bağımsız build)
+4. F3: Better Auth (stash'teki yarım işi değerlendir)
+
+----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aktif faz | F1 (Retell geçişi) ve F4 (tasarım sistemi) başlamaya hazır. F3 (auth) `feat/panel-auth` dalında başlatılmış |
+| Ses sağlayıcısı | **Retell AI** ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Kodda hâlâ Vapi adaptörü var, F1.7'de kaldırılacak |
+| Tasarım | **[DESIGN.md](DESIGN.md) tek kaynak** ([ADR-005](docs/decisions/ADR-005-design-system.md)). Kodda hâlâ eski teal + Geist teması var, F4.1'de taşınacak |
+| Testler | 72 test geçiyor (birim + PGlite entegrasyon) |
+| Lokal DB | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker) |
+| Deploy | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. GitHub reposu ve Neon bekleniyor (F8) |
+| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine) |
+| Alınan ürün kararları | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar): Recall ekibi klinik açar; e-posta + parola; özelleştirme = roller, modül görünürlüğü, kişisel tercihler (logo yok); Retell hesabı hazır |
 
 ### Dallar
 
@@ -73,6 +100,43 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · Retell geçişi ve sesli asistan çekirdeği · F1.1–F1.7
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F1-retell` → `main` · **Commit'ler:** bu kaydı içeren commit'ler
+
+**Ne yapıldı**
+
+- **Git düzeni:** `origin` (recallapp0/recall) doğrulandı. Önceki oturumdan kalan commit'lenmemiş `better-auth` değişikliği **silinmeden** `stash@{0}` olarak saklandı (aynı makinede başka aktif oturum olmadığı `ListAgents` ile doğrulandı). Belge commit'leri `main`'e fast-forward edilip push'landı. Tüm işi içeren `feat/panel-auth` dalı silindi.
+- **Retell SDK incelemesi** (`retell-sdk` 6.0.1, `.d.ts` dosyalarından): Claude modelleri `claude-5-sonnet`, `claude-4.6-sonnet`, `claude-4.5-sonnet`, `claude-4.5-haiku` (Opus yok); `language: 'tr-TR'`; ajan sürümleri (`update` taslağı günceller, `publish` ayrı); `verify`/`sign` imza yardımcıları; `call_cost.combined_cost` cent cinsinden; yerleşik değişkenler `{{current_time_<tz>}}`, `{{current_calendar_<tz>}}`, `{{user_number}}`.
+- **F1.2:** `voice_agents`, `phone_numbers` tabloları; `clinics.phone_number` veri taşıma adımıyla kaldırıldı ([0002](drizzle/0002_voice_agents_and_phone_numbers.sql)). Klinik bulma: id, slug, numara, ajan. Seed, Retell ajan bağlantısını koruyor.
+- **F1.3–F1.6:** [`src/server/voice/providers/retell/`](src/server/voice/providers/retell/): `config`, `schemas`, `agent-spec`, `sync`, `handlers`, `deps`. Rotalar `/api/voice/retell/{inbound,tools,events}`. Prompt sağlayıcıdan bağımsız şablona çevrildi ([prompt.ts](src/server/voice/prompt.ts)). `completeCall` yalnızca gelen alanları yazıyor ve sonucu öncelik korumalı güncelliyor. Duraklatılmış klinikte sesli randevu sunucuda engelleniyor.
+- **CLI:** `pnpm voice:sync`, `pnpm voice:voices`, `pnpm voice:send` (`tsx --conditions=react-server` ile; `server-only` modüller yüklenebilsin diye).
+- **F1.7:** Vapi kodu, testleri, fixture'ları ve env değişkenleri silindi; `.env.example` ve `.env.local` Retell bölümüne geçirildi (`.env.local` gizli değer içermiyordu).
+- **F1.1:** 22 belge Retell'e taşındı; yeni [RETELL-SETUP.md](docs/02-voice-agent/RETELL-SETUP.md).
+- **Kararlar:** Panel yalnızca Türkçe; Netgsm en son birlikte; logo/hero F4.3'te birlikte; e-posta Resend ([ADR-006](docs/decisions/ADR-006-email-provider.md)).
+
+**Neden**
+
+- Ajanı elle değil koddan oluşturmak: yüzlerce klinik için tek doğru kaynak DB, Retell bir senkron hedefi. Spec hash ile gereksiz API çağrısı yok; yarım kalan senkron çift ajan üretmiyor.
+- Yerleşik saat/takvim değişkenleri: Retell panelindeki testlerde inbound webhook çalışmaz; kendi tarih değişkenimiz olsaydı prompt boş tarih görürdü.
+- Sürümleme: `publish` akışı canlı doğrulanmadan kullanılmadı; taslak yerinde güncelleniyor ve sürüm numarası aramalara açıkça veriliyor.
+- E-posta: Resend verisi ABD'de tutuluyor ama e-postalar yalnızca çalışanlara gidiyor ve hasta verisi içermiyor; adaptör sayesinde SES/Brevo'ya geçiş ucuz.
+
+**Doğrulama**
+
+- `pnpm test`: **82/82** (yeni: agent-spec 6, sync 6, handlers 11). Testlerde istekler SDK'nın `sign` fonksiyonuyla imzalanıyor.
+- `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, `pnpm build` temiz. Build rotaları: `/api/voice/retell/{events,inbound,tools}`.
+- Canlı duman testi (`pnpm dev`, PGlite): `/api/health` → ok; anahtar yokken Retell uç noktaları → `503 VOICE_NOT_CONFIGURED`; eski `/api/voice/vapi` → 404. Migration 0002 ve seed gerçek sunucuda uygulandı.
+
+**Açık kalanlar / dikkat**
+
+- **Canlı Retell ile hiçbir şey denenmedi** (anahtar yok). İlk `voice:sync` sırasında Retell'in parametreleri (ör. `boosted_keywords` sınırı, model adı) reddetme ihtimali var. Hata mesajı `voice_agents.last_error` alanına ve konsola yazılır.
+- Sürümleme ve `publish` davranışı F1.8'de doğrulanmalı.
+- Sahte Retell istemcisi testlerde her örnekte tekil kimlik üretmeli (`external_agent_id` unique). Bir kez bu yüzden test kırıldı.
+- Windows'ta `git rm` boşalan klasörü siler (`scripts/fixtures`); yeniden oluşturmak gerekti.
+- Python ile Prettier tablolarını düzenlerken hizalama nedeniyle düz metin eşleşmesi tutmaz; satır başı (`startswith`) ile eşleştir.
+- `outputs/claude-denetim-raporu.md`: başka bir araçla yapılmış bağımsız denetim raporu, takip edilmiyor. Bulgusu (Google Fonts build bağımlılığı) plana F4.1 olarak işlendi.
 
 ### 2026-10-04 · Fazlı uygulama planı, Retell kararı, DESIGN.md kabulü · Planlama
 

@@ -16,24 +16,25 @@
 5. **Ortam değişkenleri:** Aşağıdaki tabloyu Vercel → Settings → Environment Variables'a gir.
 6. **Migration:** Build komutu migration'ları çalıştırır (aşağıda).
 7. **Alan adı:** Settings → Domains.
-8. **Vapi:** Production numaralarının Server URL'ini `https://<alan-adı>/api/voice/vapi` yap.
+8. **Retell:** `APP_URL` production alan adına ayarlandıktan sonra `pnpm voice:sync --all --force` ile ajanların webhook ve tool URL'lerini güncelle; numaraların inbound webhook URL'ini `https://<alan-adı>/api/voice/retell/inbound` yap.
 
 ## Ortam değişkenleri
 
 Kaynak gerçek: [`.env.example`](../../.env.example) ve [`src/lib/env.ts`](../../src/lib/env.ts).
 
-| Değişken                                                                 | Zorunlu      | Açıklama                                                |
-| ------------------------------------------------------------------------ | ------------ | ------------------------------------------------------- |
-| `DATABASE_URL`                                                           | ✓            | Postgres bağlantısı (Neon: pooled URL)                  |
-| `APP_URL`                                                                | ✓            | Uygulamanın public URL'i (Vapi server URL üretimi için) |
-| `VAPI_WEBHOOK_SECRET`                                                    | ✓            | Vapi Server URL Secret                                  |
-| `VAPI_API_KEY`                                                           |              | Vapi API (Faz 2: kayıt silme, numara yönetimi)          |
-| `VOICE_LLM_MODEL`                                                        |              | Varsayılan: ADR-003'teki model                          |
-| `VOICE_TRANSCRIBER_PROVIDER`, `VOICE_TTS_PROVIDER`, `VOICE_TTS_VOICE_ID` |              | Ses sağlayıcı seçimleri                                 |
-| `SMS_PROVIDER`                                                           |              | `console` (varsayılan) veya `netgsm`                    |
-| `NETGSM_USERCODE`, `NETGSM_PASSWORD`, `NETGSM_HEADER`                    | `netgsm` ise |                                                         |
-| `CRON_SECRET`                                                            | Prod         | Vercel Cron yetkilendirmesi                             |
-| `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`                                  | Faz 2        |                                                         |
+| Değişken                                                                 | Zorunlu          | Açıklama                                                                    |
+| ------------------------------------------------------------------------ | ---------------- | --------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                           | ✓                | Postgres bağlantısı (Neon: pooled URL)                                      |
+| `APP_URL`                                                                | ✓                | Uygulamanın public URL'i (Retell webhook ve tool URL'leri bundan üretilir)  |
+| `RETELL_API_KEY`                                                         | ✓ (ses için)     | Retell API anahtarı (webhook rozetli); imza doğrulama da bununla yapılır    |
+| `RETELL_VOICE_ID`                                                        | ✓ (senkron için) | Varsayılan ses; klinik kendi sesini seçebilir                               |
+| `RETELL_LLM_MODEL`                                                       |                  | Varsayılan `claude-5-sonnet` ([ADR-003](../decisions/ADR-003-llm-model.md)) |
+| `VOICE_LLM_MODEL`                                                        |                  | Varsayılan: ADR-003'teki model                                              |
+| `VOICE_TRANSCRIBER_PROVIDER`, `VOICE_TTS_PROVIDER`, `VOICE_TTS_VOICE_ID` |                  | Ses sağlayıcı seçimleri                                                     |
+| `SMS_PROVIDER`                                                           |                  | `console` (varsayılan) veya `netgsm`                                        |
+| `NETGSM_USERCODE`, `NETGSM_PASSWORD`, `NETGSM_HEADER`                    | `netgsm` ise     |                                                                             |
+| `CRON_SECRET`                                                            | Prod             | Vercel Cron yetkilendirmesi                                                 |
+| `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`                                  | Faz 2            |                                                                             |
 
 ## Build ve migration
 

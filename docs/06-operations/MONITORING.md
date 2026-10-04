@@ -14,15 +14,15 @@
 
 ## Teknik metrikler
 
-| Metrik                                     | Kaynak               | Alarm eşiği               |
-| ------------------------------------------ | -------------------- | ------------------------- |
-| Webhook p95 süresi                         | Vercel Observability | > 500 ms                  |
-| Webhook hata oranı (5xx)                   | Vercel / Sentry      | > %1 (5 dk)               |
-| Tool hata oranı (`ok:false`, beklenmeyen)  | Uygulama logu        | > %5                      |
-| Tur gecikmesi p95 (konuşma sonu → ilk ses) | Vapi arama raporu    | > 1,8 sn                  |
-| `CLINIC_NOT_FOUND`                         | Uygulama logu        | > 0 (yanlış yapılandırma) |
-| DB bağlantı hatası                         | `/api/health`        | Herhangi                  |
-| Arama başı maliyet                         | `calls.cost_usd`     | Bütçe sapması > %30       |
+| Metrik                                     | Kaynak                    | Alarm eşiği               |
+| ------------------------------------------ | ------------------------- | ------------------------- |
+| Webhook p95 süresi                         | Vercel Observability      | > 500 ms                  |
+| Webhook hata oranı (5xx)                   | Vercel / Sentry           | > %1 (5 dk)               |
+| Tool hata oranı (`ok:false`, beklenmeyen)  | Uygulama logu             | > %5                      |
+| Tur gecikmesi p95 (konuşma sonu → ilk ses) | Retell `latency` alanları | > 1,8 sn                  |
+| `CLINIC_NOT_FOUND`                         | Uygulama logu             | > 0 (yanlış yapılandırma) |
+| DB bağlantı hatası                         | `/api/health`             | Herhangi                  |
+| Arama başı maliyet                         | `calls.cost_usd`          | Bütçe sapması > %30       |
 
 ## Araçlar
 
@@ -31,7 +31,7 @@
 | Vercel Observability ve Logs               | MVP   | İstek süreleri, hatalar           |
 | Uptime izleme (Better Stack / UptimeRobot) | MVP   | `/api/health` 1 dk aralıkla       |
 | Sentry                                     | Faz 2 | Hata izleme, release takibi       |
-| Vapi Dashboard                             | MVP   | Arama kayıtları, gecikme, maliyet |
+| Retell Dashboard                           | MVP   | Arama kayıtları, gecikme, maliyet |
 
 ## Log biçimi
 

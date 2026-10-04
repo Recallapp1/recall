@@ -53,8 +53,8 @@ Asistan şunları **yapmaz**: teşhis koymak, ilaç veya doz önermek, tedavi yo
 
 ## 6. Hata durumları
 
-| Durum                                | Davranış                                                                                                        |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| Tool zaman aşımı veya 5xx            | "Sistemde kısa bir sorun yaşıyorum" → bir kez yeniden dene → olmazsa geri arama notu                            |
-| Veritabanı erişilemez                | Geri arama notu da yazılamıyorsa: "Lütfen daha sonra tekrar arayın" ve Vapi'nin arama kaydı inceleme için kalır |
-| Klinik bulunamadı (numara eşleşmedi) | Genel bir hata mesajı ve kapanış. Alarm üretilir                                                                |
+| Durum                                | Davranış                                                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Tool zaman aşımı veya 5xx            | "Sistemde kısa bir sorun yaşıyorum" → bir kez yeniden dene → olmazsa geri arama notu                               |
+| Veritabanı erişilemez                | Geri arama notu da yazılamıyorsa: "Lütfen daha sonra tekrar arayın" ve Retell'deki arama kaydı inceleme için kalır |
+| Klinik bulunamadı (numara eşleşmedi) | Genel bir hata mesajı ve kapanış. Alarm üretilir                                                                   |

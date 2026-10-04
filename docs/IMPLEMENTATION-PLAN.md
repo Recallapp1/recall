@@ -37,21 +37,21 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 
 ## Faz durum özeti
 
-| Faz | Başlık                                                      | Durum                                                                      | Bağımlılık                            |
-| --- | ----------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------- |
-| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                              | —                                     |
-| F1  | Retell geçişi ve sesli asistan çekirdeği                    | ⏳ Sırada                                                                  | F0                                    |
-| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                         | F1                                    |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | 🟡 Başladı (`feat/panel-auth`: better-auth paketi eklendi, commit'lenmedi) | F0                                    |
-| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | ⏳                                                                         | F0                                    |
-| F5  | Klinik paneli                                               | ⏳                                                                         | F3, F4 (F1 ile paralel ilerleyebilir) |
-| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                                         | F3, F1                                |
-| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                         | F5                                    |
-| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                         | F1, F3 (F2 gerçek numara için)        |
-| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                         | F1–F8                                 |
-| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                         | F9                                    |
+| Faz | Başlık                                                      | Durum                                                          | Bağımlılık                            |
+| --- | ----------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------- |
+| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                  | —                                     |
+| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                | F0                                    |
+| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                             | F1                                    |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ⏳ Önceki oturumun yarım işi `git stash` içinde (bkz. WORKLOG) | F0                                    |
+| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | ⏳                                                             | F0                                    |
+| F5  | Klinik paneli                                               | ⏳                                                             | F3, F4 (F1 ile paralel ilerleyebilir) |
+| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                             | F3, F1                                |
+| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                             | F5                                    |
+| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                             | F1, F3 (F2 gerçek numara için)        |
+| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                             | F1–F8                                 |
+| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                             | F9                                    |
 
-**Önerilen sıra:** F1 ile F4 paralel başlar (ses çekirdeği ve tasarım temeli birbirinden bağımsız). Ardından F3 → F5 ve F6, sonra F2 (gerçek numara), F7, F8, F9.
+**Önerilen sıra (2026-10-04 güncel):** F1 → F4 (tasarım temeli) → F3 (hesaplar) → F5 ve F6 (panel, konsol) → F7 → F8 (production) → **F2 (Netgsm: ürün ekibiyle birlikte, en son)** → F9. F1.8 ürün ekibinin Retell anahtarını girmesiyle paralel yürür.
 
 ---
 
@@ -65,7 +65,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] Müsaitlik motoru (saf fonksiyon) ve testleri
 - [x] Randevu oluşturma, bulma, iptal ve erteleme domain'i (atomik, idempotent, kiracı izolasyonlu)
 - [x] Sağlayıcıdan bağımsız 6 tool ve system prompt üretici
-- [x] Vapi adaptörü (**F1'de kaldırılacak**)
+- [x] Vapi adaptörü (F1.7'de kaldırıldı)
 - [x] PGlite ile Docker'sız entegrasyon testleri (72 test) ve lokal DB (`pnpm db:local`)
 
 ---
@@ -76,71 +76,59 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 **Ön koşullar (ürün ekibinden):** Retell hesabı ve webhook yetkili API anahtarı (`RETELL_API_KEY`).
 
-### F1.1 Belgeleri Retell'e taşı
+> **Durum (2026-10-04):** F1.1–F1.7 tamamlandı (`feat/F1-retell`). F1.8 ürün ekibinin Retell anahtarını girmesini bekliyor: [RETELL-SETUP.md](02-voice-agent/RETELL-SETUP.md). Uygulamada plandan sapılan yerler aşağıda "Not" olarak işaretli.
 
-- [ ] [ARCHITECTURE.md](01-architecture/ARCHITECTURE.md): diyagram ve akışlar Retell'e göre (inbound webhook → ajan → custom function → olay webhook'ları)
-- [ ] [API.md](01-architecture/API.md): yeni uç noktalar (F1.5), istek ve yanıt örnekleri, imza doğrulama
-- [ ] [AGENT-DESIGN.md](02-voice-agent/AGENT-DESIGN.md), [TOOLS.md](02-voice-agent/TOOLS.md), [SYSTEM-PROMPT.md](02-voice-agent/SYSTEM-PROMPT.md): statik prompt ile dinamik değişken ayrımı (F1.6)
-- [ ] [TELEPHONY.md](03-telephony/TELEPHONY.md), [CALL-ROUTING.md](03-telephony/CALL-ROUTING.md): Retell SIP (`sip:sip.retellai.com`), IP izin listeleri
-- [ ] [TECH-STACK.md](01-architecture/TECH-STACK.md), [COST-MODEL.md](06-operations/COST-MODEL.md), [MONITORING.md](06-operations/MONITORING.md), [LOCAL-DEVELOPMENT.md](06-operations/LOCAL-DEVELOPMENT.md), [DEPLOYMENT.md](06-operations/DEPLOYMENT.md), [KVKK.md](05-compliance/KVKK.md) (alt işleyen: Retell)
-- [ ] [ADR-003](decisions/ADR-003-llm-model.md): adaylar Retell'in model listesinden (Claude Sonnet/Haiku sürümleri), ölçüm yöntemi aynı
-- **Kabul:** `grep -ri vapi docs/` yalnızca ADR-002 ve tarihsel kayıtlarda sonuç verir.
+### F1.1 Belgeleri Retell'e taşı ✅
 
-### F1.2 Veri modeli: ses ajanları ve numaralar
+- [x] ARCHITECTURE, API, AGENT-DESIGN, TOOLS, SYSTEM-PROMPT, TELEPHONY, CALL-ROUTING, TECH-STACK, COST-MODEL, MONITORING, LOCAL-DEVELOPMENT, DEPLOYMENT, KVKK, SECURITY, DATA-MODEL, DATA-RETENTION, MULTI-TENANCY, TESTING, VOICE-AND-LANGUAGE, ONBOARDING, USER-FLOWS, USER-PERSONAS
+- [x] [ADR-003](decisions/ADR-003-llm-model.md): adaylar Retell'in Claude listesi (`claude-5-sonnet`, `claude-4.6-sonnet`, `claude-4.5-sonnet`, `claude-4.5-haiku`)
+- [x] Yeni: [RETELL-SETUP.md](02-voice-agent/RETELL-SETUP.md) (ürün ekibi için adım adım kurulum)
+- [x] **Kabul:** `grep -ri vapi docs/` yalnızca ADR-002/004, karar tabloları, bu plan ve TECH-STACK'teki "elendi" notunda sonuç veriyor
 
-- [ ] Yeni tablo `voice_agents`: `id, clinic_id (unique), provider ('retell'), external_agent_id (unique), external_llm_id, spec_hash, status ('pending' | 'synced' | 'error'), last_error, synced_at, created_at, updated_at`
-- [ ] Yeni tablo `phone_numbers`: `id, clinic_id, e164 (unique), provider ('retell'), external_id, carrier ('netgsm' | 'verimor' | 'retell' | …), purpose ('inbound'), status, created_at`. Bir klinik birden fazla numara kullanabilir (çoklu şube veya kampanya hattı)
-- [ ] `clinics.phone_number` alanı `phone_numbers` tablosuna taşınır (data migration + kolon kaldırma, iki adımda)
-- [ ] `calls` tablosuna: `external_agent_id`, `disconnection_reason`; `provider` değeri `retell`
-- [ ] Domain: `findClinicByAgentId`, `findClinicByPhoneNumber` (yeni tablodan)
-- [ ] Testler: migration'lar PGlite'ta uygulanıyor, kiracı izolasyonu korunuyor
-- **Dosyalar:** `src/server/db/schema.ts`, `drizzle/00xx_*.sql`, `src/server/domain/clinics.ts`
+### F1.2 Veri modeli: ses ajanları ve numaralar ✅
 
-### F1.3 Retell istemcisi ve imza doğrulama
+- [x] `voice_agents`: `clinic_id (unique), provider, external_agent_id (unique), external_llm_id, agent_version, spec_hash, status, last_error, synced_at`
+- [x] `phone_numbers`: `clinic_id, e164 (unique), provider, carrier, is_active`. Not: `external_id`, `purpose`, `status` alanları gerçek ihtiyaç doğana kadar eklenmedi (F2)
+- [x] `clinics.phone_number` → `phone_numbers` ([0002 migration](../drizzle/0002_voice_agents_and_phone_numbers.sql) içinde elle yazılmış veri taşıma adımıyla). Not: Production verisi olmadığı için tek adımda yapıldı
+- [x] Not: `calls` tablosuna yeni kolon eklenmedi. `disconnection_reason` mevcut `ended_reason` kolonuna yazılıyor, ajan kimliği `voice_agents` üzerinden bulunuyor
+- [x] Domain: `findClinicById`, `findClinicBySlug`, `findClinicByPhoneNumber`, `findClinicByAgentId`
+- [x] Seed, demo kliniğin Retell ajan bağlantısını yeniden yüklemede korur (aksi hâlde sonraki senkron ikinci bir ajan açardı)
 
-- [ ] `retell-sdk` paketini ekle (resmî Node SDK). Sürümü sabitle
-- [ ] Env: `RETELL_API_KEY` (zorunlu), `RETELL_DEFAULT_VOICE_ID`, `RETELL_DEFAULT_LLM_MODEL`, `RETELL_WEBHOOK_TOLERANCE_MS` (varsayılan 300000). `.env.example`, [DEPLOYMENT.md](06-operations/DEPLOYMENT.md), `src/lib/env.ts` güncellenir
-- [ ] `providers/retell/signature.ts`: ham gövde ile `X-Retell-Signature` doğrulaması, 5 dakikalık tazelik ve sabit zamanlı karşılaştırma. SDK'daki `Retell.verify` ile birebir aynı sonucu verdiğini gösteren test
-- [ ] Route handler'larda gövde **ham metin olarak** okunur (`await request.text()`), doğrulama sonrası parse edilir
-- [ ] Testler: geçerli imza, yanlış imza, eski zaman damgası, eksik başlık
-- **Dosyalar:** `src/server/voice/providers/retell/{client,signature,schemas}.ts`
+### F1.3 Retell istemcisi ve imza doğrulama ✅
 
-### F1.4 Ajan tanımı üretimi (agent spec)
+- [x] `retell-sdk` 6.0.1
+- [x] Env: `RETELL_API_KEY`, `RETELL_VOICE_ID`, `RETELL_LLM_MODEL` (varsayılan `claude-5-sonnet`). Not: İmza toleransı SDK'nın sabit 5 dakikası; ayrı env eklenmedi. Anahtar opsiyonel tutuldu (panel sessiz çalışabilsin); yoksa ses uç noktaları `503 VOICE_NOT_CONFIGURED` döner
+- [x] İmza doğrulama: kendi uygulamamızı yazmak yerine SDK'nın `verify` fonksiyonu kullanıldı. Testler SDK'nın `sign` fonksiyonuyla imzalanmış gerçek isteklerle çalışıyor (yanlış anahtar, değiştirilmiş gövde, imzasız)
+- [x] Gövde ham metin olarak okunup doğrulandıktan sonra parse ediliyor
+- **Dosyalar:** [config.ts](../src/server/voice/providers/retell/config.ts), [schemas.ts](../src/server/voice/providers/retell/schemas.ts), [deps.ts](../src/server/voice/providers/retell/deps.ts)
 
-- [ ] `buildRetellAgentSpec(clinic, directory, settings, config)` saf fonksiyonu. Çıktısı:
-  - **Retell LLM:** `general_prompt` (klinik bilgisi + kurallar + `{{today_long}}`, `{{now_time}}`, `{{caller_phone}}`, `{{transfer_available}}`, `{{clinic_status}}` değişkenleri), `begin_message`, `model`, `model_temperature`, `general_tools` (6 custom tool + `end_call` + koşullu `transfer_call`), `default_dynamic_variables`
-  - **Agent:** `voice_id` (klinik ayarı veya varsayılan), `language: "tr-TR"`, `webhook_url` (olaylar), sessizlik ve kesinti ayarları, kayıt tercihi (`settings.assistant.recordCalls`), veri saklama ayarı
-- [ ] Custom tool tanımları mevcut Zod şemalarından üretilir (`toolParameters`). URL: `${APP_URL}/api/voice/retell/tools`. `speak_during_execution` metni tool'un `fillerMessage` alanından gelir
-- [ ] `spec_hash` = spec'in kararlı JSON özeti. Değişmediyse senkron atlanır
-- [ ] Prompt üretimi ikiye ayrılır: `buildStaticPrompt` (senkronda) ve `buildCallVariables` (arama anında). Mevcut `prompt.ts` buna göre yeniden düzenlenir; testler korunur
-- [ ] Testler: snapshot yerine anlamlı iddialar (tool listesi, değişken adları, transfer koşulu, fiyat gizleme)
-- **Dosyalar:** `src/server/voice/providers/retell/agent-spec.ts`, `src/server/voice/prompt.ts`
+### F1.4 Ajan tanımı üretimi ✅
 
-### F1.5 Webhook uç noktaları
+- [x] [agent-spec.ts](../src/server/voice/providers/retell/agent-spec.ts): LLM (`general_prompt`, `begin_message`, `model`, sıcaklık 0, 6 custom tool + `end_call` + koşullu `transfer_call`, `default_dynamic_variables`) ve Agent (`tr-TR`, ses, saat dilimi, `boosted_keywords`, olay webhook'u, sessizlik ve süre sınırı)
+- [x] Not: Tarih, saat, takvim ve arayan numara için kendi değişkenlerimiz yerine Retell'in **yerleşik** değişkenleri kullanıldı (`{{current_time_<tz>}}`, `{{current_calendar_<tz>}}`, `{{user_number}}`). Böylece Retell panelindeki testler de doğru tarihi bilir. Bizim değişkenlerimiz: `transfer_available`, `clinic_status`
+- [x] [prompt.ts](../src/server/voice/prompt.ts) sağlayıcıdan bağımsız şablon + `buildCallVariables`
+- [x] Duraklatılmış klinikte `book_appointment` ve `reschedule_appointment` sunucuda `CLINIC_PAUSED` döner (prompt kuralına ek savunma)
+- [x] Kayıt tercihi: `recordCalls=false` ise kayıt URL'i saklanmıyor. Retell tarafı saklama ayarı F7'ye bırakıldı
 
-| Uç nokta                         | Olay                                          | Davranış                                                                                                                                                                                                                                                   |
-| -------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/voice/retell/inbound` | `call_inbound`                                | `to_number` → klinik. Bilinmeyen numara: `reject: true`. Klinik bulunursa: `override_agent_id`, `dynamic_variables` (tarih, saat, arayan, aktarım, durum), `metadata: { clinic_id }`. `calls` satırı açılır. **Hedef < 300 ms** (Retell zaman aşımı 10 sn) |
-| `POST /api/voice/retell/tools`   | custom function                               | İmza → `call.agent_id` ile klinik bulunur, `call.metadata.clinic_id` ile çapraz doğrulanır → `runTool(name, args, ctx)` → JSON yanıt (≤ 15.000 karakter)                                                                                                   |
-| `POST /api/voice/retell/events`  | `call_started`, `call_ended`, `call_analyzed` | `calls` güncellenir: süre, bitiş nedeni, transkript, kayıt URL'i, özet, maliyet. Olaylar idempotent işlenir (tekrar gelebilir)                                                                                                                             |
+### F1.5 Webhook uç noktaları ✅
 
-- [ ] Ortak işleyici deseni: `verify → parse (Zod, gevşek) → resolve tenant → domain → respond`. Route dosyaları ince kalır
-- [ ] Retell'in tekrar denemelerine karşı idempotency (`call_id` bazlı upsert)
-- [ ] Entegrasyon testleri (PGlite): inbound → tools (müsaitlik, randevu, iptal, erteleme, geri arama) → events; kiracılar arası erişim denemesi
-- **Dosyalar:** `src/app/api/voice/retell/{inbound,tools,events}/route.ts`, `src/server/voice/providers/retell/handlers.ts`
+- [x] `inbound`, `tools`, `events` ([handlers.ts](../src/server/voice/providers/retell/handlers.ts)); route dosyaları tek satır (`withRetell(handler)`)
+- [x] Kiracı: inbound'da numara, tools/events'te `agent_id`; `metadata.clinic_id` çapraz kontrolü
+- [x] İdempotency: `call_id` upsert; `completeCall` yalnızca gelen alanları yazar, sonuç öncelik korumalı (`markCallOutcome`)
+- [x] Entegrasyon testleri: [handlers.integration.test.ts](../src/server/voice/providers/retell/handlers.integration.test.ts)
 
-### F1.6 Ajan senkronizasyonu
+### F1.6 Ajan senkronizasyonu ✅ (otomatik tetikleme F5'te)
 
-- [ ] `syncClinicVoiceAgent(db, clinicId)`: spec üret → hash karşılaştır → Retell LLM ve Agent oluştur veya güncelle → `voice_agents` güncelle. Hata olursa `status=error`, `last_error` (kişisel veri içermez)
-- [ ] CLI: `pnpm voice:sync --clinic <slug>` ve `pnpm voice:sync --all`
-- [ ] Tetikleyici sözleşmesi: panelde klinik, hizmet, hekim, saat veya asistan ayarı değiştiğinde `after()` ile senkron kuyruğa alınır (F5'te bağlanacak)
-- [ ] Retell kotası ve hız sınırına karşı yeniden deneme (üstel geri çekilme)
-- [ ] Testler: Retell istemcisi sahte (fake) ile; hash değişmezse API çağrısı yapılmadığını doğrula
+- [x] [sync.ts](../src/server/voice/providers/retell/sync.ts): hash ile atlama, `--force`, yarım ilerlemeyi saklama (LLM oluştu, ajan oluşmadı → bir sonraki deneme LLM'i yeniden kullanır), herkese açık olmayan `APP_URL`'i reddetme
+- [x] CLI: `pnpm voice:sync --clinic <slug> | --all [--force]`, `pnpm voice:voices`
+- [x] Not (sürümleme): Ajanın taslak sürümü yerinde güncelleniyor ve sürüm numarası `agent_version` olarak kaydedilip inbound webhook'ta `override_agent_version` ile açıkça gönderiliyor. Retell'in `publish` akışı canlı API'de doğrulanmadan kullanılmadı → **F1.8'de doğrulanacak**
+- [ ] Hız sınırına karşı yeniden deneme: SDK'nın varsayılan yeniden denemesine bırakıldı; toplu senkron (`--all`) büyüdüğünde F6'da ele alınacak
+- [ ] Panelden otomatik tetikleme (F5.3)
 
-### F1.7 Vapi kodunun kaldırılması
+### F1.7 Vapi kodunun kaldırılması ✅
 
-- [ ] `src/server/voice/providers/vapi/`, `src/app/api/voice/vapi/`, Vapi fixture'ları ve `VAPI_*` env değişkenleri silinir
-- [ ] `scripts/fixtures/` Retell örnekleriyle değiştirilir: `retell-inbound.json`, `retell-tool-call.json`, `retell-call-ended.json` ve imzalı istek gönderen `scripts/retell-sign.ts` yardımcı betiği
+- [x] Vapi adaptörü, rotası, testleri, fixture'ları ve `VAPI_*`/`VOICE_*` env değişkenleri silindi
+- [x] Retell fixture'ları (`scripts/fixtures/retell-*.json`) ve imzalı istek gönderen `pnpm voice:send` ([retell-send.ts](../scripts/retell-send.ts))
 
 ### F1.8 Uçtan uca POC
 
@@ -188,7 +176,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 **Hedef:** Her kliniğin kendi hesabı, kendi ekip üyeleri ve rolleri; Recall ekibinin klinik oluşturup yönetebilmesi. Paneli besleyecek güvenli kiracı bağlamı.
 
-> 🟡 `feat/panel-auth` dalında `better-auth` bağımlılığı eklenmiş ama commit'lenmemiş. Bu faz o dalda devam eder.
+> Önceki bir oturumun yarım işi (`better-auth` bağımlılığı) `stash@{0}: WIP F3 (orphaned session)` olarak saklandı. F3'e başlarken `git stash show -p stash@{0}` ile incelenip ya uygulanır ya da `pnpm add better-auth` ile temiz kurulur, ardından stash silinir.
 
 ### F3.1 Better Auth kurulumu
 
@@ -196,7 +184,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [ ] Giriş yöntemi: **e-posta + parola** (karar 2026-10-04). Parola sıfırlama e-postası ve e-posta doğrulama. Sihirli bağlantı ve 2FA kapsam dışı (V1'de değerlendirilir)
 - [ ] Herkese açık kayıt (sign-up) **kapalı**: hesaplar yalnızca davetle oluşur (klinikleri Recall ekibi açar, F6)
 - [ ] `organization` ↔ `clinics` 1:1: `clinics.organization_id` (unique). Klinik oluşturma işlemi ikisini tek transaction'da yaratır
-- [ ] Env: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`; e-posta için `RESEND_API_KEY`, `EMAIL_FROM`
+- [ ] Env: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`; e-posta ([ADR-006](decisions/ADR-006-email-provider.md)): `EMAIL_PROVIDER` (`console` | `resend`), `RESEND_API_KEY`, `EMAIL_FROM`. Davet ve parola sıfırlama şablonları React Email ile, Türkçe
 - [ ] Route handler: `src/app/api/auth/[...all]/route.ts`
 
 ### F3.2 Roller ve izinler (klinik içi)
@@ -243,7 +231,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F4.1 Token'lar ve temel
 
-- [ ] Font: Inter (`next/font/google`, `latin` + `latin-ext`, Türkçe karakterler için). Geist kaldırılır
+- [ ] Font: Inter, `latin` + `latin-ext` (Türkçe karakterler). Geist kaldırılır. **Build ağdan bağımsız olmalı:** `next/font/google` build sırasında Google Fonts'u indirir ve ağsız ortamda build'i kırar (bağımsız denetim raporu bulgusu). Font dosyaları repoya alınıp `next/font/local` ile yüklenir
 - [ ] `globals.css` `@theme`: `--color-ink: #000`, `--color-surface-dark: #18181B`, `--color-surface-light: #F4F4F5`, `--color-accent: #34D399`, `--color-body: #71717A`, `--color-glass-border: rgb(255 255 255 / 0.1)`; radius: `--radius-section: 2.5rem`, `--radius-bento: 2rem`, `--radius-card: 1rem…1.5rem`; blur: 12px ve 20px; easing: `cubic-bezier(0.16, 1, 0.3, 1)`
 - [ ] Yardımcılar: `.glass`, `.glass-nav`, `.grain` (sabit SVG gürültü, %15 opaklık), `.bg-dark-gradient` (alttan ağırlıklı), `animate-fade-in-up`, `prefers-reduced-motion` desteği
 - [ ] Tipografi ölçeği: başlık (500–700, `-0.05em`, `1.05`), gövde (300–400, Zinc-500), etiket (700, 10px, `0.2em`, büyük harf)
@@ -397,13 +385,8 @@ Faturalandırma (iyzico veya Stripe), self-servis kayıt, haftalık rapor e-post
 
 Bu sorular cevaplandıkça ilgili göreve işlenir ve buradan kaldırılır.
 
-1. **GitHub reposu:** Repo açıldı; **adresi** bekleniyor (F8).
-2. **Panel dili:** Yalnızca Türkçe mi? İleride İngilizce gerekecek mi (i18n altyapısı şimdi kurulmalı mı)?
-3. **Netgsm:** Hesap ne zaman hazır olur? SIP trunk ve SMS başlığı (originator) onaylı mı? Karşılaştırmaya alınacak diğer sağlayıcılar (Verimor vb.)?
-4. **Görsel varlıklar:** Recall logosu, hero görseli ve marka kılavuzu var mı? DESIGN.md'de "yüksek çözünürlüklü soyut görsel" isteniyor.
-5. **E-posta gönderimi:** Davet ve parola sıfırlama e-postaları için Resend uygun mu, gönderici alan adı hazır mı?
-6. **Erişilebilirlik:** DESIGN.md'deki Zinc-500 gövde metni Zinc-100 zeminde AA kontrast eşiğinin biraz altında. Önerilen kullanım kurallarını (F4.1) onaylıyor musunuz?
-7. **Kayıt dinleme:** Paneldeki ses kayıtlarını hangi roller dinleyebilir?
+1. **Erişilebilirlik:** DESIGN.md'deki Zinc-500 gövde metni Zinc-100 zeminde AA kontrast eşiğinin biraz altında (≈ 4,4:1). Önerilen kullanım kurallarını (F4.1) onaylıyor musunuz?
+2. **Kayıt dinleme:** Paneldeki ses kayıtlarını hangi roller dinleyebilir? (F3.2 önerisi: `owner`, `admin`)
 
 ## Alınan kararlar
 
@@ -415,3 +398,8 @@ Bu sorular cevaplandıkça ilgili göreve işlenir ve buradan kaldırılır.
 | 2026-10-04 | Giriş: e-posta + parola; herkese açık kayıt kapalı, yalnızca davet                                         | F3.1                                                          |
 | 2026-10-04 | Panel özelleştirme: rol ve yetkiler, modül görünürlüğü, kişisel tercihler. Logo ve renk özelleştirmesi yok | F3.2, F3.5, F5                                                |
 | 2026-10-04 | Retell hesabı hazır; API anahtarını ürün ekibi `.env.local` dosyasına kendisi girer (sohbete yazılmaz)     | F1.3                                                          |
+| 2026-10-04 | GitHub reposu: `recallapp0/recall`                                                                         | F8                                                            |
+| 2026-10-04 | Panel yalnızca Türkçe; i18n altyapısı kurulmayacak (metinler doğrudan Türkçe)                              | F4, F5                                                        |
+| 2026-10-04 | Netgsm hesabı en son aşamada birlikte açılacak                                                             | F2 (F5–F7'den sonra)                                          |
+| 2026-10-04 | Recall logosu ve hero görseli henüz yok; F4.3'te birlikte üretilecek                                       | F4.3                                                          |
+| 2026-10-04 | E-posta: Resend, adaptör arkasında; e-postalar hasta verisi içermez                                        | F3, [ADR-006](decisions/ADR-006-email-provider.md)            |

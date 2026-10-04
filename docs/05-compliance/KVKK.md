@@ -4,11 +4,11 @@
 
 ## Roller
 
-| Taraf                                                 | KVKK rolü                                                    |
-| ----------------------------------------------------- | ------------------------------------------------------------ |
-| Klinik                                                | **Veri sorumlusu**: hasta verisinin işlenme amacını belirler |
-| Recall                                                | **Veri işleyen**: kliniğin talimatıyla, onun adına işler     |
-| Vapi, STT/TTS/LLM sağlayıcıları, Neon, Vercel, Netgsm | **Alt veri işleyenler**                                      |
+| Taraf                                                                                                      | KVKK rolü                                                    |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Klinik                                                                                                     | **Veri sorumlusu**: hasta verisinin işlenme amacını belirler |
+| Recall                                                                                                     | **Veri işleyen**: kliniğin talimatıyla, onun adına işler     |
+| Retell AI (ve onun STT/TTS/LLM sağlayıcıları), Neon, Vercel, Netgsm, Resend (yalnızca çalışan e-postaları) | **Alt veri işleyenler**                                      |
 
 → Her klinikle bir **Veri İşleme Sözleşmesi (DPA)** imzalanır. Alt işleyenler listesi sözleşmenin ekidir ve değişiklikler bildirilir.
 
@@ -40,7 +40,7 @@ Sağlık verisi KVKK m.6 kapsamında **özel nitelikli kişisel veri**dir ve dah
 
 ## Yurt dışı aktarım
 
-STT, TTS, LLM ve Vapi sağlayıcıları büyük ihtimalle **yurt dışında** veri işler. KVKK m.9 (2024 değişikliği sonrası) kapsamında yurt dışı aktarım için uygun mekanizmalar (yeterlilik kararı, standart sözleşme, bildirim yükümlülükleri) değerlendirilmelidir.
+Retell ve onun STT, TTS, LLM sağlayıcıları büyük ihtimalle **yurt dışında** veri işler. KVKK m.9 (2024 değişikliği sonrası) kapsamında yurt dışı aktarım için uygun mekanizmalar (yeterlilik kararı, standart sözleşme, bildirim yükümlülükleri) değerlendirilmelidir.
 
 **Teknik önlemler:**
 

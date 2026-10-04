@@ -2,10 +2,10 @@
 
 ## Sorun
 
-Vapi'nin ücretsiz ve hazır numaraları ABD ile sınırlıdır. Türkiye'deki klinikler için **Türk numarası** gerekir. Çözüm: Türk operatöründen alınan numarayı **SIP trunk** ile Vapi'ye bağlamak (BYO SIP Trunk).
+Türkiye'deki klinikler için **Türk numarası** gerekir. Çözüm: Türk operatöründen alınan numarayı **elastic SIP trunk** ile Retell'e bağlamak ve numarayı Retell'e içe aktarmak (Import Phone Number). Bkz. [Retell custom telephony](https://docs.retellai.com/deploy/custom-telephony).
 
 ```
-Hasta → PSTN → Türk operatör (Netgsm/Verimor) → SIP trunk → Vapi → Recall
+Hasta → PSTN → Türk operatör (Netgsm/Verimor) → SIP trunk → sip:sip.retellai.com → Retell → Recall
 ```
 
 ## Operatör seçenekleri
@@ -16,9 +16,9 @@ Hasta → PSTN → Türk operatör (Netgsm/Verimor) → SIP trunk → Vapi → R
 | **Verimor**                    | Bulut santral ve SIP; geliştirici dostu API             |
 | Diğer yerel VoIP sağlayıcıları | Değerlendirilebilir                                     |
 
-**Seçim kriterleri:** SIP trunk desteği (Vapi ile uyumlu SIP INVITE, codec G.711), sabit IP veya kimlik doğrulama, dakika fiyatı, numara tipi (0850, coğrafi 0212/0216/0232…), numara taşıma desteği, BTK uyumu.
+**Seçim kriterleri:** Elastic SIP trunk (origination ve termination URI), TCP veya TLS taşıma, Retell IP aralıklarını izin listesine alabilme, codec G.711, dakika fiyatı, numara tipi (0850, coğrafi 0212/0216/0232…), numara taşıma, caller ID iletimi, BTK uyumu.
 
-> **Faz 1 görevi:** En az bir operatörle Vapi BYO SIP bağlantısının uçtan uca POC'u.
+> **F2 görevi:** Netgsm ile uçtan uca bağlantı ve en az bir alternatifle karşılaştırma ([IMPLEMENTATION-PLAN.md → F2](../IMPLEMENTATION-PLAN.md#f2-telefon-sip-ve-sms-netgsm-ve-alternatiflerin-testi)).
 
 ## Numara stratejileri
 
@@ -30,12 +30,12 @@ Hasta → PSTN → Türk operatör (Netgsm/Verimor) → SIP trunk → Vapi → R
 
 Detay: [CALL-ROUTING.md](CALL-ROUTING.md)
 
-## Vapi yapılandırması
+## Retell yapılandırması (F2)
 
-1. Vapi'de **SIP Trunk credential** oluşturulur (operatörün SIP sunucusu, kimlik bilgileri, IP izin listesi).
-2. Numara Vapi'ye **BYO phone number** olarak eklenir ve credential'a bağlanır.
-3. Numaranın `assistantId` alanı **boş** bırakılır, **Server URL** = `https://<app>/api/voice/vapi`. Böylece her aramada `assistant-request` gelir ve kliniğe özel asistan dinamik üretilir.
-4. Aynı numara `clinics.phone_number` alanına E.164 olarak girilir.
+1. **Operatörde:** Origination (gelen) SIP URI = `sip:sip.retellai.com` (TCP önerilir; TLS için `sip:sip.retellai.com;transport=tls`). Retell IP aralıkları izin listesine alınır (güncel liste Retell dokümanında).
+2. **Retell'de numara içe aktarma** (API veya panel): `phone_number` (E.164), `termination_uri` (giden aramalar için operatörün adresi), `transport`, gerekiyorsa `sip_trunk_auth_username/password`, `inbound_webhook_url = https://<app>/api/voice/retell/inbound`.
+3. **Bizde:** Numara `phone_numbers` tablosuna kliniğe bağlı olarak eklenir (`e164`, `provider = retell`, `carrier = netgsm`). Inbound webhook her aramada numaradan kliniği bulur ve kliniğin ajanını atar; numaraya sabit ajan bağlamak gerekmez.
+4. Retell'in **Test SIP Connection** özelliğiyle termination doğrulanır, ardından test aramaları yapılır.
 
 ## Caller ID
 
@@ -45,5 +45,5 @@ Detay: [CALL-ROUTING.md](CALL-ROUTING.md)
 ## Kalite
 
 - Codec: G.711 (A-law, Türkiye standardı).
-- Gecikme: Operatör SIP sunucusu ile Vapi arasındaki RTT ölçülmeli. Vapi'nin bölge seçeneği varsa AB bölgesi tercih edilir.
+- Gecikme: Operatör SIP sunucusu ile Retell arasındaki RTT ölçülmeli (F2).
 - Yedek: SIP trunk çökerse operatör seviyesinde kliniğin devir numarasına yönlendirme kuralı tanımlanır (fail-open).

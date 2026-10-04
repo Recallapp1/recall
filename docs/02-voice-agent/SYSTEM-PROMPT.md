@@ -1,6 +1,18 @@
 # System Prompt
 
-Kaynak: [`src/server/voice/prompt.ts`](../../src/server/voice/prompt.ts). Prompt her aramada klinik verisinden **dinamik** üretilir.
+Kaynak: [`src/server/voice/prompt.ts`](../../src/server/voice/prompt.ts). Prompt klinik verisinden üretilir ve **senkron sırasında** Retell LLM'ine yazılır (`general_prompt`). Her aramada yeniden üretilmez; aramaya göre değişen değerler **değişkenlerle** gelir:
+
+| Yer tutucu                             | Kaynak                | Değer                                              |
+| -------------------------------------- | --------------------- | -------------------------------------------------- |
+| `{{current_time_Europe/Istanbul}}`     | Retell (yerleşik)     | Klinik saat diliminde şu an                        |
+| `{{current_calendar_Europe/Istanbul}}` | Retell (yerleşik)     | Önümüzdeki 14 gün, gün adlarıyla                   |
+| `{{user_number}}`                      | Retell (yerleşik)     | Arayan numara; web aramalarında boş                |
+| `{{transfer_available}}`               | Bizim inbound webhook | `evet` / `hayır` (devir numarası var ve mesai içi) |
+| `{{clinic_status}}`                    | Bizim inbound webhook | `active` / `paused`                                |
+
+Inbound webhook çalışmayan aramalarda (Retell panelindeki test, web call) bizim değişkenlerimiz `default_dynamic_variables` değerlerini alır: `transfer_available = hayır`, `clinic_status = active`. Saat dilimi kliniğinkidir; yukarıdaki örnek İstanbul içindir.
+
+Aşağıdaki şablon gösterim amaçlıdır; birebir metin koddadır.
 
 ## Yapı
 
@@ -23,7 +35,8 @@ Sen {{clinic.name}} için çalışan telefon asistanısın. Adın {{assistant.na
 Görevin: randevu oluşturmak, iptal etmek, ertelemek ve klinik hakkında temel bilgi vermek.
 
 # Bugün
-{{today.long}} (ör. "4 Ekim 2026 Pazar"), saat {{now.time}}. Saat dilimi: {{clinic.timezone}}.
+Şu an: {{current_time_<tz>}} (saat dilimi {{clinic.timezone}}).
+Önümüzdeki günler: {{current_calendar_<tz>}}
 "Yarın", "haftaya salı" gibi ifadeleri bu tarihe göre YYYY-AA-GG biçimine çevir.
 
 # Klinik
@@ -43,7 +56,8 @@ Hizmetler:
 # Nasıl çalışırsın
 - Randevu için: hizmeti öğren → (varsa) hekim tercihini sor → tarih/saat tercihini sor → check_availability ile uygun saatlere bak → en fazla 3 seçenek sun → hastanın adını al → bilgileri geri okuyup onay al → book_appointment çağır.
 - İptal/erteleme için: find_appointments ile hastanın randevularını bul → hangisi olduğunu teyit et → cancel_appointment veya reschedule_appointment çağır.
-- Arayan numara: {{caller.phone | "gizli"}}. Numara gizliyse randevu için telefon numarasını iste.
+- Arayan numara: "{{user_number}}". Boşsa veya gizliyse telefon numarasını sor ve tool'lara phone olarak gönder.
+- Klinik durumu: "{{clinic_status}}". "paused" ise randevu oluşturma/erteleme yapma, geri arama notu öner.
 - Bir işlemi, tool sonucu başarılı (ok: true) dönmeden asla "yapıldı" diye bildirme.
 - Tool hata dönerse hastaya sade bir dille açıkla ve alternatif öner.
 
@@ -56,10 +70,10 @@ Hizmetler:
 
 # Sınırlar
 - Tıbbi tavsiye, teşhis veya ilaç önerisi VERME. "Bu konuyu hekimimiz muayenede değerlendirecektir" de.
-- Hasta şiddetli ağrı, kanama, nefes darlığı, bilinç kaybı gibi acil bir durum anlatırsa: hemen 112'yi aramasını söyle{{#if transferAvailable}} ve transfer_call ile kliniğe aktar{{/if}}.
+- Hasta şiddetli ağrı, kanama, nefes darlığı, bilinç kaybı gibi acil bir durum anlatırsa: hemen 112'yi aramasını söyle{{#if transferPhoneNumber}}; "{{transfer_available}}" "evet" ise transfer_call ile kliniğe aktar{{/if}}.
 - Klinik bilgilerinde olmayan bir şeyi UYDURMA. Bilmiyorsan söyle ve geri arama notu öner.
 - Başka bir hastanın bilgisini asla paylaşma.
-- Hasta insanla görüşmek isterse {{#if transferAvailable}}transfer_call kullan{{else}}create_callback_request ile not bırak{{/if}}.
+- Hasta insanla görüşmek isterse {{#if transferPhoneNumber}}"{{transfer_available}}" "evet" ise transfer_call, değilse create_callback_request{{else}}create_callback_request ile not bırak{{/if}}.
 
 {{#if extraInstructions}}# Klinik özel talimatları
 {{extraInstructions}}{{/if}}

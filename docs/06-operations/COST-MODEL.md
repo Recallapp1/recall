@@ -4,14 +4,14 @@
 
 ## Dakika başı değişken maliyet bileşenleri
 
-| Bileşen                   | Birim         | Tahmin (USD/dk) | Not                                         |
-| ------------------------- | ------------- | --------------- | ------------------------------------------- |
-| Vapi platform ücreti      | dk            | ~0,05           | Plana göre değişir                          |
-| STT                       | dk            | 0,005–0,02      | Sağlayıcıya göre                            |
-| TTS                       | karakter → dk | 0,02–0,08       | ElevenLabs pahalı uç, Azure ucuz uç         |
-| LLM                       | token         | 0,01–0,05       | Aşağıda                                     |
-| SIP trunk (Türk operatör) | dk            | ~0,005–0,02     | Gelen arama ücretlendirmesi operatöre bağlı |
-| **Toplam**                |               | **~0,09–0,22**  |                                             |
+| Bileşen                                | Birim         | Tahmin (USD/dk) | Not                                                                                          |
+| -------------------------------------- | ------------- | --------------- | -------------------------------------------------------------------------------------------- |
+| Retell platform ücreti (ses altyapısı) | dk            | Plana göre      | STT, TTS ve telefon dahil fiyatlandırma Retell planına bağlı; güncel fiyattan teyit edilecek |
+| STT                                    | dk            | 0,005–0,02      | Sağlayıcıya göre                                                                             |
+| TTS                                    | karakter → dk | 0,02–0,08       | ElevenLabs pahalı uç, Azure ucuz uç                                                          |
+| LLM                                    | token         | 0,01–0,05       | Aşağıda                                                                                      |
+| SIP trunk (Türk operatör)              | dk            | ~0,005–0,02     | Gelen arama ücretlendirmesi operatöre bağlı                                                  |
+| **Toplam**                             |               | **~0,09–0,22**  |                                                                                              |
 
 ## LLM maliyeti hesabı
 
@@ -29,7 +29,7 @@ Anthropic API fiyatları (MTok başına, 2026-09 itibarıyla):
 | `claude-sonnet-5-5` | 2,00         | 10,00         | ~0,08 $        | ~0,025 $        |
 | `claude-haiku-4-5`  | 1,00         | 5,00          | ~0,04 $        | ~0,013 $        |
 
-**Prompt caching:** System prompt her turda aynı olduğu için cache okuma fiyatıyla (input fiyatının küçük bir kısmı) faturalandırılabilir ve input maliyeti belirgin şekilde düşer. Vapi'nin Anthropic entegrasyonunun prompt caching'i destekleyip desteklemediği Faz 1'de doğrulanacak.
+**LLM'i Retell çalıştırır:** Claude modelleri Retell'in model listesinden seçilir (`claude-5-sonnet`, `claude-4.6-sonnet`, `claude-4.5-sonnet`, `claude-4.5-haiku`) ve Retell fiyatlandırmasıyla faturalanır. Yukarıdaki Anthropic fiyatları yalnızca karşılaştırma içindir; gerçek arama başı maliyet `call_cost.combined_cost` (cent) alanından ölçülür (F1.8).
 
 Model seçimi: [ADR-003](../decisions/ADR-003-llm-model.md)
 
@@ -55,5 +55,5 @@ Profesyonel paket: 1.000 dk/ay dahil ([PRICING.md](../00-product/PRICING.md)).
 
 ## İzleme
 
-- Her aramanın maliyeti `calls.cost_usd` alanına (Vapi raporundan) yazılır.
+- Her aramanın maliyeti `calls.cost_usd` alanına (Retell `call_cost.combined_cost`, cent → USD) yazılır.
 - Klinik bazında aylık maliyet ve gelir karşılaştırması (iç pano, Faz 2).

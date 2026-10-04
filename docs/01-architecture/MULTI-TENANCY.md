@@ -10,11 +10,12 @@ Tüm klinikler aynı veritabanını ve tabloları paylaşır. Her satırda `clin
 
 ## Kiracı nereden gelir?
 
-| Giriş noktası           | Kiracı kaynağı                         | Asla                             |
-| ----------------------- | -------------------------------------- | -------------------------------- |
-| Sesli asistan webhook'u | Aranan numara → `clinics.phone_number` | LLM'in ürettiği tool argümanları |
-| Panel                   | Oturumdaki aktif organizasyon → klinik | URL veya form alanı              |
-| Cron                    | Her kliniği sırayla dolaşır            | —                                |
+| Giriş noktası                    | Kiracı kaynağı                                                                                                  | Asla                             |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Retell inbound webhook           | Aranan numara → `phone_numbers.e164`                                                                            | LLM'in ürettiği tool argümanları |
+| Retell tool ve olay webhook'ları | `call.agent_id` → `voice_agents.external_agent_id` (inbound'da yazılan `metadata.clinic_id` ile çapraz kontrol) | LLM'in ürettiği tool argümanları |
+| Panel                            | Oturumdaki aktif organizasyon → klinik                                                                          | URL veya form alanı              |
+| Cron                             | Her kliniği sırayla dolaşır                                                                                     | —                                |
 
 ## Kurallar
 

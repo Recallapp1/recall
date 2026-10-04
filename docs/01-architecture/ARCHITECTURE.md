@@ -10,26 +10,28 @@ flowchart LR
     subgraph Telefon["Telefon katmanı"]
         OP[Türk operatör<br/>SIP trunk]
     end
-    subgraph Voice["Ses katmanı (Vapi)"]
-        STT[STT<br/>Türkçe]
-        LLM[LLM<br/>Claude]
-        TTS[TTS<br/>Türkçe ses]
+    subgraph Voice["Ses katmanı (Retell AI)"]
+        AG[Kliniğin ajanı<br/>STT · LLM · TTS<br/>tr-TR]
     end
     subgraph Vercel["Recall (Vercel, fra1)"]
-        WH["/api/voice/vapi<br/>webhook"]
+        IN["/api/voice/retell/inbound"]
+        TL["/api/voice/retell/tools"]
+        EV["/api/voice/retell/events"]
         PANEL[Klinik paneli<br/>Next.js]
-        CRON[Vercel Cron<br/>hatırlatma, saklama]
+        SYNC[Ajan senkronu<br/>voice:sync]
         DOM[Domain katmanı<br/>müsaitlik, randevu]
     end
     DB[(Neon Postgres<br/>Frankfurt)]
     SMS[Netgsm SMS]
 
-    P <--> OP <--> STT
-    STT --> LLM --> TTS --> OP
-    LLM <-->|tool calls| WH
-    WH --> DOM --> DB
+    P <--> OP <--> AG
+    AG -->|1 call_inbound| IN
+    AG <-->|2 custom function| TL
+    AG -->|3 call_ended / analyzed| EV
+    IN & TL & EV --> DOM --> DB
     PANEL --> DOM
-    CRON --> DOM
+    SYNC -->|LLM + Agent API| AG
+    SYNC --> DB
     DOM --> SMS
 ```
 
@@ -37,62 +39,85 @@ flowchart LR
 
 **Gerçek zamanlı ses işleme Vercel'de çalışmaz.** Bir telefon görüşmesi dakikalarca açık kalan, çift yönlü ve düşük gecikmeli bir ses akışıdır. Vercel Functions ise istek-yanıt modeline göre çalışır. Bu yüzden sorumluluğu ikiye ayırıyoruz:
 
-| Katman          | Sorumluluk                                                           | Nerede                  |
-| --------------- | -------------------------------------------------------------------- | ----------------------- |
-| **Ses katmanı** | SIP, STT, LLM döngüsü, TTS, söz kesme (barge-in), sessizlik algılama | Vapi (yönetilen servis) |
-| **İş katmanı**  | Klinik config'i, müsaitlik, randevu, hasta, arama kaydı, panel       | Recall / Vercel         |
+| Katman          | Sorumluluk                                                           | Nerede                       |
+| --------------- | -------------------------------------------------------------------- | ---------------------------- |
+| **Ses katmanı** | SIP, STT, LLM döngüsü, TTS, söz kesme (barge-in), sessizlik algılama | Retell AI (yönetilen servis) |
+| **İş katmanı**  | Klinik verisi, müsaitlik, randevu, hasta, arama kaydı, panel         | Recall / Vercel              |
 
-Ses katmanı iş katmanıyla iki yoldan konuşur:
+Karar: [ADR-004](../decisions/ADR-004-retell-voice-platform.md).
 
-1. **`assistant-request`:** Arama geldiğinde Vapi, aranan numarayı bize sorar. Biz o kliniğe özel asistan yapılandırmasını (prompt, ses, tool'lar) döneriz. **Tek bir kod tabanı, sınırsız klinik.**
-2. **Tool çağrıları:** LLM bir işlem yapmak istediğinde (müsaitlik sorgulama, randevu oluşturma) Vapi webhook'umuzu çağırır. Biz domain katmanında işi yapıp sonucu döneriz.
+## Çok kiracılı ses: klinik başına senkronize ajan
 
-Bu ayrım sayesinde ses sağlayıcısını değiştirmek (Retell, ElevenLabs Agents veya kendi LiveKit pipeline'ımız) sadece `src/server/voice/providers/` altında yeni bir adaptör yazmak anlamına gelir. Bkz. [ADR-002](../decisions/ADR-002-voice-platform.md).
+**Tek kod tabanı, sınırsız klinik.** Her kliniğin Retell'de kendi **LLM**'i ve **ajanı** vardır. Bunlar elle değil, bizim veritabanımızdan üretilir:
+
+1. **Senkron (`pnpm voice:sync`, F5'te panelden otomatik):** Klinik verisi (hizmetler, hekimler, saatler, SSS, ses, kurallar) → [`buildRetellAgentSpec`](../../src/server/voice/providers/retell/agent-spec.ts) → Retell LLM + Agent oluştur/güncelle → `voice_agents` tablosuna `external_agent_id`, `agent_version`, `spec_hash` yazılır. Spec değişmediyse Retell çağrılmaz.
+2. **Arama anı:** Prompt sabittir. Değişen değerler değişkenlerle gelir:
+   - Retell'in yerleşik değişkenleri: `{{current_time_Europe/Istanbul}}`, `{{current_calendar_Europe/Istanbul}}`, `{{user_number}}`
+   - Bizim değişkenlerimiz (inbound webhook ile): `{{transfer_available}}`, `{{clinic_status}}`
+
+Retell panelinde ajan elle düzenlenmez; bir sonraki senkron değişiklikleri ezer.
 
 ## Bileşenler
 
 ### Next.js uygulaması (`src/app`)
 
 - **`(marketing)`:** Herkese açık tanıtım sayfası.
-- **`panel/`:** Oturum gerektiren klinik paneli. Server Components ve Server Actions.
-- **`api/voice/vapi`:** Vapi server URL'i. Tek uç nokta, mesaj tipine göre dağıtım yapar.
-- **`api/cron/*`:** Vercel Cron job'ları (hatırlatma SMS'leri, veri saklama temizliği).
+- **`panel/`:** Oturum gerektiren klinik paneli (F5).
+- **`api/voice/retell/inbound`:** Gelen arama webhook'u. Numara → klinik → ajan ve değişkenler.
+- **`api/voice/retell/tools`:** Retell custom function'ları. `name` alanına göre tool çalıştırır.
+- **`api/voice/retell/events`:** `call_started`, `call_ended`, `call_analyzed`.
+- **`api/cron/*`:** Vercel Cron job'ları (F2, F7).
 - **`api/health`:** Uptime izleme.
 
 ### Sunucu katmanı (`src/server`)
 
 - **`db/`:** Drizzle şeması, client, seed.
-- **`domain/`:** Framework'ten bağımsız iş kuralları. Müsaitlik hesabı saf fonksiyondur ve DB'ye dokunmaz; tamamen birim test edilir.
+- **`domain/`:** Framework'ten bağımsız iş kuralları. Müsaitlik hesabı saf fonksiyondur ve DB'ye dokunmaz.
 - **`voice/`:**
   - `tools/`: Tool tanımları (Zod şema ve handler). Sağlayıcıdan bağımsızdır.
-  - `prompt.ts`: Klinik config'inden system prompt üretir.
-  - `providers/vapi/`: Vapi mesaj tipleri, imza doğrulama, asistan JSON'u.
+  - `prompt.ts`: Klinik verisinden prompt şablonu üretir. Arama anı değerleri yer tutucudur.
+  - `providers/retell/`: Retell'e özgü her şey: `agent-spec.ts` (spec üretimi), `sync.ts` (senkron), `handlers.ts` (webhook'lar), `schemas.ts`, `config.ts`, `deps.ts`.
 - **`notifications/`:** SMS gönderimi (Netgsm adaptörü, lokalde konsol adaptörü).
 
 ### Veri
 
 - **Postgres:** Tek veritabanı, satır seviyesinde kiracı izolasyonu (`clinic_id`). Bkz. [MULTI-TENANCY.md](MULTI-TENANCY.md).
-- **Ses kayıtları:** Vapi'de tutulur; biz sadece URL saklarız. Saklama süresi: [DATA-RETENTION.md](../05-compliance/DATA-RETENTION.md).
+- **`voice_agents`:** Kliniğin Retell ajanı ile bağlantısı. **`phone_numbers`:** Kliniğin gelen arama numaraları.
+- **Ses kayıtları:** Retell'de tutulur; biz sadece URL saklarız. Saklama: [DATA-RETENTION.md](../05-compliance/DATA-RETENTION.md).
 
 ## İstek akışları
 
 ### Gelen arama
 
-Bkz. [USER-FLOWS.md §1](../00-product/USER-FLOWS.md#1-gelen-arama-yeni-randevu-ana-akış).
-
-### Tool çağrısı (iç akış)
-
 ```
-POST /api/voice/vapi
-  → secret header doğrulaması
-  → Zod ile mesaj parse
-  → message.type === "tool-calls"
-  → call.phoneNumber → clinic (çözümle, yoksa reddet)
-  → her toolCall için: registry[name].input.parse(args) → handler(ctx, input)
-  → { results: [{ toolCallId, result }] }
+Retell ── POST /api/voice/retell/inbound ──▶ Recall
+  1. X-Retell-Signature doğrula (ham gövde, API anahtarı, 5 dk pencere)
+  2. call_inbound.to_number → E.164 → phone_numbers → klinik
+  3. voice_agents → override_agent_id + override_agent_version
+  4. calls satırı aç (call_id)
+  5. ◀── { call_inbound: { override_agent_id, override_agent_version,
+                            dynamic_variables: { transfer_available, clinic_status },
+                            metadata: { clinic_id } } }
+     Numara bilinmiyor veya ajan senkronize değil → { call_inbound: { reject: true } }
 ```
 
-Tool handler'ları **her zaman** webhook'tan çözümlenen `clinicId` ile çalışır. LLM'in ürettiği argümanlar asla kiracı belirlemez.
+### Tool çağrısı
+
+```
+Retell ── POST /api/voice/retell/tools { name, args, call } ──▶ Recall
+  1. İmza doğrula
+  2. call.agent_id → voice_agents → klinik
+     call.metadata.clinic_id varsa ikisi eşleşmeli (yoksa 404)
+  3. calls satırını bul/oluştur
+  4. runTool(name, args, { clinic, callerPhone: call.from_number, … })
+  5. ◀── { ok: true, … } | { ok: false, error, message }
+```
+
+Tool handler'ları **her zaman** sunucuda çözümlenen klinik ile çalışır. LLM'in ürettiği argümanlar asla kiracı belirlemez.
+
+### Arama olayları
+
+`call_ended` ve `call_analyzed` olayları süre, bitiş nedeni, transkript, kayıt URL'i, özet ve maliyeti (cent → USD) yazar. Olaylar tekrar gelebilir; yalnızca gelen alanlar yazılır, sonuç (`outcome`) öncelik sırasıyla korunur (bir randevu "bilgi" ile ezilmez).
 
 ## Gecikme bütçesi
 
@@ -106,12 +131,12 @@ Hedef: hasta konuşmayı bitirdikten sonra ilk sese kadar p50 < 1,0 sn.
 | Tool çağrısı (gerekirse)            | < 300 ms   |
 | TTS ilk ses                         | 100–200 ms |
 
-Tool webhook'u bu bütçenin bir parçasıdır: Vercel bölgesi (`fra1`) ve Neon bölgesi (`eu-central-1`) aynı yerde olmalı, sorgular indeksli olmalı. Ayrıntılar: [AGENT-DESIGN.md](../02-voice-agent/AGENT-DESIGN.md).
+Tool uç noktası bu bütçenin bir parçasıdır: Vercel `fra1` ve Neon `eu-central-1` aynı bölgede, sorgular indeksli. Retell'den Vercel'e ağ gecikmesi F1.8'de ölçülecek. Ayrıntılar: [AGENT-DESIGN.md](../02-voice-agent/AGENT-DESIGN.md).
 
 ## Ortamlar
 
-| Ortam      | Uygulama                | Veritabanı            | Ses                             |
-| ---------- | ----------------------- | --------------------- | ------------------------------- |
-| Lokal      | `pnpm dev`              | Docker Postgres       | Vapi + ngrok/cloudflared tüneli |
-| Preview    | Vercel Preview (her PR) | Neon dalı (PR başına) | Test numarası                   |
-| Production | Vercel Production       | Neon main             | Gerçek klinik numaraları        |
+| Ortam      | Uygulama                | Veritabanı               | Ses                                                                                |
+| ---------- | ----------------------- | ------------------------ | ---------------------------------------------------------------------------------- |
+| Lokal      | `pnpm dev`              | `pnpm db:local` (PGlite) | Retell + cloudflared tüneli ([RETELL-SETUP.md](../02-voice-agent/RETELL-SETUP.md)) |
+| Preview    | Vercel Preview (her PR) | Neon dalı (PR başına)    | Ayrı test ajanları (F8)                                                            |
+| Production | Vercel Production       | Neon main                | Gerçek klinik numaraları (F2)                                                      |

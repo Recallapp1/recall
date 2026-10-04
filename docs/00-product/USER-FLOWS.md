@@ -7,16 +7,16 @@ sequenceDiagram
     autonumber
     actor H as Hasta
     participant T as Türk operatör (SIP)
-    participant V as Vapi
+    participant V as Retell
     participant R as Recall API
     participant DB as Postgres
     participant S as Netgsm SMS
 
     H->>T: Kliniğin numarasını arar
     T->>V: SIP INVITE (aranan numara)
-    V->>R: assistant-request (to, from)
-    R->>DB: Numaraya ait kliniği ve config'i bul
-    R-->>V: Kliniğe özel asistan (prompt, ses, tool'lar)
+    V->>R: call_inbound (to, from)
+    R->>DB: Numaraya ait kliniği ve senkronize ajanını bul
+    R-->>V: Kliniğin ajanı + arama anı değişkenleri
     V->>H: "Gülüş Diş Kliniği, merhaba. Bu görüşme kaydedilmektedir…"
     H->>V: "Yarın diş temizliği için randevu almak istiyorum"
     V->>R: tool: check_availability(service, date)
@@ -30,7 +30,7 @@ sequenceDiagram
     R->>S: Onay SMS'i
     R-->>V: OK + randevu özeti
     V->>H: "Randevunuz oluşturuldu, SMS ile bilgi gönderdik."
-    V->>R: end-of-call-report (transkript, özet, süre)
+    V->>R: call_ended / call_analyzed (transkript, özet, süre)
     R->>DB: Arama kaydı
 ```
 

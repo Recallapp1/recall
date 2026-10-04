@@ -36,7 +36,7 @@
 ## 5. Recall operasyon ekibi (iç kullanıcı)
 
 - **İhtiyaç:** Yeni klinikleri sisteme almak, numara bağlamak, sorunlu aramaları incelemek, maliyetleri izlemek.
-- **Not:** MVP'de ayrı bir admin paneli yok. Bu işler doğrudan veritabanı, seed betikleri ve Vapi paneli üzerinden yürütülür.
+- **Not:** MVP'de ayrı bir admin paneli yok. Bu işler doğrudan veritabanı, seed betikleri, `pnpm voice:sync` ve Retell paneli üzerinden yürütülür. Yönetim konsolu F6'da gelir.
 
 ## Panel rol eşlemesi
 

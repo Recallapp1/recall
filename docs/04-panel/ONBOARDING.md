@@ -4,23 +4,24 @@ Hedef: Sözleşmeden **canlı ilk aramaya 48 saat**.
 
 ## MVP: Recall ekibi destekli (concierge)
 
-| #   | Adım                                                                          | Kim                           | Araç                      |
-| --- | ----------------------------------------------------------------------------- | ----------------------------- | ------------------------- |
-| 1   | Keşif görüşmesi: hizmetler, süreler, hekimler, saatler, SSS, fiyat politikası | Recall + klinik               | Form                      |
-| 2   | Klinik kaydı ve owner daveti                                                  | Recall                        | Seed betiği / panel       |
-| 3   | Hekimler, hizmetler, çalışma saatleri girişi                                  | Recall veya klinik            | Panel                     |
-| 4   | Asistan ayarları (ad, karşılama, ses, SSS)                                    | Klinik                        | Panel → Ayarlar → Asistan |
-| 5   | Türk numarası tahsisi ve Vapi'ye bağlanması                                   | Recall                        | Operatör paneli + Vapi    |
-| 6   | **Test araması:** Recall ekibi ve klinik birlikte 5 senaryo dener             | Birlikte                      | Telefon                   |
-| 7   | Kliniğin mevcut hattında yönlendirme kurulumu                                 | Klinik (Recall rehberliğinde) | Operatör                  |
-| 8   | Devir numarası testi (döngü olmadığından emin ol)                             | Birlikte                      | Telefon                   |
-| 9   | Canlıya geçiş, ilk hafta günlük kontrol                                       | Recall                        | Panel, arama kayıtları    |
+| #   | Adım                                                                                                 | Kim                           | Araç                                          |
+| --- | ---------------------------------------------------------------------------------------------------- | ----------------------------- | --------------------------------------------- |
+| 1   | Keşif görüşmesi: hizmetler, süreler, hekimler, saatler, SSS, fiyat politikası                        | Recall + klinik               | Form                                          |
+| 2   | Klinik kaydı ve owner daveti                                                                         | Recall                        | Seed betiği / panel                           |
+| 3   | Hekimler, hizmetler, çalışma saatleri girişi                                                         | Recall veya klinik            | Panel                                         |
+| 4   | Asistan ayarları (ad, karşılama, ses, SSS)                                                           | Klinik                        | Panel → Ayarlar → Asistan                     |
+| 5   | Türk numarası tahsisi, Retell'e içe aktarma ve kliniğe bağlama; `pnpm voice:sync` ile ajan oluşturma | Recall                        | Operatör paneli + Retell + CLI (F6'da konsol) |
+| 6   | **Test araması:** Recall ekibi ve klinik birlikte 5 senaryo dener                                    | Birlikte                      | Telefon                                       |
+| 7   | Kliniğin mevcut hattında yönlendirme kurulumu                                                        | Klinik (Recall rehberliğinde) | Operatör                                      |
+| 8   | Devir numarası testi (döngü olmadığından emin ol)                                                    | Birlikte                      | Telefon                                       |
+| 9   | Canlıya geçiş, ilk hafta günlük kontrol                                                              | Recall                        | Panel, arama kayıtları                        |
 
 ## Kontrol listesi (canlıya geçmeden önce)
 
 - [ ] En az 1 hekim, 1 hizmet ve haftalık çalışma saatleri tanımlı
 - [ ] Önümüzdeki 30 gün için resmî tatiller girilmiş
-- [ ] `clinics.phone_number` Vapi'deki numarayla aynı (E.164)
+- [ ] Numara `phone_numbers` tablosunda kliniğe bağlı ve Retell'de inbound webhook URL'i ayarlı (E.164)
+- [ ] Kliniğin ajanı senkronize (`voice_agents.status = synced`)
 - [ ] Devir numarası farklı bir hat ve test edildi
 - [ ] KVKK aydınlatma metni klinik web sitesinde yayında ([KVKK.md](../05-compliance/KVKK.md))
 - [ ] Veri işleme sözleşmesi (DPA) imzalı

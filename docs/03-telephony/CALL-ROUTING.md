@@ -31,9 +31,9 @@ flowchart TD
 
 - Hedef: `clinics.transfer_phone_number`.
 - **Döngü riski:** Klinik "meşgul/cevapsız → Recall" yönlendirmesi kullanıyorsa ve devir numarası aynı numaraysa arama tekrar Recall'a döner. Bu yüzden devir numarası **farklı bir hat** olmalıdır (sekreterin cep telefonu, dahili hat). Onboarding'de kontrol edilir.
-- Devir modu: Vapi `transferCall`. Asistan devretmeden önce kısa bir bilgilendirme yapar ("Sizi arkadaşıma aktarıyorum").
+- Devir modu: Retell `transfer_call` (cold transfer). Asistan devretmeden önce kısa bir bilgilendirme yapar ("Sizi arkadaşıma aktarıyorum").
 
 ## Yoğunluk
 
-- Vapi eşzamanlı arama limiti hesap planına bağlıdır. Klinik başına eşzamanlı arama limiti (ör. 3) `settings` ile sınırlandırılabilir (Faz 3).
+- Retell eşzamanlı arama limiti hesap planına bağlıdır. Klinik başına eşzamanlı arama limiti (ör. 3) `settings` ile sınırlandırılabilir (Faz 3).
 - SIP trunk kanal sayısı operatör sözleşmesinde belirlenir.

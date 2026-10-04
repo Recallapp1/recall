@@ -8,14 +8,9 @@
 
 ## STT (konuşmadan metne)
 
-Faz 1'de aşağıdaki sağlayıcılar **aynı test kayıtlarıyla** karşılaştırılacak:
+STT'yi Retell çalıştırır. Ajan dili **yalnızca `tr-TR`** olarak ayarlanır: Retell topluluğunun gözlemine göre çok dilli mod Türkçe tanımayı zayıflatıyor. Retell'de Türkçe destekleyen ASR sağlayıcıları (2026-10): **Deepgram, Azure, Soniox, AssemblyAI**. F1.8'de **aynı test kayıtlarıyla** karşılaştırılacaklar.
 
-| Aday                         | Not                                       |
-| ---------------------------- | ----------------------------------------- |
-| Deepgram (Nova serisi, `tr`) | Düşük gecikme; Türkçe doğruluk ölçülecek  |
-| Azure Speech (`tr-TR`)       | Özel kelime listesi (phrase list) desteği |
-| ElevenLabs Scribe            | Türkçe performansı ölçülecek              |
-| Google Speech                | Alternatif                                |
+Klinik adları, hekim adları, hizmet adları ve eş anlamlılar senkron sırasında ajanın `boosted_keywords` alanına otomatik eklenir.
 
 **Ölçüm kriterleri:**
 
@@ -28,13 +23,11 @@ Faz 1'de aşağıdaki sağlayıcılar **aynı test kayıtlarıyla** karşılaşt
 
 ## TTS (metinden konuşmaya)
 
-| Aday                                                       | Not                                         |
-| ---------------------------------------------------------- | ------------------------------------------- |
-| ElevenLabs (Multilingual / Flash)                          | Doğallık yüksek; Flash daha düşük gecikmeli |
-| Azure Neural TTS (`tr-TR-EmelNeural`, `tr-TR-AhmetNeural`) | Kararlı, SSML desteği                       |
-| Cartesia                                                   | Düşük gecikme; Türkçe kalitesi ölçülecek    |
+Retell'de Türkçe destekleyen TTS sağlayıcıları (2026-10): **ElevenLabs, Cartesia, OpenAI, MiniMax, Fish Audio** ve Retell'in kendi sesleri. Sesler `pnpm voice:voices` ile listelenir; önizleme bağlantısından dinlenerek seçilir.
 
-Her klinik panelden 3–4 hazır ses arasından seçim yapabilir (`settings.assistant.voiceId`).
+- **Varsayılan ses:** `RETELL_VOICE_ID` (tüm klinikler)
+- **Kliniğe özel ses:** `settings.assistant.voiceId` (panelden, F5). Varsayılanın önüne geçer.
+- F1.8'de 3–4 aday ses Türkçe doğallık, isim ve sayı telaffuzu, gecikme açısından karşılaştırılır; panelde sunulacak hazır sesler bu listeden seçilir.
 
 ## Telaffuz ve normalizasyon
 

@@ -16,7 +16,7 @@
 
 - `GET /api/cron/retention`: günlük çalışır (Vercel Cron, `vercel.json`).
 - Her silme işlemi sayısal olarak loglanır ("12 transkript temizlendi"), içerik loglanmaz.
-- Sağlayıcı tarafı (Vapi kayıtları): Vapi API ile silme veya Vapi'de kayıt saklama süresi ayarı. Faz 1'de doğrulanacak.
+- Sağlayıcı tarafı (Retell kayıtları): Retell ajan ayarları `data_storage_setting` ve `data_storage_retention_days` ile saklama sınırlanabilir; arama silme API'si de değerlendirilecek (F7).
 
 ## Anonimleştirme
 

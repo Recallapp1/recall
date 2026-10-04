@@ -6,8 +6,8 @@
 | ---------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | **Birim**              | Vitest                                                     | Domain fonksiyonları (müsaitlik, tarih çözümleme, telefon normalizasyonu, prompt üretimi, tool argüman şemaları) | Her commit                             |
 | **Entegrasyon**        | Vitest + PGlite (süreç içi Postgres, gerçek migration'lar) | Tool handler'ları ve DB; exclusion constraint; kiracı izolasyonu; uçtan uca webhook akışı                        | Her commit (Docker gerekmez)           |
-| **Webhook sözleşmesi** | Vitest                                                     | Örnek Vapi payload'ları → beklenen yanıt biçimi                                                                  | Her PR                                 |
-| **Senaryo eval**       | Vapi test araçları / özel script                           | [CONVERSATION-SCENARIOS.md](../02-voice-agent/CONVERSATION-SCENARIOS.md)                                         | Prompt, model veya tool değişikliğinde |
+| **Webhook sözleşmesi** | Vitest                                                     | Retell SDK ile imzalanmış istekler → imza, kiracı, tool ve olay davranışı                                        | Her PR                                 |
+| **Senaryo eval**       | Retell web call / test araçları + özel script              | [CONVERSATION-SCENARIOS.md](../02-voice-agent/CONVERSATION-SCENARIOS.md)                                         | Prompt, model veya tool değişikliğinde |
 | **E2E (panel)**        | Playwright (Faz 2)                                         | Giriş, randevu oluşturma, iptal                                                                                  | Release öncesi                         |
 
 ## Birim testi kuralları

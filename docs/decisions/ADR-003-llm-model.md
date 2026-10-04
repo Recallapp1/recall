@@ -30,5 +30,5 @@ Sesli asistanın LLM'i aynı anda şunları sağlamalı:
 
 ## Notlar
 
-- Vapi üzerinden kullanılabilen Anthropic modelleri ve parametreleri (effort, thinking) Vapi'nin desteğine bağlıdır. Faz 1'de doğrulanacak. Desteklenmeyen bir parametre gerekiyorsa Vapi'nin "custom LLM" seçeneğiyle kendi uç noktamızdan Anthropic SDK çağrılabilir.
+- **Retell geçişi (2026-10-04):** LLM'i Retell çalıştırır; seçenekler Retell'in listesindeki Claude modelleriyle sınırlıdır: `claude-5-sonnet` (varsayılan, `RETELL_LLM_MODEL`), `claude-4.6-sonnet`, `claude-4.5-sonnet`, `claude-4.5-haiku`. Opus Retell'de sunulmuyor. Effort ve thinking gibi Anthropic parametreleri Retell üzerinden ayarlanamaz. F1.8 ölçümü bu modellerle yapılır.
 - Karar ölçümden sonra bu belgeye işlenir ve durum `Kabul edildi` olur.

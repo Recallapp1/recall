@@ -29,6 +29,7 @@ Recall, kliniklere (diş, sağlık, güzellik) gelen telefon aramalarını karş
 | Sesli asistan    | **Retell AI** Voice Agent API, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). **Vapi kullanılmaz** |
 | LLM              | Claude (bkz. [ADR-003](docs/decisions/ADR-003-llm-model.md))                                                                                    |
 | Telefon ve SMS   | Netgsm (SIP trunk ve SMS); alternatifler test edilecek (F2)                                                                                     |
+| E-posta          | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md))                                                                 |
 | Test             | Vitest                                                                                                                                          |
 | Deploy           | Vercel (bölge `fra1`)                                                                                                                           |
 | Paket yöneticisi | pnpm (Node 24)                                                                                                                                  |
@@ -48,6 +49,9 @@ pnpm db:generate    # şemadan migration üret
 pnpm db:migrate     # migration'ları uygula
 pnpm db:seed        # demo klinik verisi
 pnpm db:studio      # Drizzle Studio
+pnpm voice:voices   # Retell seslerini listele
+pnpm voice:sync --clinic <slug>   # kliniğin Retell ajanını oluştur/güncelle (--all, --force)
+pnpm voice:send <inbound|function-call|call-ended>   # imzalı örnek webhook isteği
 ```
 
 Bir değişikliği bitmiş saymadan önce `pnpm lint && pnpm typecheck && pnpm test` çalıştır.
@@ -86,6 +90,7 @@ docs/                     # Tüm ürün ve teknik belgeler
 - **Next.js 16:** `middleware` yerine `proxy.ts`; `params`, `cookies()`, `headers()` async. Emin olmadığın API için `node_modules/next/dist/docs/` belgelerine bak.
 - **Sağlık verisi (KVKK):** Loglara telefon numarası, isim, transkript yazma. Bkz. [KVKK.md](docs/05-compliance/KVKK.md).
 - **Sesli asistan tıbbi tavsiye vermez.** Prompt ve tool değişiklikleri [ESCALATION.md](docs/02-voice-agent/ESCALATION.md) belgesine uymalı.
+- **Panel yalnızca Türkçe.** i18n altyapısı yok; kullanıcıya görünen metinler doğrudan Türkçe yazılır.
 - Yorumlar sadece *neden*i açıklar. Kod ve tanımlayıcılar İngilizce, kullanıcıya görünen metinler ve belgeler Türkçe.
 
 ## Git

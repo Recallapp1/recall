@@ -11,7 +11,7 @@
 ```bash
 pnpm install
 cp .env.example .env.local
-pnpm db:up         # docker compose ile Postgres 17 (port 5433)
+pnpm db:local      # ayrı terminalde: PGlite Postgres (port 5433); Docker varsa: pnpm db:up
 pnpm db:migrate    # tabloları oluştur
 pnpm db:seed       # demo klinik: "Gülüş Diş Kliniği"
 pnpm dev
@@ -41,48 +41,41 @@ pnpm db:reset      # Docker: container + volume siler, yeniden oluşturur, migra
 
 ## Sesli asistanı lokalde test etme
 
-Vapi'nin webhook'u lokal makinene ulaşabilmeli. Bunun için bir tünel gerekir.
+Retell'in webhook'ları lokal makinene ulaşabilmeli; bunun için bir tünel gerekir. Adım adım kurulum (API anahtarı, ses seçimi, tünel, ajanı oluşturma, test araması): **[RETELL-SETUP.md](../02-voice-agent/RETELL-SETUP.md)**.
 
-1. Tünel aç (birini seç):
-   ```bash
-   cloudflared tunnel --url http://localhost:3000
-   # veya
-   ngrok http 3000
-   ```
-2. Vapi panelinde test numarasının **Server URL** alanına `https://<tünel>/api/voice/vapi` yaz; **Server URL Secret** alanına `.env.local` içindeki `VAPI_WEBHOOK_SECRET` değerini gir.
-3. Seed'deki demo kliniğin `phone_number` alanını Vapi test numarasıyla güncelle:
-   ```bash
-   pnpm db:seed --phone +1XXXXXXXXXX
-   ```
-4. Numarayı ara. Webhook logları `pnpm dev` terminalinde görünür.
+### Webhook'ları telefonsuz test etme
 
-### Webhook'u telefonsuz test etme
+`pnpm dev` çalışırken, Retell'in imzalama yöntemiyle imzalanmış örnek istekler gönderir (`RETELL_API_KEY` gerekir):
 
 ```bash
-curl -X POST http://localhost:3000/api/voice/vapi \
-  -H "content-type: application/json" \
-  -H "x-vapi-secret: $VAPI_WEBHOOK_SECRET" \
-  -d @scripts/fixtures/vapi-tool-calls.json
+pnpm voice:send inbound          # gelen arama: numara → klinik → ajan
+pnpm voice:send function-call    # find_appointments tool'u
+pnpm voice:send call-ended       # arama bitti olayı
 ```
 
-`scripts/fixtures/` altında örnek `assistant-request` ve `tool-calls` payload'ları bulunur.
+Örnek gövdeler `scripts/fixtures/retell-*.json` dosyalarındadır. `function-call` ve `call-ended`, demo kliniğin senkronize ajanını kullanır (önce `pnpm voice:sync --clinic gulus-dis`) veya `--agent <id>` alır.
 
 ## Faydalı komutlar
 
-| Komut                           | Ne yapar                            |
-| ------------------------------- | ----------------------------------- |
-| `pnpm lint`                     | ESLint                              |
-| `pnpm typecheck`                | TypeScript kontrolü                 |
-| `pnpm test` / `pnpm test:watch` | Vitest                              |
-| `pnpm format`                   | Prettier                            |
-| `pnpm db:generate`              | Şema değişikliğinden migration üret |
-| `pnpm db:studio`                | Drizzle Studio                      |
+| Komut                             | Ne yapar                                 |
+| --------------------------------- | ---------------------------------------- |
+| `pnpm lint`                       | ESLint                                   |
+| `pnpm typecheck`                  | TypeScript kontrolü                      |
+| `pnpm test` / `pnpm test:watch`   | Vitest                                   |
+| `pnpm format`                     | Prettier                                 |
+| `pnpm db:generate`                | Şema değişikliğinden migration üret      |
+| `pnpm db:studio`                  | Drizzle Studio                           |
+| `pnpm voice:voices`               | Retell seslerini listele                 |
+| `pnpm voice:sync --clinic <slug>` | Kliniğin Retell ajanını oluştur/güncelle |
+| `pnpm voice:send <fixture>`       | İmzalı örnek webhook isteği gönder       |
 
 ## Sorun giderme
 
-| Belirti                         | Çözüm                                                               |
-| ------------------------------- | ------------------------------------------------------------------- |
-| `ECONNREFUSED 5433`             | `pnpm db:up` çalıştır; Docker açık mı?                              |
-| `Invalid environment variables` | `.env.local` dosyasını `.env.example` ile karşılaştır               |
-| Webhook 401                     | `x-vapi-secret` ile `VAPI_WEBHOOK_SECRET` eşleşmiyor                |
-| Webhook 404 `CLINIC_NOT_FOUND`  | Aranan numara `clinics.phone_number` ile eşleşmiyor (E.164 biçimi?) |
+| Belirti                             | Çözüm                                                                                              |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `ECONNREFUSED 5433`                 | `pnpm db:local` (veya `pnpm db:up`) çalışıyor mu?                                                  |
+| `Invalid environment variables`     | `.env.local` dosyasını `.env.example` ile karşılaştır                                              |
+| Retell uç noktaları 503             | `.env.local` içinde `RETELL_API_KEY` yok; ekleyip `pnpm dev`'i yeniden başlat                      |
+| Retell uç noktaları 401             | İmza geçersiz: anahtar yanlış veya webhook rozetli değil; saat farkı 5 dakikadan büyük             |
+| Tool çağrısı 404 `CLINIC_NOT_FOUND` | Çağrıyı yapan ajan bizim senkronladığımız ajan değil (Retell panelinde elle oluşturulmuş olabilir) |
+| Inbound `reject: true`              | Aranan numara `phone_numbers` tablosunda yok veya kliniğin ajanı senkronize değil                  |

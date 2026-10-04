@@ -12,9 +12,10 @@ Hasta sesi → [VAD/endpointing] → STT (tr) → LLM (Claude + tool'lar) → TT
                                     Recall webhook (tool'lar)
 ```
 
-Pipeline Vapi tarafından yönetilir. Biz şunları kontrol ederiz:
+Pipeline Retell tarafından yönetilir ([ADR-004](../decisions/ADR-004-retell-voice-platform.md)). Biz şunları kontrol ederiz:
 
-- **Asistan yapılandırması:** Her aramada `assistant-request` ile dinamik olarak üretilir ([`src/server/voice/providers/vapi/assistant.ts`](../../src/server/voice/providers/vapi/assistant.ts)).
+- **Ajan yapılandırması:** Klinik verisinden üretilip Retell'e senkronize edilir ([`agent-spec.ts`](../../src/server/voice/providers/retell/agent-spec.ts), [`sync.ts`](../../src/server/voice/providers/retell/sync.ts)). Dil `tr-TR`, saat dilimi kliniğinki, STT için klinik adları ve hizmetleri `boosted_keywords` olarak verilir.
+- **Arama anı değişkenleri:** Inbound webhook `transfer_available` ve `clinic_status` gönderir; saat, takvim ve arayan numara Retell'in yerleşik değişkenlerinden gelir.
 - **System prompt:** Klinik verisinden üretilir. Bkz. [SYSTEM-PROMPT.md](SYSTEM-PROMPT.md).
 - **Tool'lar:** Bkz. [TOOLS.md](TOOLS.md).
 
@@ -40,7 +41,7 @@ Kalıcı bir işlemden önce (randevu oluşturma, iptal, erteleme) asistan bilgi
 
 ### Söz kesme (barge-in)
 
-Hasta asistan konuşurken söze girerse asistan durur ve dinler. Vapi'de varsayılan olarak açıktır; `stopSpeakingPlan` ile ayarlanır.
+Hasta asistan konuşurken söze girerse asistan durur ve dinler. Retell'de varsayılan olarak açıktır; hassasiyet ajan ayarı `interruption_sensitivity` ile değiştirilir (F1.8'de Türkçe için ayarlanacak).
 
 ### Sessizlik
 
@@ -71,9 +72,9 @@ Ayrıntılar: [ESCALATION.md](ESCALATION.md)
 | Kısa system prompt         | İlk token süresini düşürür                                                                     |
 | Endpointing ayarı          | Agresif olursa hastanın sözü kesilir, gevşek olursa yavaş hissettirir. Türkçe için ayarlanmalı |
 | Tool webhook süresi        | Hedef < 300 ms: aynı bölge, indeksli sorgular, soğuk başlatma yok (Fluid Compute)              |
-| TTS streaming              | Vapi varsayılanı                                                                               |
+| TTS streaming              | Retell varsayılanı                                                                             |
 
-Ölçüm: her aramada Vapi'nin raporladığı tur gecikmeleri `calls` tablosuna ve izleme panosuna yazılır. Bkz. [MONITORING.md](../06-operations/MONITORING.md).
+Ölçüm: her aramada Retell'in raporladığı gecikmeler (`latency`: ASR, LLM, TTS) `calls` tablosuna ve izleme panosuna yazılır. Bkz. [MONITORING.md](../06-operations/MONITORING.md).
 
 ## Durum yönetimi
 

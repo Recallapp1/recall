@@ -14,6 +14,8 @@ erDiagram
     clinics ||--o{ appointments : has
     clinics ||--o{ calls : receives
     clinics ||--o{ callback_requests : has
+    clinics ||--o| voice_agents : "synced to"
+    clinics ||--o{ phone_numbers : answers
     practitioners ||--o{ practitioner_services : performs
     services ||--o{ practitioner_services : "performed by"
     practitioners ||--o{ working_hours : works
@@ -35,7 +37,6 @@ erDiagram
 | slug                   | text unique            | URL'lerde                                                                                   |
 | name                   | text                   | Asistanın söylediği ad                                                                      |
 | timezone               | text                   | Varsayılan `Europe/Istanbul`                                                                |
-| phone_number           | text unique, null      | Recall'a bağlı numara (E.164). Gelen aramada kiracıyı bu belirler                           |
 | transfer_phone_number  | text, null             | İnsana devretme numarası                                                                    |
 | address                | text, null             |                                                                                             |
 | settings               | jsonb                  | Asistan ayarları, bkz. [CLINIC-CONFIG-SCHEMA.md](../02-voice-agent/CLINIC-CONFIG-SCHEMA.md) |
@@ -43,6 +44,27 @@ erDiagram
 | created_at, updated_at | timestamptz            |                                                                                             |
 
 > Faz 2'de Better Auth `organization` tablosu eklenecek ve `clinics.organization_id` ile 1:1 bağlanacak.
+
+### `voice_agents`: kliniğin Retell ajanı
+
+| Kolon                              | Not                                                                                           |
+| ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| clinic_id                          | unique: klinik başına bir ajan                                                                |
+| provider                           | `retell`                                                                                      |
+| external_agent_id, external_llm_id | Retell'deki kimlikler. Gelen tool ve olay çağrılarında kiracı `external_agent_id` ile bulunur |
+| agent_version                      | Aramaların sabitlendiği sürüm (inbound webhook `override_agent_version`)                      |
+| spec_hash                          | Son gönderilen tanımın özeti; değişmediyse senkron atlanır                                    |
+| status, last_error, synced_at      | `pending` / `synced` / `error`; hata metni hasta verisi içermez                               |
+
+### `phone_numbers`: gelen arama numaraları
+
+| Kolon     | Not                                         |
+| --------- | ------------------------------------------- |
+| e164      | unique. Gelen aramada kiracıyı bu belirler  |
+| clinic_id | Bir kliniğin birden fazla numarası olabilir |
+| provider  | `retell`                                    |
+| carrier   | `netgsm`, `verimor` … (F2)                  |
+| is_active | Pasif numaraya gelen arama reddedilir       |
 
 ### `practitioners`: hekim veya uzman
 
@@ -102,7 +124,7 @@ Bir güne birden fazla satır girilebilir (öğle arası = iki blok). Bir hekimi
 
 | Kolon                                  | Not                                                                                           |
 | -------------------------------------- | --------------------------------------------------------------------------------------------- |
-| provider, provider_call_id             | `vapi`, unique                                                                                |
+| provider, provider_call_id             | `retell`, unique                                                                              |
 | from_number, to_number                 |                                                                                               |
 | started_at, ended_at, duration_seconds |                                                                                               |
 | ended_reason                           | Sağlayıcıdan gelen                                                                            |

@@ -9,6 +9,7 @@
 | [003](ADR-003-llm-model.md)             | Sesli asistan LLM'i: Claude, model seçimi gecikme ölçümüne göre | Önerildi (Faz 1'de Retell model listesine göre güncellenecek) |
 | [004](ADR-004-retell-voice-platform.md) | Ses platformu: Retell AI, klinik başına senkronize ajan         | Kabul edildi                                                  |
 | [005](ADR-005-design-system.md)         | Tek tasarım kaynağı: DESIGN.md                                  | Kabul edildi                                                  |
+| [006](ADR-006-email-provider.md)        | E-posta: Resend (adaptör arkasında, hasta verisi yok)           | Kabul edildi                                                  |
 
 ## Yeni ADR
 

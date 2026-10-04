@@ -92,12 +92,26 @@ Atomiktir: yeni slot ayrılamazsa eski randevu korunur.
 
 Panelde "Geri aranacaklar" listesine düşer.
 
-## Platform tool'ları (Vapi yerleşik)
+## Platform tool'ları (Retell yerleşik)
 
-| Tool           | Ne zaman eklenir                                               |
-| -------------- | -------------------------------------------------------------- |
-| `transferCall` | `clinics.transfer_phone_number` tanımlıysa. Hedef bu numaradır |
-| `endCall`      | Her zaman. Görüşme doğal olarak bittiğinde                     |
+| Tool            | Retell tipi     | Ne zaman eklenir                                                                                                                        |
+| --------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `transfer_call` | `transfer_call` | `clinics.transfer_phone_number` tanımlıysa (cold transfer). Prompt, yalnızca `{{transfer_available}}` "evet" iken kullanılmasını söyler |
+| `end_call`      | `end_call`      | Her zaman. Görüşme doğal olarak bittiğinde                                                                                              |
+
+## Retell'e nasıl aktarılır
+
+Her tool, senkron sırasında Retell LLM'ine **custom function** olarak eklenir ([agent-spec.ts](../../src/server/voice/providers/retell/agent-spec.ts)):
+
+| Alan                     | Değer                                                           |
+| ------------------------ | --------------------------------------------------------------- |
+| `url`                    | `${APP_URL}/api/voice/retell/tools` (tüm tool'lar tek uç nokta) |
+| `method`                 | `POST`, gövde `{ name, args, call }`                            |
+| `parameters`             | Zod şemasından üretilen JSON Schema                             |
+| `speak_during_execution` | `fillerMessage` varsa açık ("Hemen takvime bakıyorum.")         |
+| `timeout_ms`             | 10 sn                                                           |
+
+Duraklatılmış (`paused`) kliniklerde `book_appointment` ve `reschedule_appointment` sunucu tarafında `CLINIC_PAUSED` döner; prompt kuralına ek bir savunma katmanıdır.
 
 ## Yeni tool ekleme
 
