@@ -30,3 +30,7 @@ DESIGN.md v1 siyah/zinc monokrom palet ve Emerald-400 vurgu tanımlıyordu. Ür�
 - ⚠️ Panel türetmeleri ([DESIGN-SYSTEM.md](../04-panel/DESIGN-SYSTEM.md)) yeni palete göre güncellendi; F5 öncesi ürün ekibine onaylatılacak.
 - ⚠️ Demo talepleri şimdilik yalnızca veritabanına yazılıyor; ekibe bildirim (e-posta) ve görüntüleme ekranı F3/F6'da gelecek.
 - ⏳ Logo ve görsel varlıklar ürün ekibiyle birlikte üretilecek. Şimdilik geçici yazı-logo ve CSS tabanlı derinlik kullanılıyor.
+
+## Ek (2026-10-04): Yazı tipi Montserrat
+
+Ürün ekibinin isteğiyle tüm ürünün (tanıtım sayfası, panel, e-postalar) yazı tipi Inter'den **Montserrat**'a geçirildi. Font yine yerel paketten gelir (`@fontsource-variable/montserrat`, `latin-ext` dahil); build ağa bağımlı değildir. Montserrat Inter'den geniş olduğu için header bağlantıları tek satırda tutuldu ve mobilde header iç boşlukları azaltıldı.

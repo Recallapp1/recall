@@ -21,7 +21,7 @@ Recall, kliniklere (diş, sağlık, güzellik) gelen telefon aramalarını karş
 | Katman           | Seçim                                                                                                                                           |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Framework        | Next.js 16 (App Router, Turbopack), React 19.2, TypeScript strict                                                                               |
-| Stil             | Tailwind CSS 4, shadcn/ui, [DESIGN.md](DESIGN.md) (Inter, Zinc + Emerald-400, glassmorphism)                                                    |
+| Stil             | Tailwind CSS 4, shadcn/ui, [DESIGN.md](DESIGN.md) (Montserrat, lacivert + beyaz, glassmorphism)                                                 |
 | Veritabanı       | PostgreSQL (lokal: PGlite `db:local` veya Docker, prod: Neon / Vercel Marketplace)                                                              |
 | ORM              | Drizzle ORM + drizzle-kit (`pg` sürücüsü)                                                                                                       |
 | Kimlik doğrulama | Better Auth (organization plugin = klinik)                                                                                                      |

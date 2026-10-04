@@ -24,7 +24,7 @@ F3 (hesaplar) ile birlikte işlem e-postaları gerekiyor: **ekip daveti**, **par
 **Resend**, bir **adaptör arkasında**:
 
 1. `src/server/notifications/email.ts` → `EmailProvider { send({ to, subject, react|html, text }) }`. Adaptörler: `ResendEmailProvider` (prod), `ConsoleEmailProvider` (lokal; alıcıyı maskeleyip konsola yazar). Seçim `EMAIL_PROVIDER=console|resend`, SMS katmanıyla aynı desen.
-2. Şablonlar React Email ile `src/emails/` altında, **Türkçe**, DESIGN.md token'larıyla (Inter, Zinc, Emerald-400 vurgu).
+2. Şablonlar React Email ile `src/emails/` altında, **Türkçe**, DESIGN.md token'larıyla (Montserrat, lacivert palet, `primary` vurgu).
 3. **E-postalar hasta verisi içermez.** Yalnızca klinik adı, davet eden kişinin adı ve tek kullanımlık bağlantılar. Bu kural kod incelemesinde kontrol edilir.
 4. Gönderim bölgesi **eu-west-1**; gönderici alan adı Recall'un alan adı (ör. `bildirim@<alan-adı>`), SPF/DKIM/DMARC ile doğrulanır (F8).
 5. Env: `EMAIL_PROVIDER`, `RESEND_API_KEY`, `EMAIL_FROM`.

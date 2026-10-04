@@ -26,7 +26,7 @@ Tek yer: [`src/app/globals.css`](../../src/app/globals.css) (`@theme`). Bileşen
 | Kenarlık (açık)             | `hairline`                                       | `#E3E8F2`                              |
 | Glass                       | `glass` / `glass-strong` / `glass-border`        | %5 / %10 / %12 beyaz                   |
 | Koyu zeminde metin          | `on-dark` / `on-dark-soft` / `on-dark-muted`     | beyaz / %85 / `#A5B4CF`                |
-| Font                        | `font-sans`                                      | Inter (yerel paket, `latin-ext`)       |
+| Font                        | `font-sans`                                      | Montserrat (yerel paket, `latin-ext`)  |
 | Başlık / etiket             | `text-display` / `text-label`                    | `-0.05em`, `1.05` / 700, 10px, `0.2em` |
 | Radius                      | `rounded-section` / `bento` / `card` / `card-sm` | 2.5 / 2 / 1.5 / 1 rem                  |
 | Blur                        | `glass` (12px), `glass-nav` (20px)               |                                        |

@@ -231,7 +231,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F4.1 Token'lar ve temel
 
-- [x] Font: Inter, `@fontsource-variable/inter` paketinden yerel (`latin-ext` dahil). Geist kaldırıldı. Build artık ağa bağımlı değil (doğrulandı). Not: `next/font/local` yerine paketin kendi `@font-face` CSS'i kullanıldı; dosya kopyalamaya gerek kalmadı
+- [x] Font: **Montserrat** (2026-10-04, ürün ekibi kararı; önce Inter), `@fontsource-variable/montserrat` paketinden yerel (`latin-ext` dahil). Geist kaldırıldı. Build artık ağa bağımlı değil (doğrulandı). Not: `next/font/local` yerine paketin kendi `@font-face` CSS'i kullanıldı; dosya kopyalamaya gerek kalmadı
 - [x] `globals.css` `@theme`: DESIGN.md paleti, radius, blur, motion, sayfa genişliği. Eşleme tablosu: [DESIGN-SYSTEM.md §1](04-panel/DESIGN-SYSTEM.md#1-tokenlar)
 - [x] Yardımcılar: `glass`, `glass-nav`, `grain`, `bg-dark-gradient`, `surface-dark` (gradyan + grain + beyaz metin), `text-display`, `text-label`, `animate-fade-in-up`, `animate-status-bounce`, `prefers-reduced-motion`
 - [x] Tipografi ölçeği (`DisplayHeading`, `BodyText`, `Eyebrow`)

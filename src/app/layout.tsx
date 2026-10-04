@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 // Self-hosted (no network at build time); includes latin-ext for Turkish.
-import "@fontsource-variable/inter";
+import "@fontsource-variable/montserrat";
 
 import "./globals.css";
 
