@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
+import { safeError } from "@/lib/safe-error";
+
 import { DomainError } from "../../domain/errors";
 import { bookAppointmentTool } from "./book-appointment";
 import { cancelAppointmentTool } from "./cancel-appointment";
@@ -74,7 +76,15 @@ export async function runTool(
       log({ ok: false, error: error.code });
       return { ok: false, error: error.code, message: error.userMessage };
     }
-    console.error("tool.failed", { tool: name, clinicId: ctx.clinic.clinic.id, error });
+    console.error(
+      JSON.stringify({
+        msg: "tool.failed",
+        tool: name,
+        clinicId: ctx.clinic.clinic.id,
+        callId: ctx.callId,
+        error: safeError(error),
+      }),
+    );
     return {
       ok: false,
       error: "INTERNAL_ERROR",

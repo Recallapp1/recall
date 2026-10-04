@@ -2,6 +2,7 @@ import "server-only";
 
 import { env } from "@/lib/env";
 import { maskPhone } from "@/lib/phone";
+import { safeError } from "@/lib/safe-error";
 
 import { displayDate } from "../domain/time";
 import type { AppointmentSummary } from "../domain/appointments";
@@ -87,9 +88,6 @@ export async function sendSmsSafely(to: string, body: string, context: Record<st
   try {
     await smsProvider().send(to, body);
   } catch (error) {
-    console.error("sms.failed", {
-      ...context,
-      error: error instanceof Error ? error.message : error,
-    });
+    console.error(JSON.stringify({ msg: "sms.failed", ...context, error: safeError(error) }));
   }
 }
