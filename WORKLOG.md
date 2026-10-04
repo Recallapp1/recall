@@ -10,15 +10,16 @@
 
 _Son güncelleme: 2026-10-04_
 
-| Konu                    | Durum                                                                                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Aktif faz               | F1 (Retell geçişi) ve F4 (tasarım sistemi) başlamaya hazır. F3 (auth) `feat/panel-auth` dalında başlatılmış                                            |
-| Ses sağlayıcısı         | **Retell AI** ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Kodda hâlâ Vapi adaptörü var, F1.7'de kaldırılacak                         |
-| Tasarım                 | **[DESIGN.md](DESIGN.md) tek kaynak** ([ADR-005](docs/decisions/ADR-005-design-system.md)). Kodda hâlâ eski teal + Geist teması var, F4.1'de taşınacak |
-| Testler                 | 72 test geçiyor (birim + PGlite entegrasyon)                                                                                                           |
-| Lokal DB                | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker)                                                                                   |
-| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. GitHub reposu ve Neon bekleniyor (F8)                                                       |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                         |
+| Konu                    | Durum                                                                                                                                                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aktif faz               | F1 (Retell geçişi) ve F4 (tasarım sistemi) başlamaya hazır. F3 (auth) `feat/panel-auth` dalında başlatılmış                                                                                                                      |
+| Ses sağlayıcısı         | **Retell AI** ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Kodda hâlâ Vapi adaptörü var, F1.7'de kaldırılacak                                                                                                   |
+| Tasarım                 | **[DESIGN.md](DESIGN.md) tek kaynak** ([ADR-005](docs/decisions/ADR-005-design-system.md)). Kodda hâlâ eski teal + Geist teması var, F4.1'de taşınacak                                                                           |
+| Testler                 | 72 test geçiyor (birim + PGlite entegrasyon)                                                                                                                                                                                     |
+| Lokal DB                | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker)                                                                                                                                                             |
+| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. GitHub reposu ve Neon bekleniyor (F8)                                                                                                                                 |
+| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                   |
+| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar): Recall ekibi klinik açar; e-posta + parola; özelleştirme = roller, modül görünürlüğü, kişisel tercihler (logo yok); Retell hesabı hazır |
 
 ### Dallar
 
@@ -30,7 +31,7 @@ _Son güncelleme: 2026-10-04_
 
 ### Sıradaki işler
 
-1. Ürün ekibinin açık soruları cevaplaması
+1. Ürün ekibinden: `RETELL_API_KEY` değerinin `.env.local` dosyasına girilmesi ve GitHub repo adresi
 2. F1.1–F1.4: Retell belgeleri, veri modeli, imza doğrulama, ajan spec'i
 3. F4.1: DESIGN.md token'ları ve Inter fontu
 4. F3: `feat/panel-auth` dalında Better Auth kurulumu
@@ -107,6 +108,7 @@ Kurallar:
 - `feat/panel-auth` dalında commit'lenmemiş `better-auth` değişikliği **bulundu ve dokunulmadı**. O dal başka bir oturumun yarım işi.
 - Retell'in custom function çağrılarını hangi bölgeden yaptığı bilinmiyor. Gecikme F1.8'de ölçülecek.
 - Erişilebilirlik: Zinc-500 / Zinc-100 kontrastı ≈ 4,4:1 (AA eşiği 4,5:1). Ürün ekibine soruldu.
+- Ürün ekibi kararları (aynı oturum): klinikleri Recall ekibi açar; giriş e-posta + parola, açık kayıt kapalı; panel özelleştirme = rol ve yetkiler + modül görünürlüğü + kişisel tercihler (logo ve renk yok); Retell hesabı hazır; GitHub reposu açıldı (adres bekleniyor). Plana "Alınan kararlar" tablosu olarak işlendi.
 
 ### 2026-10-04 · Docker'sız lokal Postgres · Altyapı
 

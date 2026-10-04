@@ -193,7 +193,8 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 ### F3.1 Better Auth kurulumu
 
 - [ ] Better Auth + Drizzle adaptörü; tablolar: `user`, `session`, `account`, `verification`, `organization`, `member`, `invitation`
-- [ ] Giriş yöntemi (ürün ekibi kararı, bkz. Açık sorular): e-posta + parola ve/veya e-posta ile sihirli bağlantı
+- [ ] Giriş yöntemi: **e-posta + parola** (karar 2026-10-04). Parola sıfırlama e-postası ve e-posta doğrulama. Sihirli bağlantı ve 2FA kapsam dışı (V1'de değerlendirilir)
+- [ ] Herkese açık kayıt (sign-up) **kapalı**: hesaplar yalnızca davetle oluşur (klinikleri Recall ekibi açar, F6)
 - [ ] `organization` ↔ `clinics` 1:1: `clinics.organization_id` (unique). Klinik oluşturma işlemi ikisini tek transaction'da yaratır
 - [ ] Env: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`; e-posta için `RESEND_API_KEY`, `EMAIL_FROM`
 - [ ] Route handler: `src/app/api/auth/[...all]/route.ts`
@@ -221,10 +222,10 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F3.5 Panel kişiselleştirme altyapısı
 
-- [ ] `clinics.settings.panel` (klinik geneli): görünür modüller (ör. Aramalar sekmesi kapatılabilir), varsayılan takvim görünümü (gün/hafta), haftanın başlangıcı, takvim saat aralığı, klinik logosu
+- [ ] `clinics.settings.panel` (klinik geneli): görünür modüller (ör. Aramalar sekmesi kapatılabilir), varsayılan takvim görünümü (gün/hafta), haftanın başlangıcı, takvim saat aralığı
 - [ ] `member_preferences` (kişi bazında): varsayılan sayfa, takvimde gösterilen hekimler, yoğunluk (rahat/sıkı), bildirim tercihleri
 - [ ] Şemalar `src/lib/contracts/panel-settings.ts` içinde (client ve server ortak)
-- [ ] Not: Renk ve font DESIGN.md'ye bağlı olduğundan klinik bazında değiştirilemez. Klinik markası logo ve ad ile yansıtılır (ürün ekibi onayı bekleniyor, bkz. Açık sorular)
+- [ ] Kapsam (karar 2026-10-04): **rol ve yetkiler** (F3.2), **modül görünürlüğü** ve **kişisel tercihler**. Klinik logosu ve klinik bazında renk/font özelleştirmesi **kapsam dışı**; görünüm tamamen DESIGN.md'ye bağlıdır
 
 ### F3.6 Testler
 
@@ -263,7 +264,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [ ] Açık özellik ızgarası: yapışkan başlık ve 2×3 ikon-etiket, görsel kart ve cam ilerleme paneli
 - [ ] Koyu "nasıl çalışır" bloğu: numaralı adımlar ve 3° döndürülmüş mock pencere (arama transkripti ve tool çağrısı), bounce durum etiketi
 - [ ] Bento fiyat ızgarası ([PRICING.md](00-product/PRICING.md) paketleri)
-- [ ] Görsel varlıklar (bkz. Açık sorular: hero görseli, logo)
+- [ ] Görsel varlıklar (bkz. Açık sorular: Recall logosu, hero görseli)
 
 ### F4.4 Kontroller
 
@@ -279,7 +280,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F5.1 Panel kabuğu
 
-- [ ] Düzen: koyu cam kenar çubuğu (gradyan + grain), açık içerik alanı (Zinc-100), üst bar (klinik adı/logosu, klinik değiştirici, kullanıcı menüsü)
+- [ ] Düzen: koyu cam kenar çubuğu (gradyan + grain), açık içerik alanı (Zinc-100), üst bar (klinik adı, klinik değiştirici, kullanıcı menüsü)
 - [ ] Mobil: alt sekme çubuğu
 - [ ] Modül görünürlüğü `settings.panel` ve izinlerden hesaplanır (yetkisi olmayan menüyü görmez)
 
@@ -297,7 +298,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F5.3 Ayarlar (kliniğe özelleştirme)
 
-- [ ] Klinik: ad, adres, saat dilimi, logo, devir numarası
+- [ ] Klinik: ad, adres, saat dilimi, devir numarası
 - [ ] Çalışma saatleri ve tatiller (resmî tatil şablonu)
 - [ ] Hekimler: liste, hizmet eşleme, haftalık program, izinler
 - [ ] Hizmetler: ad, eş anlamlılar, süre, fiyat aralığı, aktif/pasif
@@ -396,13 +397,21 @@ Faturalandırma (iyzico veya Stripe), self-servis kayıt, haftalık rapor e-post
 
 Bu sorular cevaplandıkça ilgili göreve işlenir ve buradan kaldırılır.
 
-1. **Retell hesabı:** Hesap açıldı mı? API anahtarı ne zaman paylaşılabilir? Hangi plan?
-2. **Klinik oluşturma:** Klinikler sadece Recall ekibi tarafından mı açılacak (konsol), yoksa klinikler kendi kendine kayıt olabilecek mi?
-3. **Panel özelleştirme kapsamı:** Hangi seviyede olmalı? Modül gizleme, özel roller, kişisel tercihler, klinik logosu? Klinik bazında renk değişimi DESIGN.md ile çelişir; istenmiyor varsayıyoruz.
-4. **Giriş yöntemi:** E-posta + parola mı, sihirli bağlantı mı, ikisi birden mi? Telefon/SMS ile giriş isteniyor mu?
-5. **Panel dili:** Yalnızca Türkçe mi? İleride İngilizce gerekecek mi (i18n altyapısı şimdi kurulmalı mı)?
-6. **Netgsm:** Hesap var mı? SIP trunk ve SMS başlığı (originator) onaylı mı? Karşılaştırmaya alınacak diğer sağlayıcılar (Verimor vb.)?
-7. **Görsel varlıklar:** Logo, hero görseli ve marka kılavuzu var mı? DESIGN.md'de "yüksek çözünürlüklü soyut görsel" isteniyor.
-8. **E-posta gönderimi:** Davetler için Resend uygun mu, alan adı hazır mı?
-9. **Erişilebilirlik:** DESIGN.md'deki Zinc-500 gövde metni Zinc-100 zeminde AA kontrast eşiğinin biraz altında. Önerilen kullanım kurallarını (F4.1) onaylıyor musunuz?
-10. **Kayıt dinleme:** Paneldeki ses kayıtlarını hangi roller dinleyebilir?
+1. **GitHub reposu:** Repo açıldı; **adresi** bekleniyor (F8).
+2. **Panel dili:** Yalnızca Türkçe mi? İleride İngilizce gerekecek mi (i18n altyapısı şimdi kurulmalı mı)?
+3. **Netgsm:** Hesap ne zaman hazır olur? SIP trunk ve SMS başlığı (originator) onaylı mı? Karşılaştırmaya alınacak diğer sağlayıcılar (Verimor vb.)?
+4. **Görsel varlıklar:** Recall logosu, hero görseli ve marka kılavuzu var mı? DESIGN.md'de "yüksek çözünürlüklü soyut görsel" isteniyor.
+5. **E-posta gönderimi:** Davet ve parola sıfırlama e-postaları için Resend uygun mu, gönderici alan adı hazır mı?
+6. **Erişilebilirlik:** DESIGN.md'deki Zinc-500 gövde metni Zinc-100 zeminde AA kontrast eşiğinin biraz altında. Önerilen kullanım kurallarını (F4.1) onaylıyor musunuz?
+7. **Kayıt dinleme:** Paneldeki ses kayıtlarını hangi roller dinleyebilir?
+
+## Alınan kararlar
+
+| Tarih      | Karar                                                                                                      | Etkilenen görevler                                            |
+| ---------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 2026-10-04 | Ses altyapısı Retell AI; Vapi kullanılmayacak; Netgsm ve alternatifler test edilecek                       | F1, F2, [ADR-004](decisions/ADR-004-retell-voice-platform.md) |
+| 2026-10-04 | DESIGN.md tek tasarım kaynağı                                                                              | F4, F5, [ADR-005](decisions/ADR-005-design-system.md)         |
+| 2026-10-04 | Klinikleri Recall ekibi açar (konsol); self-servis kayıt V1'e kaldı                                        | F3.1, F6, F10                                                 |
+| 2026-10-04 | Giriş: e-posta + parola; herkese açık kayıt kapalı, yalnızca davet                                         | F3.1                                                          |
+| 2026-10-04 | Panel özelleştirme: rol ve yetkiler, modül görünürlüğü, kişisel tercihler. Logo ve renk özelleştirmesi yok | F3.2, F3.5, F5                                                |
+| 2026-10-04 | Retell hesabı hazır; API anahtarını ürün ekibi `.env.local` dosyasına kendisi girer (sohbete yazılmaz)     | F1.3                                                          |
