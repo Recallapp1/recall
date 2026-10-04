@@ -1,0 +1,15 @@
+{
+  "message": {
+    "type": "tool-calls",
+    "call": { "id": "local-test-call-1" },
+    "phoneNumber": { "number": "+902120000000" },
+    "customer": { "number": "+905321234567" },
+    "toolCallList": [
+      {
+        "id": "tool-call-1",
+        "type": "function",
+        "function": { "name": "find_appointments", "arguments": {} }
+      }
+    ]
+  }
+}
