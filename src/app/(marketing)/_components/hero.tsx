@@ -1,6 +1,6 @@
 import { CalendarCheck, CheckCircle2, MessageSquareText, PhoneCall } from "lucide-react";
 
-import { ActionLink, Eyebrow, FadeInUp, GlassCard, SecondaryLink } from "@/components/design";
+import { ActionLink, FadeInUp, GlassCard, SecondaryLink } from "@/components/design";
 
 import { hero } from "../_content";
 
@@ -9,7 +9,10 @@ const WAVE = [6, 14, 22, 12, 28, 18, 34, 20, 26, 10, 30, 16, 24, 8, 18, 28, 12, 
 
 export function Hero() {
   return (
-    <section className="surface-dark relative overflow-hidden rounded-b-section px-4 pt-32 pb-20 sm:px-6 lg:pt-40 lg:pb-28">
+    <section
+      data-header-tone="dark"
+      className="surface-dark relative mx-4 mt-3 overflow-hidden rounded-section px-4 pt-32 pb-20 sm:mx-6 sm:px-6 lg:pt-40 lg:pb-28"
+    >
       {/* Soft blue light from the top right; depth without a photo. */}
       <div
         aria-hidden
@@ -26,11 +29,6 @@ export function Hero() {
 
       <div className="mx-auto grid max-w-6xl items-center gap-16 lg:grid-cols-[1.1fr_1fr]">
         <FadeInUp className="flex flex-col gap-8">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-glass-border bg-glass px-4 py-1.5">
-            <span aria-hidden className="size-1.5 rounded-full bg-accent" />
-            <Eyebrow className="text-on-dark-soft">{hero.eyebrow}</Eyebrow>
-          </span>
-
           <h1 className="text-5xl text-display font-semibold text-balance text-on-dark sm:text-6xl lg:text-7xl">
             {hero.title}
           </h1>
@@ -102,7 +100,10 @@ function CallIllustration() {
         </div>
       </GlassCard>
 
-      <div className="absolute -bottom-10 -left-4 flex w-64 items-start gap-3 rounded-card bg-paper p-4 text-heading shadow-2xl shadow-ink/40 sm:-left-12">
+      <div
+        data-header-tone="light"
+        className="absolute -bottom-10 -left-4 flex w-64 items-start gap-3 rounded-card bg-paper p-4 text-heading shadow-2xl shadow-ink/40 sm:-left-12"
+      >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-soft">
           <CalendarCheck aria-hidden className="size-4 text-primary" />
         </span>

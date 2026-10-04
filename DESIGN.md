@@ -47,7 +47,7 @@ backdrop-filter: blur(12px);
 border: 1px solid rgba(255, 255, 255, 0.12);
 ```
 
-- Navigation uses `blur(20px)` on a translucent navy background so it reads on dark and light sections.
+- Navigation uses `blur(20px)` and is translucent (see §3 Sticky header).
 - Every glass element has a 1px white border at ~10% opacity.
 
 ### Depth on Dark Sections
@@ -80,10 +80,14 @@ Never use flat colors for dark backgrounds. Always apply the navy gradient plus 
 ## 3. Layout Principles
 
 - Content width: `max-w-6xl` (72rem) for landing content, `1600px` page cap
-- **Sticky floating header:** always visible while scrolling (`sticky top-0`), navy glass pill
+- **Sticky floating header:** always visible while scrolling (`sticky top-0`), translucent glass pill that adapts to what is beneath it:
+  - over dark surfaces: clear glass (`white 5%`, `blur(20px)`), white text, so the section shows through and the bar never blends into a same-colored background
+  - over light surfaces: frosted white (`white 55%`), dark text
+  - if any part of the bar is over a light surface, the frosted white mode is used (readable on both)
+  - dark sections and dark cards in light sections are tagged `data-header-tone="dark"`; light cards in dark sections `data-header-tone="light"`
 - Alternate dark navy and light sections for rhythm; light sections alternate `canvas` and `paper`
 - Section anchors leave room for the sticky header (`scroll-mt-28`)
-- All major section wrappers keep the `2.5rem` radius
+- All major section wrappers, **including the hero and the footer**, are inset from the page edges and keep the `2.5rem` radius on all four corners
 
 ---
 
@@ -92,7 +96,7 @@ Never use flat colors for dark backgrounds. Always apply the navy gradient plus 
 | # | Section | Tone |
 |---|---|---|
 | 1 | Sticky header (logo, links, "Demo talep edin") | navy glass |
-| 2 | Hero: "Kliniğinizin yeni nesil sekreteri" + live call illustration | dark |
+| 2 | Hero: "Kliniğinizin yeni nesil sekreteri" + live call illustration (no eyebrow pill) | dark |
 | 3 | Clinic types | canvas |
 | 4 | Problem → solution | canvas |
 | 5 | How it works (4 steps) | paper |

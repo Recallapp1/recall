@@ -10,6 +10,7 @@ export function Security() {
   return (
     <section
       id="guvenlik"
+      data-header-tone="dark"
       className="surface-dark mx-4 scroll-mt-28 overflow-hidden rounded-section px-6 py-20 sm:mx-6 sm:px-12"
     >
       <div
@@ -86,6 +87,7 @@ export function Pricing() {
           {plans.map((plan) => (
             <li
               key={plan.name}
+              data-header-tone={plan.featured ? "dark" : undefined}
               className={cn(
                 "relative flex flex-col gap-6 rounded-bento p-8",
                 plan.featured

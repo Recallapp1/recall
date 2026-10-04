@@ -78,6 +78,26 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-04 · Tanıtım sayfası geri bildirimi: şeffaf navbar, köşeli hero ve footer · F4.3
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit
+
+**Ne yapıldı**
+
+- Hero'daki "Kliniklere özel yapay zekâ asistanı" etiketi kaldırıldı.
+- Hero ve footer, aradaki bölümler gibi kenarlardan içeride ve dört köşesi `2.5rem` yuvarlak.
+- Navbar şeffaf ve uyarlanabilir ([header-surface.tsx](<src/app/(marketing)/_components/header-surface.tsx>)): altındaki yüzeyi `elementsFromPoint` ile üç noktadan örnekler. Koyu yüzeyde şeffaf cam ve beyaz yazı, herhangi bir noktada açık yüzey varsa buzlu beyaz (%55) ve koyu yazı. Koyu bölümler ve açık bölümdeki koyu kartlar `data-header-tone="dark"`, koyu bölümdeki açık kartlar (demo formu, hero kartı) `"light"`.
+- DESIGN.md §3 ve §4 güncellendi.
+
+**Neden**
+
+- Tamamen şeffaf ve beyaz yazılı bir navbar beyaz bölümlerde okunmaz; ilk sürümde koyu İletişim bölümündeki beyaz form kartının üzerinde bu tam olarak yaşandı. Bölüm bazlı değil yüzey bazlı ölçüm gerekiyordu.
+
+**Doğrulama**
+
+- Lint, lint:tokens, typecheck temiz. Tarayıcı (1280 px, 375 px): hero'da koyu, açık bölümde açık, form kartı üzerinde açık, Özellikler'de koyu; yatay taşma yok.
+- Not: Tarayıcı panelinde ölçüm yaparken `requestAnimationFrame` gecikebiliyor; durumu bir kare bekledikten sonra okumak gerekiyor.
+
 ### 2026-10-04 · DESIGN.md v2 (lacivert) ve yeni tanıtım sayfası · F4.3, ADR-007
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/landing-redesign` → `main` · **Commit'ler:** bu kaydı içeren commit'ler

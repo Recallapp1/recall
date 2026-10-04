@@ -40,7 +40,6 @@ export const nav = [
 ];
 
 export const hero = {
-  eyebrow: "Kliniklere özel yapay zekâ asistanı",
   title: "Kliniğinizin yeni nesil sekreteri",
   lead: "Yapay zekâ destekli sesli asistan ile gelen aramaları karşılayın, randevuları yönetin ve ekibinize zaman kazandırın.",
   highlights: ["Doğal Türkçe konuşur", "7/24 aramaları karşılar", "KVKK odaklı altyapı"],

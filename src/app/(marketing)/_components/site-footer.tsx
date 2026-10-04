@@ -3,7 +3,10 @@ import { Logo } from "./logo";
 
 export function SiteFooter() {
   return (
-    <footer className="surface-dark mt-4 rounded-t-section px-6 pt-14 pb-10 sm:px-12">
+    <footer
+      data-header-tone="dark"
+      className="surface-dark mx-4 my-4 overflow-hidden rounded-section px-6 pt-14 pb-10 sm:mx-6 sm:px-12"
+    >
       <div className="mx-auto flex max-w-6xl flex-col gap-10">
         <div className="flex flex-col justify-between gap-8 md:flex-row">
           <div className="flex max-w-sm flex-col gap-4">

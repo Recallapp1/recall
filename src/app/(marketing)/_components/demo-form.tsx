@@ -25,6 +25,7 @@ export function DemoForm() {
     return (
       <div
         role="status"
+        data-header-tone="light"
         className="flex flex-col items-center gap-4 rounded-bento bg-paper p-10 text-center"
       >
         <CheckCircle2 aria-hidden className="size-12 text-success" />
@@ -38,6 +39,7 @@ export function DemoForm() {
 
   return (
     <form
+      data-header-tone="light"
       action={formAction}
       noValidate
       className="flex flex-col gap-5 rounded-bento bg-paper p-6 shadow-2xl shadow-ink/30 sm:p-8"

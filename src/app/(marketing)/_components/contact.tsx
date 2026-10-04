@@ -13,6 +13,7 @@ export function Contact() {
   return (
     <section
       id="iletisim"
+      data-header-tone="dark"
       className="surface-dark mx-4 mt-4 scroll-mt-28 overflow-hidden rounded-section px-6 py-20 sm:mx-6 sm:px-12"
     >
       <div

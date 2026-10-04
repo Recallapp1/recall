@@ -2,21 +2,19 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 
 import { nav } from "../_content";
+import { HeaderSurface } from "./header-surface";
 import { Logo } from "./logo";
 
 /**
- * Sticky floating navigation: stays visible while scrolling. Navy glass so it
- * reads on both the dark hero and the light sections below it.
+ * Sticky floating navigation: stays visible while scrolling. The translucent
+ * surface adapts to the section beneath it (see HeaderSurface).
  */
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 px-4 pt-3 sm:px-6">
-      <nav
-        aria-label="Ana menü"
-        className="mx-auto flex max-w-6xl items-center justify-between gap-4 rounded-full border border-glass-border bg-surface-dark/85 py-2 pr-2 pl-4 shadow-lg shadow-ink/10 backdrop-blur-[20px]"
-      >
+      <HeaderSurface>
         <Link href="/" aria-label="Recall ana sayfa">
-          <Logo />
+          <Logo className="transition-colors duration-300 group-data-[tone=light]/nav:text-heading" />
         </Link>
 
         <ul className="hidden items-center gap-1 lg:flex">
@@ -24,7 +22,7 @@ export function SiteHeader() {
             <li key={item.href}>
               <a
                 href={item.href}
-                className="rounded-full px-4 py-2 text-sm text-on-dark-soft transition-colors duration-300 hover:bg-glass-strong hover:text-on-dark"
+                className="rounded-full px-4 py-2 text-sm text-on-dark-soft transition-colors duration-300 group-data-[tone=light]/nav:text-body hover:bg-glass-strong hover:text-on-dark group-data-[tone=light]/nav:hover:bg-canvas group-data-[tone=light]/nav:hover:text-heading"
               >
                 {item.label}
               </a>
@@ -44,7 +42,7 @@ export function SiteHeader() {
           <details className="group relative lg:hidden">
             <summary
               aria-label="Menüyü aç"
-              className="flex size-10 cursor-pointer list-none items-center justify-center rounded-full text-on-dark hover:bg-glass-strong [&::-webkit-details-marker]:hidden"
+              className="flex size-10 cursor-pointer list-none items-center justify-center rounded-full text-on-dark transition-colors duration-300 group-data-[tone=light]/nav:text-heading hover:bg-glass-strong group-data-[tone=light]/nav:hover:bg-canvas [&::-webkit-details-marker]:hidden"
             >
               <Menu aria-hidden className="size-5" />
             </summary>
@@ -62,7 +60,7 @@ export function SiteHeader() {
             </ul>
           </details>
         </div>
-      </nav>
+      </HeaderSurface>
     </header>
   );
 }
