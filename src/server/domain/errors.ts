@@ -15,7 +15,8 @@ export type DomainErrorCode =
   | "TOO_LATE_TO_CANCEL"
   | "INVITATION_INVALID"
   | "ACCOUNT_EXISTS"
-  | "INVALID_TRANSITION";
+  | "INVALID_TRANSITION"
+  | "LAST_OWNER";
 
 export class DomainError extends Error {
   constructor(
