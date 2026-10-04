@@ -49,6 +49,7 @@ async function main() {
         appUrl: settings.appUrl,
         llmModel: settings.llmModel,
         defaultVoiceId: settings.defaultVoiceId,
+        voiceModel: settings.voiceModel,
       },
       force,
     });

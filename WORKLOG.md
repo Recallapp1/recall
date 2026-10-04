@@ -101,6 +101,30 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-04 · İlk web call testi ve düzeltmeler · F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit
+
+**Ne yapıldı**
+
+- Ürün ekibi Retell panelinden ilk test aramasını yaptı: **Türkçe beğenildi, randevu oluştu** (Diş Taşı Temizliği, 5 Ekim 14:00, Dt. Can Demir, kaynak `voice`, arama sonucu `booked`, maliyet 0,39 $ / 124 sn).
+- Döküm incelendi (`call_66a9fb509847226d348995b84e8`): isim doğru anlaşılmış. Bildirilen sorun ("isim başka bir sesle söylendi") TTS kaynaklı: cümle özel isimle başlayınca çok dilli ses tonu değişti.
+- Düzeltmeler (ajan `voice:sync` ile yerinde güncellendi, `updated`):
+  - `RETELL_VOICE_MODEL` (yeni env, opsiyonel) → ajanın `voice_model` alanı. `.env.local`'da `eleven_multilingual_v2`.
+  - `post_call_analysis_data`: Türkçe ve minimal özet (ad, telefon, şikâyet ayrıntısı yok). Önceden özet İngilizce ve ad içeriyordu.
+  - Prompt: isimden cinsiyet tahmin etme, "Bey/Hanım" ekleme (asistan "Mehmet Bey" demişti).
+- Testler: 85/85 (yeni: voice_model, özet, hitap kuralı).
+
+**Ölçüm**
+
+- Uçtan uca gecikme p50 2,22 sn / p90 3,34 sn; LLM p50 1,41 sn (`claude-5-sonnet`), ASR 0,60 sn, TTS 0,16 sn. **Hedefin çok üstünde.** [ADR-003](docs/decisions/ADR-003-llm-model.md) içine işlendi.
+
+**Açık kalanlar / dikkat**
+
+- Ürün ekibi yeni sesle tekrar test etmeli (isimde ton değişimi kalktı mı, `eleven_multilingual_v2` gecikmeyi ne kadar artırdı).
+- Gecikme için sıradaki deneme: `RETELL_LLM_MODEL=claude-4.5-haiku` → sync → aynı senaryo → `call.latency` karşılaştırması.
+- Veritabanı aracında `at time zone` sonucu node tarafından yerel saat sanılıp UTC'ye çevrilir; saat 3 saat kaymış görünür. Sorgularda `to_char(...)` kullan.
+
 ### 2026-10-04 · İlk canlı Retell senkronu · F1.8
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit

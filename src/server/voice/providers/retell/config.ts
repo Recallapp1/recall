@@ -12,6 +12,8 @@ export interface RetellConfig {
   llmModel: string;
   /** Fallback voice for clinics that have not chosen one. */
   defaultVoiceId: string | undefined;
+  /** TTS model; unset means Retell's default for the voice. */
+  voiceModel: string | undefined;
 }
 
 /** Retell settings, failing loudly when voice is used without being configured. */
@@ -25,6 +27,7 @@ export function retellConfig(): RetellConfig {
     appUrl: config.APP_URL,
     llmModel: config.RETELL_LLM_MODEL,
     defaultVoiceId: config.RETELL_VOICE_ID,
+    voiceModel: config.RETELL_VOICE_MODEL,
   };
 }
 

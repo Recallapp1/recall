@@ -121,6 +121,22 @@ describe("buildRetellAgentSpec", () => {
   });
 });
 
+describe("voice and analysis settings", () => {
+  it("sets the TTS model only when configured", () => {
+    expect(buildRetellAgentSpec(input()).agent).not.toHaveProperty("voice_model");
+    expect(
+      buildRetellAgentSpec(input({ voiceModel: "eleven_multilingual_v2" })).agent.voice_model,
+    ).toBe("eleven_multilingual_v2");
+  });
+
+  it("asks for a minimal Turkish call summary", () => {
+    const [summary] = buildRetellAgentSpec(input()).agent.post_call_analysis_data ?? [];
+    expect(summary).toMatchObject({ type: "system-presets", name: "call_summary" });
+    expect(summary?.description).toContain("Türkçe");
+    expect(summary?.description).toContain("telefon numarası");
+  });
+});
+
 describe("specHash", () => {
   it("is stable for equal specs and changes with the configuration", () => {
     const a = specHash(buildRetellAgentSpec(input()));

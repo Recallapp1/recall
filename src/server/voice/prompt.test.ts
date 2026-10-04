@@ -74,6 +74,10 @@ describe("buildSystemPrompt", () => {
     expect(buildSystemPrompt(promptInput())).toBe(buildSystemPrompt(promptInput()));
   });
 
+  it("does not guess gendered titles from names", () => {
+    expect(buildSystemPrompt(promptInput())).toContain('"Bey" veya "Hanım" ekleme');
+  });
+
   it("hides prices unless the clinic allows them", () => {
     expect(buildSystemPrompt(promptInput())).not.toContain("TL");
 

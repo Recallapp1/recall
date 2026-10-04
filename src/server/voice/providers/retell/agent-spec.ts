@@ -26,6 +26,7 @@ export interface AgentSpecInput {
   appUrl: string;
   llmModel: string;
   defaultVoiceId: string | undefined;
+  voiceModel?: string | undefined;
 }
 
 export const RETELL_ROUTES = {
@@ -43,6 +44,14 @@ const DEFAULT_CALL_VARIABLES: CallVariables = {
 };
 
 const MAX_BOOSTED_KEYWORDS = 100;
+
+/**
+ * Retell's default summary is English and repeats personal data. Ours is
+ * Turkish (shown in the panel) and minimal, because summaries outlive
+ * transcripts under the retention policy (docs/05-compliance/DATA-RETENTION.md).
+ */
+const SUMMARY_INSTRUCTION =
+  "Görüşmenin 1-3 cümlelik Türkçe özeti: hastanın talebi, yapılan işlem (randevu, iptal, erteleme, bilgi, geri arama notu) ve varsa açık kalan konu. Hasta adı, telefon numarası veya sağlık şikâyeti ayrıntısı yazma.";
 
 /**
  * Everything Retell needs to run a clinic's assistant, derived purely from our
@@ -127,6 +136,9 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
     agent: {
       agent_name: `Recall · ${clinic.name}`.slice(0, 100),
       voice_id: voiceId,
+      ...(input.voiceModel && {
+        voice_model: input.voiceModel as AgentParams["voice_model"],
+      }),
       language: "tr-TR",
       timezone: tz,
       webhook_url: url(RETELL_ROUTES.events),
@@ -134,6 +146,9 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
       boosted_keywords: boostedKeywords(directory),
       end_call_after_silence_ms: 20_000,
       max_call_duration_ms: 15 * 60_000,
+      post_call_analysis_data: [
+        { type: "system-presets", name: "call_summary", description: SUMMARY_INSTRUCTION },
+      ],
     },
   };
 }

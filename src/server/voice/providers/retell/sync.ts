@@ -26,7 +26,7 @@ export interface RetellAgentApi {
 
 export interface SyncDeps {
   api: RetellAgentApi;
-  config: Pick<AgentSpecInput, "appUrl" | "llmModel" | "defaultVoiceId">;
+  config: Pick<AgentSpecInput, "appUrl" | "llmModel" | "defaultVoiceId" | "voiceModel">;
   /** Push even when the spec is unchanged (e.g. after edits in the Retell dashboard). */
   force?: boolean;
   now?: () => Date;

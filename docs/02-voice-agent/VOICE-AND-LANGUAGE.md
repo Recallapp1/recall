@@ -27,6 +27,7 @@ Retell'de Türkçe destekleyen TTS sağlayıcıları (2026-10): **ElevenLabs, Ca
 
 - **Varsayılan ses:** `RETELL_VOICE_ID` (tüm klinikler)
 - **Kliniğe özel ses:** `settings.assistant.voiceId` (panelden, F5). Varsayılanın önüne geçer.
+- **Seslendirme modeli:** `RETELL_VOICE_MODEL` (ör. `eleven_multilingual_v2`). İlk testte (2026-10-04, `11labs-Anna`, Retell varsayılan modeli) cümle bir özel isimle başladığında ("Mehmet Koyun, doğru anladım mı?") ses tonu değişti. Çok dilli modeller kısa ve bağlamsız bölümlerde dili yanlış tahmin edebiliyor. `eleven_multilingual_v2` daha tutarlı ama TTS gecikmesi daha yüksek; F1.8'de karşılaştırılacak.
 - F1.8'de 3–4 aday ses Türkçe doğallık, isim ve sayı telaffuzu, gecikme açısından karşılaştırılır; panelde sunulacak hazır sesler bu listeden seçilir.
 
 ## Telaffuz ve normalizasyon

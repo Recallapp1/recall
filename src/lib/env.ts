@@ -18,6 +18,8 @@ const envSchema = z.object({
   RETELL_VOICE_ID: optionalString,
   /** One of Retell's supported LLM ids; see docs/decisions/ADR-003-llm-model.md. */
   RETELL_LLM_MODEL: z.string().default("claude-5-sonnet"),
+  /** TTS model for the voice; must belong to the voice's provider (e.g. eleven_multilingual_v2). */
+  RETELL_VOICE_MODEL: optionalString,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   NETGSM_USERCODE: optionalString,

@@ -93,6 +93,7 @@ ${directory.services.map((s) => `- ${formatService(s, assistant.speakPrices)} (i
 - Tarihleri "5 Kasım Perşembe", saatleri "saat on dört otuz" ya da "iki buçuk" gibi konuşma diliyle söyle.
 - Emoji, madde işareti, markdown kullanma.
 - Samimi ama profesyonel ol; "siz" diye hitap et.
+- İsimden cinsiyet tahmin etme: "Bey" veya "Hanım" ekleme. Hastaya adıyla veya doğrudan "siz" diye hitap et; hasta kendisi bir hitap belirtirse onu kullan.
 - Hastanın adını aldıktan sonra doğru anladığını teyit et.`,
 
     `# Sınırlar
