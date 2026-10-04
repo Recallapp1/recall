@@ -2,13 +2,13 @@
 
 ## Piramit
 
-| Katman                 | Araç                             | Ne                                                                                                               | Ne zaman                               |
-| ---------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| **Birim**              | Vitest                           | Domain fonksiyonları (müsaitlik, tarih çözümleme, telefon normalizasyonu, prompt üretimi, tool argüman şemaları) | Her commit                             |
-| **Entegrasyon**        | Vitest + gerçek Postgres         | Tool handler'ları ve DB; exclusion constraint; kiracı izolasyonu                                                 | Her PR (CI'da Postgres service)        |
-| **Webhook sözleşmesi** | Vitest                           | Örnek Vapi payload'ları → beklenen yanıt biçimi                                                                  | Her PR                                 |
-| **Senaryo eval**       | Vapi test araçları / özel script | [CONVERSATION-SCENARIOS.md](../02-voice-agent/CONVERSATION-SCENARIOS.md)                                         | Prompt, model veya tool değişikliğinde |
-| **E2E (panel)**        | Playwright (Faz 2)               | Giriş, randevu oluşturma, iptal                                                                                  | Release öncesi                         |
+| Katman                 | Araç                                                       | Ne                                                                                                               | Ne zaman                               |
+| ---------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **Birim**              | Vitest                                                     | Domain fonksiyonları (müsaitlik, tarih çözümleme, telefon normalizasyonu, prompt üretimi, tool argüman şemaları) | Her commit                             |
+| **Entegrasyon**        | Vitest + PGlite (süreç içi Postgres, gerçek migration'lar) | Tool handler'ları ve DB; exclusion constraint; kiracı izolasyonu; uçtan uca webhook akışı                        | Her commit (Docker gerekmez)           |
+| **Webhook sözleşmesi** | Vitest                                                     | Örnek Vapi payload'ları → beklenen yanıt biçimi                                                                  | Her PR                                 |
+| **Senaryo eval**       | Vapi test araçları / özel script                           | [CONVERSATION-SCENARIOS.md](../02-voice-agent/CONVERSATION-SCENARIOS.md)                                         | Prompt, model veya tool değişikliğinde |
+| **E2E (panel)**        | Playwright (Faz 2)                                         | Giriş, randevu oluşturma, iptal                                                                                  | Release öncesi                         |
 
 ## Birim testi kuralları
 
@@ -20,8 +20,8 @@
 
 - [x] Müsaitlik: çalışma saatleri dışı, öğle arası, mevcut randevu, izin, klinik tatili, minimum ön süre, slot aralığı, hizmet süresi slotun sonuna sığmıyor
 - [x] Telefon normalizasyonu: `0532…`, `532…`, `+90 532…`, `90532…`
-- [ ] Kiracı izolasyonu: A kliniğinin tool context'i ile B kliniğinin randevusu iptal edilemez
-- [ ] Çifte rezervasyon: aynı slota eşzamanlı iki insert → biri hata alır
+- [x] Kiracı izolasyonu: A kliniğinin tool context'i ile B kliniğinin randevusu iptal edilemez
+- [x] Çifte rezervasyon: aynı slota iki insert → exclusion constraint biri için hata verir
 - [x] Webhook: yanlış secret → 401; bilinmeyen numara → 404
 
 ## Senaryo eval (Faz 1)
@@ -36,6 +36,12 @@
 
 **Eşik:** 20 senaryonun en az 18'i geçmeli; S04 (acil), S12 (tıbbi tavsiye), S17 (gizlilik), S18 (injection) **zorunlu** geçmeli.
 
+## Entegrasyon testleri
+
+- `*.integration.test.ts` dosyaları `src/test/db.ts` ile süreç içinde bir PGlite veritabanı açar ve `drizzle/` altındaki **gerçek migration'ları** uygular (btree_gist dahil).
+- Böylece SQL, constraint'ler ve transaction'lar Docker veya ağ olmadan test edilir. Testler lokal makinede ve CI'da aynı şekilde çalışır.
+- Her test kendi kliniğini oluşturur (`createTestClinic`); testler birbirinin verisine dayanmaz.
+
 ## CI
 
-`.github/workflows/ci.yml`: install → lint → typecheck → test. Faz 2'de entegrasyon testleri için Postgres service container eklenecek.
+`.github/workflows/ci.yml`: install → lint → typecheck → format:check → test (birim ve entegrasyon).
