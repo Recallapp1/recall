@@ -22,6 +22,7 @@ import {
   APPOINTMENT_SOURCES,
   APPOINTMENT_STATUSES,
 } from "../../lib/contracts/appointment";
+import { CALL_OUTCOMES } from "../../lib/contracts/call";
 
 import type { ClinicSettingsInput } from "../domain/clinic-settings";
 
@@ -47,16 +48,7 @@ export const appointmentStatus = pgEnum("appointment_status", APPOINTMENT_STATUS
 
 export const appointmentSource = pgEnum("appointment_source", APPOINTMENT_SOURCES);
 
-export const callOutcome = pgEnum("call_outcome", [
-  "booked",
-  "cancelled",
-  "rescheduled",
-  "info",
-  "transferred",
-  "callback",
-  "abandoned",
-  "other",
-]);
+export const callOutcome = pgEnum("call_outcome", CALL_OUTCOMES);
 
 export const callbackStatus = pgEnum("callback_status", ["open", "done"]);
 

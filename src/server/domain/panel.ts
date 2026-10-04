@@ -1,6 +1,22 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, gte, ilike, inArray, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  lt,
+  lte,
+  notLike,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import {
   ACTIVE_APPOINTMENT_STATUSES,
@@ -9,7 +25,7 @@ import {
   type AppointmentStatus,
 } from "@/lib/contracts/appointment";
 
-import type { Executor } from "../db";
+import type { Database, Executor } from "../db";
 import {
   appointments,
   callbackRequests,
@@ -17,6 +33,7 @@ import {
   patients,
   practitioners,
   services,
+  type Call,
 } from "../db/schema";
 import { practitionerDisplayName, type ClinicContext } from "./clinics";
 import { DomainError } from "./errors";
@@ -404,4 +421,293 @@ export function scheduleRange(
     startMinute: Math.floor(Math.min(...starts) / 60) * 60,
     endMinute: Math.min(24 * 60, Math.ceil(Math.max(...ends) / 60) * 60),
   };
+}
+
+// ─── Calls ───────────────────────────────────────────────────────────────────
+
+export interface PanelCall {
+  id: string;
+  fromNumber: string | null;
+  startedAt: Date | null;
+  createdAt: Date;
+  durationSeconds: number | null;
+  outcome: Call["outcome"];
+  summary: string | null;
+  hasTranscript: boolean;
+  hasRecording: boolean;
+  /** Patient whose phone matches the caller, if known to the clinic. */
+  patientId: string | null;
+  patientName: string | null;
+}
+
+export async function listCalls(
+  exec: Executor,
+  clinicId: string,
+  options: { outcome?: NonNullable<Call["outcome"]>; limit: number; offset: number },
+): Promise<{ rows: PanelCall[]; total: number }> {
+  const conditions = [
+    eq(calls.clinicId, clinicId),
+    ...(options.outcome ? [eq(calls.outcome, options.outcome)] : []),
+  ];
+  const [rows, [total]] = await Promise.all([
+    exec
+      .select({
+        id: calls.id,
+        fromNumber: calls.fromNumber,
+        startedAt: calls.startedAt,
+        createdAt: calls.createdAt,
+        durationSeconds: calls.durationSeconds,
+        outcome: calls.outcome,
+        summary: calls.summary,
+        hasTranscript: sql<boolean>`${calls.transcript} is not null`,
+        hasRecording: sql<boolean>`${calls.recordingUrl} is not null`,
+        patientId: patients.id,
+        patientName: patients.fullName,
+      })
+      .from(calls)
+      .leftJoin(
+        patients,
+        and(eq(patients.clinicId, calls.clinicId), eq(patients.phone, calls.fromNumber)),
+      )
+      .where(and(...conditions))
+      .orderBy(desc(calls.createdAt))
+      .limit(options.limit)
+      .offset(options.offset),
+    exec
+      .select({ value: count() })
+      .from(calls)
+      .where(and(...conditions)),
+  ]);
+  return { rows, total: total?.value ?? 0 };
+}
+
+export interface PanelCallDetail extends PanelCall {
+  endedReason: string | null;
+  transcript: string | null;
+  recordingUrl: string | null;
+  appointments: PanelAppointment[];
+}
+
+export async function getCall(
+  exec: Executor,
+  scope: PanelScope,
+  callId: string,
+): Promise<PanelCallDetail | null> {
+  const [row] = await exec
+    .select({ call: calls, patientId: patients.id, patientName: patients.fullName })
+    .from(calls)
+    .leftJoin(
+      patients,
+      and(eq(patients.clinicId, calls.clinicId), eq(patients.phone, calls.fromNumber)),
+    )
+    .where(and(eq(calls.clinicId, scope.clinicId), eq(calls.id, callId)));
+  if (!row) return null;
+
+  const linked = await appointmentQuery(exec)
+    .where(and(...scopeConditions(scope), eq(appointments.callId, callId)))
+    .orderBy(asc(appointments.startsAt));
+  const { call } = row;
+  return {
+    id: call.id,
+    fromNumber: call.fromNumber,
+    startedAt: call.startedAt,
+    createdAt: call.createdAt,
+    durationSeconds: call.durationSeconds,
+    outcome: call.outcome,
+    summary: call.summary,
+    hasTranscript: call.transcript !== null,
+    hasRecording: call.recordingUrl !== null,
+    patientId: row.patientId,
+    patientName: row.patientName,
+    endedReason: call.endedReason,
+    transcript: call.transcript,
+    recordingUrl: call.recordingUrl,
+    appointments: linked.map((a) => toPanelAppointment(a, scope.timeZone)),
+  };
+}
+
+// ─── Patients ────────────────────────────────────────────────────────────────
+
+export interface PanelPatient {
+  id: string;
+  fullName: string;
+  phone: string;
+  notes: string | null;
+  createdAt: Date;
+  appointmentCount: number;
+  lastAppointmentAt: Date | null;
+  nextAppointmentAt: Date | null;
+}
+
+/** Marker for anonymised patients; the phone column must stay unique per clinic. */
+export const ANONYMIZED_PREFIX = "anon:";
+
+export async function listPatients(
+  exec: Executor,
+  scope: PanelScope,
+  options: { search?: string; limit: number; offset: number; now: Date },
+): Promise<{ rows: PanelPatient[]; total: number }> {
+  const search = options.search?.trim();
+  const digits = search?.replace(/\D/g, "");
+  const conditions = [
+    eq(patients.clinicId, scope.clinicId),
+    notLike(patients.phone, `${ANONYMIZED_PREFIX}%`),
+    ...(search
+      ? [
+          or(
+            ilike(patients.fullName, `%${search}%`),
+            ...(digits && digits.length >= 3 ? [ilike(patients.phone, `%${digits}%`)] : []),
+          )!,
+        ]
+      : []),
+    // A practitioner sees only patients they have treated or will treat.
+    ...(scope.practitionerId
+      ? [
+          exists(
+            exec
+              .select({ one: sql`1` })
+              .from(appointments)
+              .where(
+                and(
+                  eq(appointments.patientId, patients.id),
+                  eq(appointments.practitionerId, scope.practitionerId),
+                ),
+              ),
+          ),
+        ]
+      : []),
+  ];
+
+  const active = inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]);
+  const stats = exec
+    .select({
+      patientId: appointments.patientId,
+      appointmentCount: count().as("appointment_count"),
+      lastAppointmentAt: sql<
+        string | null
+      >`max(${appointments.startsAt}) filter (where ${lte(appointments.startsAt, options.now)})`.as(
+        "last_appointment_at",
+      ),
+      nextAppointmentAt: sql<
+        string | null
+      >`min(${appointments.startsAt}) filter (where ${and(gt(appointments.startsAt, options.now), active)})`.as(
+        "next_appointment_at",
+      ),
+    })
+    .from(appointments)
+    .where(eq(appointments.clinicId, scope.clinicId))
+    .groupBy(appointments.patientId)
+    .as("stats");
+
+  const [rows, [total]] = await Promise.all([
+    exec
+      .select({
+        id: patients.id,
+        fullName: patients.fullName,
+        phone: patients.phone,
+        notes: patients.notes,
+        createdAt: patients.createdAt,
+        appointmentCount: sql<number>`coalesce(${stats.appointmentCount}, 0)::int`,
+        lastAppointmentAt: stats.lastAppointmentAt,
+        nextAppointmentAt: stats.nextAppointmentAt,
+      })
+      .from(patients)
+      .leftJoin(stats, eq(stats.patientId, patients.id))
+      .where(and(...conditions))
+      .orderBy(asc(patients.fullName))
+      .limit(options.limit)
+      .offset(options.offset),
+    exec
+      .select({ value: count() })
+      .from(patients)
+      .where(and(...conditions)),
+  ]);
+  return {
+    rows: rows.map((row) => ({
+      ...row,
+      lastAppointmentAt: row.lastAppointmentAt ? new Date(row.lastAppointmentAt) : null,
+      nextAppointmentAt: row.nextAppointmentAt ? new Date(row.nextAppointmentAt) : null,
+    })),
+    total: total?.value ?? 0,
+  };
+}
+
+export async function getPatient(exec: Executor, scope: PanelScope, patientId: string) {
+  const [patient] = await exec
+    .select({
+      id: patients.id,
+      fullName: patients.fullName,
+      phone: patients.phone,
+      notes: patients.notes,
+      createdAt: patients.createdAt,
+    })
+    .from(patients)
+    .where(and(eq(patients.clinicId, scope.clinicId), eq(patients.id, patientId)));
+  if (!patient || patient.phone.startsWith(ANONYMIZED_PREFIX)) return null;
+
+  const history = await appointmentQuery(exec)
+    .where(and(...scopeConditions(scope), eq(appointments.patientId, patientId)))
+    .orderBy(desc(appointments.startsAt));
+  if (scope.practitionerId && history.length === 0) return null;
+  return { patient, appointments: history.map((a) => toPanelAppointment(a, scope.timeZone)) };
+}
+
+export async function updatePatientNotes(
+  exec: Executor,
+  clinicId: string,
+  input: { patientId: string; notes: string },
+): Promise<void> {
+  const updated = await exec
+    .update(patients)
+    .set({ notes: input.notes.trim() || null })
+    .where(and(eq(patients.clinicId, clinicId), eq(patients.id, input.patientId)))
+    .returning({ id: patients.id });
+  if (updated.length === 0) throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
+}
+
+/**
+ * KVKK erasure request: removes the patient's identity from the clinic's
+ * records while keeping appointment history for statistics. Calls from the
+ * patient's number lose the number, transcript, summary and recording link;
+ * callback requests lose name and number. Not reversible.
+ */
+export async function anonymizePatient(
+  db: Database,
+  clinicId: string,
+  patientId: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [patient] = await tx
+      .select({ phone: patients.phone })
+      .from(patients)
+      .where(and(eq(patients.clinicId, clinicId), eq(patients.id, patientId)))
+      .for("update");
+    if (!patient || patient.phone.startsWith(ANONYMIZED_PREFIX)) {
+      throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
+    }
+
+    await tx
+      .update(calls)
+      .set({ fromNumber: null, transcript: null, summary: null, recordingUrl: null })
+      .where(and(eq(calls.clinicId, clinicId), eq(calls.fromNumber, patient.phone)));
+    await tx
+      .update(callbackRequests)
+      .set({ patientName: null, phone: null })
+      .where(
+        and(eq(callbackRequests.clinicId, clinicId), eq(callbackRequests.phone, patient.phone)),
+      );
+    await tx
+      .update(appointments)
+      .set({ notes: null })
+      .where(and(eq(appointments.clinicId, clinicId), eq(appointments.patientId, patientId)));
+    await tx
+      .update(patients)
+      .set({
+        fullName: "Anonimleştirilmiş hasta",
+        phone: `${ANONYMIZED_PREFIX}${patientId}`,
+        notes: null,
+        kvkkNoticeAt: null,
+      })
+      .where(and(eq(patients.clinicId, clinicId), eq(patients.id, patientId)));
+  });
 }

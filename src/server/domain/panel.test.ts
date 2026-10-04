@@ -5,8 +5,13 @@ import * as schema from "@/server/db/schema";
 import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
 import {
+  anonymizePatient,
   changeAppointmentStatus,
   getAppointment,
+  getCall,
+  getPatient,
+  listCalls,
+  listPatients,
   listAppointments,
   scopeFor,
   todayOverview,
@@ -192,5 +197,100 @@ describe("changeAppointmentStatus", () => {
     await expect(
       changeAppointmentStatus(db, scope, { appointmentId: created.id, status: "confirmed", now }),
     ).rejects.toMatchObject({ code: "INVALID_TRANSITION" });
+  });
+});
+
+describe("patients", () => {
+  it("lists patients with appointment stats and finds them by name or phone", async () => {
+    const { rows } = await listPatients(db, scopeFor(a.ctx), { limit: 50, offset: 0, now });
+    const ayse = rows.find((row) => row.fullName === "Ayşe Yılmaz");
+    expect(ayse).toMatchObject({ appointmentCount: 1 });
+    // Her 09:00 appointment is already past at 10:00.
+    expect(ayse?.lastAppointmentAt).toBeInstanceOf(Date);
+    expect(ayse?.nextAppointmentAt).toBeNull();
+    const ece = rows.find((row) => row.fullName === "Ece Bal");
+    expect(ece?.nextAppointmentAt).toBeInstanceOf(Date);
+
+    const byPhone = await listPatients(db, scopeFor(a.ctx), {
+      search: "0000004",
+      limit: 50,
+      offset: 0,
+      now,
+    });
+    expect(byPhone.rows.map((row) => row.fullName)).toEqual(["Ece Bal"]);
+  });
+
+  it("shows a practitioner only their own patients", async () => {
+    const { rows } = await listPatients(db, scopeFor(a.ctx, secondPractitionerId), {
+      limit: 50,
+      offset: 0,
+      now,
+    });
+    expect(rows.map((row) => row.fullName)).toEqual(["Can Tunç"]);
+  });
+
+  it("anonymises a patient and the calls from their number", async () => {
+    const created = await insertAppointment(a, {
+      phone: "+905320000007",
+      name: "Silinecek Kişi",
+      minute: 17 * 60,
+    });
+    const [call] = await db
+      .insert(schema.calls)
+      .values({
+        clinicId: a.ctx.clinic.id,
+        provider: "retell",
+        providerCallId: "anon-test",
+        fromNumber: "+905320000007",
+        transcript: "Merhaba, ben Silinecek Kişi.",
+        summary: "Randevu aldı.",
+      })
+      .returning();
+    const { patientId } = (await getAppointment(db, scopeFor(a.ctx), created.id))!;
+
+    await anonymizePatient(db, a.ctx.clinic.id, patientId);
+
+    expect(await getPatient(db, scopeFor(a.ctx), patientId)).toBeNull();
+    const detail = await getCall(db, scopeFor(a.ctx), call!.id);
+    expect(detail).toMatchObject({ fromNumber: null, transcript: null, summary: null });
+    const history = await getAppointment(db, scopeFor(a.ctx), created.id);
+    expect(history?.patientName).toBe("Anonimleştirilmiş hasta");
+    const { rows } = await listPatients(db, scopeFor(a.ctx), {
+      search: "Silinecek",
+      limit: 50,
+      offset: 0,
+      now,
+    });
+    expect(rows).toHaveLength(0);
+  });
+});
+
+describe("calls", () => {
+  it("lists only the clinic's calls and links the caller to a patient", async () => {
+    await db.insert(schema.calls).values([
+      {
+        clinicId: a.ctx.clinic.id,
+        provider: "retell",
+        providerCallId: "c-a",
+        fromNumber: "+905320000001",
+        outcome: "booked",
+      },
+      {
+        clinicId: b.ctx.clinic.id,
+        provider: "retell",
+        providerCallId: "c-b",
+        fromNumber: "+905320000009",
+      },
+    ]);
+    const { rows } = await listCalls(db, a.ctx.clinic.id, { limit: 50, offset: 0 });
+    expect(rows.some((row) => row.patientName === "Başka Klinik")).toBe(false);
+    expect(rows.find((row) => row.fromNumber === "+905320000001")?.patientName).toBe("Ayşe Yılmaz");
+
+    const booked = await listCalls(db, a.ctx.clinic.id, {
+      outcome: "booked",
+      limit: 50,
+      offset: 0,
+    });
+    expect(booked.rows.every((row) => row.outcome === "booked")).toBe(true);
   });
 });

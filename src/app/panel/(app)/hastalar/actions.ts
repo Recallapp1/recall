@@ -1,0 +1,75 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+
+import type { FormState } from "@/lib/contracts/form-state";
+import { safeError } from "@/lib/safe-error";
+import { requirePermission } from "@/server/auth/session";
+import { db } from "@/server/db";
+import { recordAudit } from "@/server/domain/audit";
+import { DomainError } from "@/server/domain/errors";
+import { anonymizePatient, updatePatientNotes } from "@/server/domain/panel";
+
+const notesSchema = z.object({
+  patientId: z.uuid(),
+  notes: z.string().trim().max(1000, "Not en fazla 1000 karakter olabilir."),
+});
+
+export async function savePatientNotes(
+  _previous: FormState<"notes">,
+  formData: FormData,
+): Promise<FormState<"notes">> {
+  const { clinic, session } = await requirePermission({ patients: ["update"] });
+  const parsed = notesSchema.safeParse({
+    patientId: formData.get("patientId") ?? "",
+    notes: formData.get("notes") ?? "",
+  });
+  if (!parsed.success) {
+    return { status: "error", message: parsed.error.issues[0]?.message ?? "Not kaydedilemedi." };
+  }
+  try {
+    await updatePatientNotes(db(), clinic.id, parsed.data);
+    await recordAudit(db(), {
+      clinicId: clinic.id,
+      actorUserId: session.user.id,
+      action: "patient.updated",
+      targetType: "patient",
+      targetId: parsed.data.patientId,
+      metadata: { fields: ["notes"] },
+    });
+    revalidatePath(`/panel/hastalar/${parsed.data.patientId}`);
+    return { status: "success", message: "Not kaydedildi." };
+  } catch (error) {
+    if (error instanceof DomainError) return { status: "error", message: error.userMessage };
+    console.error(JSON.stringify({ msg: "panel.patient_notes.failed", error: safeError(error) }));
+    return { status: "error", message: "Not şu anda kaydedilemedi." };
+  }
+}
+
+/** KVKK erasure. Irreversible; the UI asks for confirmation first. */
+export async function anonymizePatientAction(
+  patientId: string,
+): Promise<{ ok: false; message: string }> {
+  const { clinic, session } = await requirePermission({ patients: ["anonymize"] });
+  if (!z.uuid().safeParse(patientId).success) return { ok: false, message: "Hasta bulunamadı." };
+  try {
+    await anonymizePatient(db(), clinic.id, patientId);
+    await recordAudit(db(), {
+      clinicId: clinic.id,
+      actorUserId: session.user.id,
+      action: "patient.anonymized",
+      targetType: "patient",
+      targetId: patientId,
+    });
+  } catch (error) {
+    if (error instanceof DomainError) return { ok: false, message: error.userMessage };
+    console.error(
+      JSON.stringify({ msg: "panel.patient_anonymize.failed", error: safeError(error) }),
+    );
+    return { ok: false, message: "İşlem şu anda yapılamadı." };
+  }
+  revalidatePath("/panel", "layout");
+  redirect("/panel/hastalar?durum=anonimlestirildi");
+}

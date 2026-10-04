@@ -7,3 +7,4 @@ export {
 } from "./schedule/schedule-grid";
 export { AppointmentSourceBadge, AppointmentStatusBadge } from "./status-badges";
 export { PageHeader } from "./page-header";
+export { OutcomeBadge } from "./outcome-badge";
