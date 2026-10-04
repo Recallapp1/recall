@@ -309,6 +309,27 @@ export const callbackRequests = pgTable(
   (t) => [index().on(t.clinicId, t.status)],
 );
 
+// ─── Platform (not tenant-scoped) ────────────────────────────────────────────
+
+/** Demo requests from the public landing page; handled by the Recall team (F6). */
+export const demoRequests = pgTable(
+  "demo_requests",
+  {
+    id: id(),
+    fullName: text().notNull(),
+    clinicName: text().notNull(),
+    /** E.164 when it could be normalised, otherwise as entered. */
+    phone: text().notNull(),
+    email: text(),
+    clinicType: text().notNull(),
+    message: text(),
+    /** Moment the KVKK consent box was ticked. */
+    consentAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.createdAt)],
+);
+
 export type Clinic = typeof clinics.$inferSelect;
 export type Practitioner = typeof practitioners.$inferSelect;
 export type Service = typeof services.$inferSelect;
@@ -320,3 +341,4 @@ export type Call = typeof calls.$inferSelect;
 export type CallbackRequest = typeof callbackRequests.$inferSelect;
 export type VoiceAgent = typeof voiceAgents.$inferSelect;
 export type PhoneNumber = typeof phoneNumbers.$inferSelect;
+export type DemoRequest = typeof demoRequests.$inferSelect;
