@@ -17,7 +17,7 @@ Vapi'nin **Server URL**'i. Tüm Vapi mesajları buraya gelir.
 
 **Kimlik doğrulama:** `x-vapi-secret` header'ı `VAPI_WEBHOOK_SECRET` ile sabit zamanlı karşılaştırılır. Eşleşmezse `401`.
 
-**Kiracı çözümleme:** `message.call.phoneNumber.number` (aranan numara) → `clinics.phone_number`. Bulunamazsa `404`.
+**Kiracı çözümleme:** `message.phoneNumber.number` (yoksa `message.call.phoneNumber.number`), yani aranan numara → E.164 → `clinics.phone_number`. Bulunamazsa `assistant-request` için `200 { "error": "…" }` döner (Vapi bu metni arayana okur ve aramayı kapatır), diğer mesajlar için `404`.
 
 ### Mesaj tipleri
 
