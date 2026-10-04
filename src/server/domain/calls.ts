@@ -1,0 +1,139 @@
+import "server-only";
+
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+
+import { normalizePhone } from "@/lib/phone";
+
+import type { Executor } from "../db";
+import { callbackRequests, calls, type Call } from "../db/schema";
+import { DomainError } from "./errors";
+
+export interface CallIdentity {
+  clinicId: string;
+  provider: string;
+  providerCallId: string;
+  fromNumber?: string | null;
+  toNumber?: string | null;
+  startedAt?: Date | null;
+}
+
+/** Returns our call row for a provider call, creating it on first sight. */
+export async function upsertCall(exec: Executor, identity: CallIdentity): Promise<Call> {
+  const [row] = await exec
+    .insert(calls)
+    .values({
+      clinicId: identity.clinicId,
+      provider: identity.provider,
+      providerCallId: identity.providerCallId,
+      fromNumber: normalizePhone(identity.fromNumber),
+      toNumber: normalizePhone(identity.toNumber),
+      startedAt: identity.startedAt ?? new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [calls.provider, calls.providerCallId],
+      set: { updatedAt: sql`now()` },
+    })
+    .returning();
+
+  if (row.clinicId !== identity.clinicId) {
+    // A provider call id can never move between tenants.
+    throw new DomainError("CLINIC_NOT_FOUND", "Call belongs to another clinic");
+  }
+  return row;
+}
+
+type Outcome = NonNullable<Call["outcome"]>;
+
+/** Higher wins: a call that booked and then asked a question is still "booked". */
+const OUTCOME_PRIORITY: Outcome[] = [
+  "other",
+  "abandoned",
+  "info",
+  "callback",
+  "transferred",
+  "cancelled",
+  "rescheduled",
+  "booked",
+];
+
+export async function markCallOutcome(
+  exec: Executor,
+  clinicId: string,
+  callId: string,
+  outcome: Outcome,
+) {
+  const lower = OUTCOME_PRIORITY.slice(0, OUTCOME_PRIORITY.indexOf(outcome));
+  await exec
+    .update(calls)
+    .set({ outcome })
+    .where(
+      and(
+        eq(calls.id, callId),
+        eq(calls.clinicId, clinicId),
+        lower.length > 0
+          ? or(isNull(calls.outcome), inArray(calls.outcome, lower))
+          : isNull(calls.outcome),
+      ),
+    );
+}
+
+export interface CallReport {
+  endedAt?: Date | null;
+  startedAt?: Date | null;
+  durationSeconds?: number | null;
+  endedReason?: string | null;
+  summary?: string | null;
+  transcript?: string | null;
+  recordingUrl?: string | null;
+  costUsd?: number | null;
+}
+
+const ABANDONED_UNDER_SECONDS = 10;
+
+export async function completeCall(exec: Executor, call: Call, report: CallReport) {
+  let outcome = call.outcome;
+  if (!outcome) {
+    const reason = report.endedReason?.toLowerCase() ?? "";
+    if (reason.includes("transfer") || reason.includes("forward")) outcome = "transferred";
+    else if ((report.durationSeconds ?? 0) < ABANDONED_UNDER_SECONDS) outcome = "abandoned";
+    else outcome = "info";
+  }
+
+  await exec
+    .update(calls)
+    .set({
+      startedAt: report.startedAt ?? call.startedAt,
+      endedAt: report.endedAt ?? new Date(),
+      durationSeconds: report.durationSeconds != null ? Math.round(report.durationSeconds) : null,
+      endedReason: report.endedReason ?? null,
+      summary: report.summary ?? null,
+      transcript: report.transcript ?? null,
+      recordingUrl: report.recordingUrl ?? null,
+      costUsd: report.costUsd != null ? report.costUsd.toFixed(4) : null,
+      outcome,
+    })
+    .where(and(eq(calls.id, call.id), eq(calls.clinicId, call.clinicId)));
+}
+
+export async function createCallbackRequest(
+  exec: Executor,
+  input: {
+    clinicId: string;
+    callId: string | null;
+    reason: string;
+    patientName?: string | null;
+    phone?: string | null;
+  },
+) {
+  const [row] = await exec
+    .insert(callbackRequests)
+    .values({
+      clinicId: input.clinicId,
+      callId: input.callId,
+      reason: input.reason.trim(),
+      patientName: input.patientName?.trim() || null,
+      phone: normalizePhone(input.phone),
+    })
+    .returning({ id: callbackRequests.id });
+  return row;
+}
