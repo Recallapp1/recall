@@ -37,19 +37,19 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 
 ## Faz durum özeti
 
-| Faz | Başlık                                                      | Durum                                                                                  | Bağımlılık                            |
-| --- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------- |
-| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                                          | —                                     |
-| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                                        | F0                                    |
-| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                                     | F1                                    |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ⏳ Önceki oturumun yarım işi `git stash` içinde (bkz. WORKLOG)                         | F0                                    |
-| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.3 ✅ (DESIGN.md v2, lacivert; logo/görseller bekleniyor) · F4.2 sırada | F0                                    |
-| F5  | Klinik paneli                                               | ⏳                                                                                     | F3, F4 (F1 ile paralel ilerleyebilir) |
-| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                                                     | F3, F1                                |
-| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                                     | F5                                    |
-| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                                     | F1, F3 (F2 gerçek numara için)        |
-| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                                     | F1–F8                                 |
-| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                                     | F9                                    |
+| Faz | Başlık                                                      | Durum                                                                      | Bağımlılık                            |
+| --- | ----------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------- |
+| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                              | —                                     |
+| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                            | F0                                    |
+| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                         | F1                                    |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ⏳ Önceki oturumun yarım işi `git stash` içinde (bkz. WORKLOG)             | F0                                    |
+| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor) | F0                                    |
+| F5  | Klinik paneli                                               | ⏳                                                                         | F3, F4 (F1 ile paralel ilerleyebilir) |
+| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                                         | F3, F1                                |
+| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                         | F5                                    |
+| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                         | F1, F3 (F2 gerçek numara için)        |
+| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                         | F1–F8                                 |
+| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                         | F9                                    |
 
 **Önerilen sıra (2026-10-04 güncel):** F1 → F4 (tasarım temeli) → F3 (hesaplar) → F5 ve F6 (panel, konsol) → F7 → F8 (production) → **F2 (Netgsm: ürün ekibiyle birlikte, en son)** → F9. F1.8 ürün ekibinin Retell anahtarını girmesiyle paralel yürür.
 
@@ -242,10 +242,12 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F4.2 Bileşen kütüphanesi
 
-- [ ] shadcn/ui kurulumu, DESIGN.md token'larıyla yeniden temalanması
-- [ ] DESIGN.md özel bileşenleri: `ActionButton` (iç içe ikonlu hap buton), `GlassCard`, `GlassStatCard`, `Label` (etiket tipografisi), `StatusTag` (bounce), `SectionShell` (2.5rem radius, koyu gradyan + grain)
-- [ ] Panel bileşenleri: `Button` varyantları, `Input`, `Select`, `Textarea`, `Switch`, `Checkbox`, `Dialog`, `Sheet`, `Tabs`, `Table` (sıralama, sayfalama), `Badge` (randevu durumu, kaynak), `Toast`, `Skeleton`, `EmptyState`, `Avatar`, `DropdownMenu`, `Tooltip`, `Calendar` (gün/hafta, hekim kolonları)
-- [ ] Yaşayan stil rehberi: `/dev/design` (yalnızca development'ta açık), tüm bileşenler ve durumları
+- [x] shadcn/ui kurulumu (Radix, `radix-nova`), DESIGN.md token'larıyla yeniden temalanması; takma ad katmanı yok, `lint:tokens` shadcn tema adlarını yakalar ([ADR-008](decisions/ADR-008-shadcn-theming.md))
+- [x] DESIGN.md özel bileşenleri: `ActionButton`, `GlassCard`, `GlassStatCard`, `Eyebrow` (etiket tipografisi), `StatusTag`, `SectionShell` (F4.1'de yapılmıştı)
+- [x] Panel bileşenleri: `Button` varyantları, `Input`, `Select`, `Textarea`, `Switch`, `Checkbox`, `Dialog`, `Sheet`, `Tabs`, `Table`, `Badge`, durum/kaynak rozetleri, `Toaster`, `Skeleton`, `EmptyState`, `Avatar`, `DropdownMenu`, `Tooltip`, `Popover` + `Calendar` (tarih seçici), `FormField`, `ScheduleGrid` (gün/hafta, hekim kolonları, çakışma şeritleri; düzen fonksiyonu testli)
+- [ ] `Table` sıralama ve sayfalama: veri katmanıyla birlikte F5'te (sunucu tarafı, URL parametreleri)
+- [x] Yaşayan stil rehberi: `/dev/tasarim` → "Panel bileşenleri" bölümü (yalnızca development)
+- [ ] **Ürün ekibi onayı:** panel türetmeleri, durum rozetleri ve `danger` token'ı (F5 öncesi)
 
 ### F4.3 Tanıtım sitesi (DESIGN.md bölümleri)
 

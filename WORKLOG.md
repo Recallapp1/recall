@@ -8,22 +8,22 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04 (yazı tipi Montserrat, navbar 768 px)_
+_Son güncelleme: 2026-10-04 (F4.2 panel bileşenleri)_
 
-| Konu                    | Durum                                                                                                                                                                                                                              |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | **F4**: yeni tanıtım sayfası tamam (13 bölüm, sticky header, demo formu). Sırada **F4.2** (panel bileşenleri), ardından **F3** (hesaplar)                                                                                          |
-| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo kliniğin Retell ajanı canlı (`agent_d0b8d67285431ede3db2c75201`), Türkçe ve sayı okuma ekipçe onaylandı. Ajan şu an `claude-4.5-haiku` ile; gecikme karşılaştırması ekibin test aramasını bekliyor |
-| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                          |
-| Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/design`, stil rehberi `/dev/tasarim`, `pnpm lint:tokens`      |
-| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                   |
-| Testler                 | **114 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                            |
-| Lokal DB                | `pnpm db:local` (PGlite) veya `pnpm db:up` (Docker). PGlite verisi 2026-10-04 tarihinde bozuldu; yedek `.pglite.corrupt-20261004`. Uzun süreli kullanımda Docker tercih edilmeli                                                   |
-| Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                   |
-| GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                    |
-| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                    |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                     |
-| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                            |
+| Konu                    | Durum                                                                                                                                                                                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aktif faz               | **F4**: tanıtım sayfası ve **F4.2 panel bileşenleri** tamam (shadcn/ui + DESIGN.md, takvim ızgarası). Panel türetmeleri ürün ekibinin onayını bekliyor. Sırada **F3** (hesaplar)                                                                                                               |
+| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo kliniğin Retell ajanı canlı (`agent_d0b8d67285431ede3db2c75201`), Türkçe ve sayı okuma ekipçe onaylandı. Ajan şu an `claude-4.5-haiku` ile; gecikme karşılaştırması ekibin test aramasını bekliyor                                                             |
+| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
+| Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
+| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
+| Testler                 | **120 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
+| Lokal DB                | `pnpm db:local` (PGlite) veya `pnpm db:up` (Docker). PGlite verisi 2026-10-04 tarihinde bozuldu; yedek `.pglite.corrupt-20261004`. Uzun süreli kullanımda Docker tercih edilmeli                                                                                                               |
+| Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                               |
+| GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
+| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                |
+| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                                                                                 |
+| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                        |
 
 ### Dallar ve saklanan işler
 
@@ -34,11 +34,10 @@ _Son güncelleme: 2026-10-04 (yazı tipi Montserrat, navbar 768 px)_
 
 ### Sıradaki işler
 
-1. Ürün ekibi: tanıtım sayfası geri bildirimi; `claude-4.5-haiku` ile bir test araması (gecikme karşılaştırması)
-2. F4.2: panel bileşenleri (form, tablo, dialog, takvim, rozetler)
-3. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
-4. Demo talepleri: ekibe e-posta bildirimi ve görüntüleme (F3/F6)
-5. Logo ve görsel varlıklar (ürün ekibiyle birlikte)
+1. Ürün ekibi: `/dev/tasarim` → "Panel bileşenleri" onayı (rozetler, takvim, `danger` token'ı); `claude-4.5-haiku` ile bir test araması (gecikme karşılaştırması)
+2. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
+3. Demo talepleri: ekibe e-posta bildirimi ve görüntüleme (F3/F6)
+4. Logo ve görsel varlıklar (ürün ekibiyle birlikte)
 
 ---
 
@@ -77,6 +76,18 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · Panel bileşen kütüphanesi · F4.2, ADR-008
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F4.2-panel-bilesenleri` · **Commit'ler:** bu kaydı içeren commit'ler
+
+- **shadcn/ui** (Radix, `radix-nova`) kuruldu: 20 bileşen `src/components/ui/`. Takma ad katmanı kurulmadı; sınıflar DESIGN.md token'larına çevrildi ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)). shadcn'in eklediği Geist fontu, `cn` paketi, `next-themes`, `dark:` sınıfları ve CLI bağımlılığı kaldırıldı; gereken Radix durum varyantları `globals.css`'e kopyalandı.
+- **Yeni token'lar:** `danger`, `danger-hover`, `danger-soft`, `success-soft` (kontrastlar ölçüldü). Odak halkası açık zeminde `primary`, koyu zeminde `accent` (eski `accent` halka beyazda 2,5:1 idi, WCAG 1.4.11'i karşılamıyordu). Tailwind 4'ün `currentColor` kenarlık varsayılanı `hairline` yapıldı (tanıtım sayfasında etkilenen öğe yok, tarayıcıda doğrulandı).
+- **Panel bileşenleri** (`src/components/panel/`): `AppointmentStatusBadge`, `AppointmentSourceBadge`, `ScheduleGrid` (hekim/gün kolonları, çakışan randevular yan yana, "şimdi" çizgisi; `layoutColumn` testli), `FormField` (aria bağlantıları), `EmptyState`.
+- **Ortak sözleşme:** randevu durum/kaynak değerleri ve Türkçe etiketleri `src/lib/contracts/appointment.ts`'e taşındı; Drizzle enum'ları buradan türetiliyor (`db:generate`: şema değişikliği yok).
+- **Koruma:** `pnpm lint:tokens` artık shadcn tema adlarını (`bg-background`, `text-muted-foreground`…) yakalıyor; `cn.test.ts` `globals.css`'teki her renk token'ının `cn()` listesinde olduğunu doğruluyor.
+- Stil rehberi `/dev/tasarim` → "Panel bileşenleri": butonlar, rozetler, form alanları, tarih seçici, sekmeler, menü, dialog, sheet, toast, tablo, gün takvimi, boş durum, iskelet. 1280 ve 375 px'te taşma yok.
+- Açık: tablo sıralama/sayfalama F5'te veriyle; panel türetmeleri ve `danger` token'ı ürün ekibi onayı bekliyor.
 
 ### 2026-10-04 · Yazı tipi Montserrat, navbar %25 daha dar · F4.3
 

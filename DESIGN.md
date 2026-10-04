@@ -28,8 +28,15 @@ A clinical, trustworthy design system: deep navy and clean white, one bright blu
 | Borders (light)              | `hairline`           | `#E3E8F2`   |
 | Subtle border (dark)         | `glass-border`       | `rgba(255, 255, 255, 0.12)` |
 | Positive status              | `success`            | `#15803D`   |
+| Positive badge background    | `success-soft`       | `#DCFCE7`   |
+| Error, destructive action (panel) | `danger`        | `#B91C1C`   |
+| Error badge / alert background | `danger-soft`      | `#FEE2E2`   |
 
-**Contrast (WCAG AA):** body on white 7.6:1, heading on white 17.7:1, white on primary 6.7:1, accent on navy 6.9:1, secondary text on navy 8.4:1. The accent is **not** used as text on light backgrounds (2.5:1).
+`danger*` and `success-soft` were added for the panel in F4.2 ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)) and await product approval together with the panel derivations.
+
+**Contrast (WCAG AA):** body on white 7.6:1, heading on white 17.7:1, white on primary 6.7:1, accent on navy 6.9:1, secondary text on navy 8.4:1, danger on white 6.5:1. The accent is **not** used as text on light backgrounds (2.5:1).
+
+**Focus ring:** 2px, `primary` on light surfaces and `accent` on dark surfaces (both ≥ 3:1 against their background).
 
 ### Typography
 

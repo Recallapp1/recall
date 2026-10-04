@@ -21,7 +21,9 @@ Tek yer: [`src/app/globals.css`](../../src/app/globals.css) (`@theme`). Bileşen
 | Birincil (buton, link)      | `primary` / `primary-hover`                      | `#1D4ED8` / `#1E40AF`                  |
 | İkon zemini (açık)          | `primary-soft`                                   | `#DBEAFE`                              |
 | Vurgu (yalnızca koyu zemin) | `accent`                                         | `#60A5FA`                              |
-| Olumlu durum                | `success`                                        | `#15803D`                              |
+| Olumlu durum                | `success` / `success-soft`                       | `#15803D` / `#DCFCE7`                  |
+| Hata, yıkıcı eylem (panel)  | `danger` / `danger-hover` / `danger-soft`        | `#B91C1C` / `#991B1B` / `#FEE2E2`      |
+| Odak halkası                | `--focus-ring`                                   | açıkta `primary`, koyuda `accent`      |
 | Başlık / gövde (açık)       | `heading` / `body`                               | `#0B1736` / `#475569`                  |
 | Kenarlık (açık)             | `hairline`                                       | `#E3E8F2`                              |
 | Glass                       | `glass` / `glass-strong` / `glass-border`        | %5 / %10 / %12 beyaz                   |
@@ -49,11 +51,22 @@ Tek yer: [`src/app/globals.css`](../../src/app/globals.css) (`@theme`). Bileşen
 
 **Tanıtım sayfası** ([`src/app/(marketing)/`](<../../src/app/(marketing)/>)): `_content.ts` tüm metinleri tutar (tasarıma dokunmadan düzenlenir). `_components/` altında `site-header` (sticky), `hero`, `overview` (klinik türleri, sorun, nasıl çalışır, özellikler), `product` (örnek görüşme, panel önizlemesi), `trust` (güvenlik, kurulum, paketler, SSS), `contact` + `demo-form`, `site-footer`, `section-header`, `logo`.
 
+**Panel temelleri** ([`src/components/ui/`](../../src/components/ui/), shadcn/ui + Radix, [ADR-008](../decisions/ADR-008-shadcn-theming.md)): `Button` (default, outline, secondary, ghost, destructive, link; hap), `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Label`, `Dialog`, `Sheet`, `Popover`, `Calendar` (tarih seçici, Türkçe, hafta pazartesi başlar), `DropdownMenu`, `Tooltip`, `Tabs`, `Table`, `Badge`, `Avatar`, `Skeleton`, `Separator`, `Toaster` (sonner). Yeni bir shadcn bileşeni eklendiğinde sınıflar DESIGN.md token'larına çevrilir; `pnpm lint:tokens` çevrilmemiş olanları yakalar.
+
+**Panel bileşenleri** ([`src/components/panel/`](../../src/components/panel/)):
+
+| Bileşen                                            | Kullanım                                                                                              |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `AppointmentStatusBadge`, `AppointmentSourceBadge` | Durum ve kaynak rozetleri; etiketler `src/lib/contracts/appointment.ts` (DB enum'larıyla aynı kaynak) |
+| `ScheduleGrid`                                     | Gün (hekim kolonları) ve hafta (gün kolonları) takvimi; çakışan randevular yan yana; "şimdi" çizgisi  |
+| `FormField`                                        | Etiket + alan + ipucu/hata; `aria-describedby` ve `aria-invalid` otomatik                             |
+| `EmptyState`                                       | Boş liste/takvim                                                                                      |
+
 Sınıf birleştirme: `cn()` ([`src/lib/cn.ts`](../../src/lib/cn.ts)); özel token'ları tanır. Yeni token eklenirse buradaki listeye de eklenmelidir. İkonlar: [lucide-react](https://lucide.dev).
 
 ## 3. Panel türetmeleri (F4.2 / F5)
 
-Önerilen türetmeler; **F5 başlamadan önce ürün ekibine onaylatılacak.**
+Önerilen türetmeler; **F5 başlamadan önce ürün ekibine onaylatılacak.** F4.2'de koda döküldü; canlı hâli stil rehberinin "Panel bileşenleri" bölümünde.
 
 ### Kabuk
 
@@ -64,16 +77,18 @@ Sınıf birleştirme: `cn()` ([`src/lib/cn.ts`](../../src/lib/cn.ts)); özel tok
 
 ### Yoğun veri öğeleri
 
-| Öğe             | Öneri                                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------------- |
-| Tablo           | `paper` kart; başlık satırı `text-label text-body`; satır ayırıcı `hairline`; hover `canvas`      |
-| Form alanı      | Demo formundaki stil: `paper`, `hairline`, `rounded-card-sm`; odakta `primary` kenarlık           |
-| Birincil buton  | `ActionButton variant="primary"` veya düz `primary` hap                                           |
-| İkincil buton   | `SecondaryLink tone="onLight"`                                                                    |
-| Takvim ızgarası | `paper` kart; saat çizgileri `hairline`; randevu blokları `primary-soft` zemin, `rounded-card-sm` |
-| Dialog / Sheet  | `paper`, `rounded-bento`; arka plan karartması `ink` %40                                          |
-| Boş durum       | `primary-soft` daire içinde ikon + kısa açıklama + tek eylem                                      |
-| Toast           | `surface-dark` hap, beyaz metin; başarıda `success` ikon                                          |
+| Öğe             | Öneri                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tablo           | `paper` kart; başlık satırı `text-label text-body`; satır ayırıcı `hairline`; hover `canvas`                                               |
+| Form alanı      | Demo formundaki stil: `paper`, `hairline`, `rounded-card-sm`, 44px yükseklik; odakta `primary` kenarlık; hatada `danger` kenarlık ve metin |
+| Birincil buton  | `ActionButton variant="primary"` veya düz `primary` hap                                                                                    |
+| İkincil buton   | `SecondaryLink tone="onLight"`                                                                                                             |
+| Takvim ızgarası | `paper` kart; saat çizgileri `hairline`; randevu blokları `primary-soft` zemin, `rounded-card-sm`                                          |
+| Dialog / Sheet  | `paper`, `rounded-bento`; arka plan karartması `ink` %40                                                                                   |
+| Boş durum       | `primary-soft` daire içinde ikon + kısa açıklama + tek eylem                                                                               |
+| Toast           | `surface-dark` kart, beyaz metin, `accent` ikon; hata toast'u `danger` zemin                                                               |
+| Menü / Select   | `paper`, `rounded-card-sm`, `hairline` çerçeve; odaktaki öğe `primary-soft`; yıkıcı öğe `danger`                                           |
+| Sekmeler        | Hap; liste zemini `hairline`, aktif sekme `paper`                                                                                          |
 
 ### Durum rozetleri (öneri, onay bekliyor)
 

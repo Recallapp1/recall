@@ -65,7 +65,7 @@ src/
 │   ├── (marketing)/      # Herkese açık sayfalar
 │   ├── panel/            # Klinik paneli (oturum gerekli)
 │   └── api/              # Route handler'lar (webhook'lar, health)
-├── components/           # Paylaşılan UI bileşenleri (ui/ = shadcn)
+├── components/           # design/ (DESIGN.md), ui/ (shadcn, token'larla temalı), panel/ (alan bileşenleri)
 ├── lib/                  # Framework'ten bağımsız yardımcılar (env, utils)
 │   └── contracts/        # Client ve server ortak Zod şemaları
 └── server/               # Sadece sunucuda çalışan kod
