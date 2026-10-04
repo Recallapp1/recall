@@ -50,6 +50,7 @@ async function main() {
         llmModel: settings.llmModel,
         defaultVoiceId: settings.defaultVoiceId,
         voiceModel: settings.voiceModel,
+        llmHighPriority: settings.llmHighPriority,
       },
       force,
     });

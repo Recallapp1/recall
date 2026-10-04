@@ -39,6 +39,15 @@ Sesli asistanın LLM'i aynı anda şunları sağlamalı:
 
 Hedef (p50 < 1,0 sn, p95 < 1,8 sn) tutturulamadı; en büyük pay LLM'de. Sıradaki deneme: aynı senaryo `claude-4.5-haiku` ile; ardından Retell LLM'in `model_high_priority` seçeneği (daha düşük gecikme, daha yüksek maliyet). Arama maliyeti: 0,39 $ / 124 sn ≈ **0,19 $/dk** (Retell `combined_cost`).
 
+## Haiku denemesi ve hız ayarları (2026-10-04)
+
+- Ürün ekibi `claude-4.5-haiku` ile test araması yaptı: Türkçe kalite yeterli, hız farkı "çok fark etmedi, bir tık daha hızlı olabilir". **Varsayılan model `claude-4.5-haiku`** (Retell'deki en hızlı Claude).
+- Ek hız için iki ayar açıldı (env ile, kod değişmeden geri alınabilir):
+  - `RETELL_VOICE_MODEL=eleven_flash_v2_5`: ElevenLabs Flash, Türkçe destekli, multilingual v2'ye göre ilk ses çok daha erken başlar; ek ücret yok.
+  - `RETELL_LLM_HIGH_PRIORITY=true`: Retell'in öncelikli LLM havuzu (`model_high_priority`); daha düşük ve tutarlı LLM gecikmesi, **dakika başı ek ücret**.
+- Claude dışı modeller (Gemini Flash, GPT mini) Retell'de daha hızlı olabilir, ancak bu ADR'nin Claude kararını değiştirir; gerekirse ayrı ölçümle değerlendirilir.
+- Sonraki adım: aynı senaryoyla yeni bir ölçüm (Retell call detail → latency) ve sonuçların bu tabloya eklenmesi.
+
 ## Notlar
 
 - **Retell geçişi (2026-10-04):** LLM'i Retell çalıştırır; seçenekler Retell'in listesindeki Claude modelleriyle sınırlıdır: `claude-5-sonnet` (varsayılan, `RETELL_LLM_MODEL`), `claude-4.6-sonnet`, `claude-4.5-sonnet`, `claude-4.5-haiku`. Opus Retell'de sunulmuyor. Effort ve thinking gibi Anthropic parametreleri Retell üzerinden ayarlanamaz. F1.8 ölçümü bu modellerle yapılır.

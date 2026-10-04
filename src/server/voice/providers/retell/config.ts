@@ -14,6 +14,7 @@ export interface RetellConfig {
   defaultVoiceId: string | undefined;
   /** TTS model; unset means Retell's default for the voice. */
   voiceModel: string | undefined;
+  llmHighPriority: boolean;
 }
 
 /** Retell settings, failing loudly when voice is used without being configured. */
@@ -28,6 +29,7 @@ export function retellConfig(): RetellConfig {
     llmModel: config.RETELL_LLM_MODEL,
     defaultVoiceId: config.RETELL_VOICE_ID,
     voiceModel: config.RETELL_VOICE_MODEL,
+    llmHighPriority: config.RETELL_LLM_HIGH_PRIORITY,
   };
 }
 

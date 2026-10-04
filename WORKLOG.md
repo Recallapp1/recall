@@ -8,17 +8,17 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04 (klinik paneli: tüm ekranlar ve ayarlar)_
+_Son güncelleme: 2026-10-04 (Neon geliştirme dalı, asistan hız ayarları)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                                                   |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Aktif faz               | **F5 klinik paneli kullanılabilir**: Bugün, Takvim, Randevular, Aramalar, Geri aranacaklar, Hastalar, Ayarlar (klinik, saatler, hekimler, hizmetler, asistan, randevu kuralları, ekip, denetim). Açık: web test araması, tatiller, kişisel tercihler, özel rol arayüzü, E2E testleri. Sonra F6 (Recall yönetim konsolu) |
-| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo kliniğin Retell ajanı canlı (`agent_d0b8d67285431ede3db2c75201`), Türkçe ve sayı okuma ekipçe onaylandı. Ajan şu an `claude-4.5-haiku` ile; gecikme karşılaştırması ekibin test aramasını bekliyor                                                                                      |
+| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo ajan canlı (`agent_d0b8d67285431ede3db2c75201`). Model `claude-4.5-haiku` + `eleven_flash_v2_5` + öncelikli LLM havuzu (ADR-003). Yeni gecikme ölçümü bekleniyor                                                                                                                        |
 | Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                                               |
 | Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens`                          |
 | E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                                                        |
 | Testler                 | **216 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                                                 |
-| Lokal DB                | `pnpm db:local` (PGlite, `DATABASE_POOL_MAX=1`, 5 dk'da bir `.pglite-snapshot.tar.gz`, açılmazsa otomatik geri yükler) veya `pnpm db:up` (Docker). Kurtarma adımları: 2026-10-04 "Bugün ekranı" kaydı                                                                                                                   |
+| Lokal DB                | **Neon** projesi `falling-mud-37269187` (Frankfurt), **`dev` dalı** (`.env.local` `DATABASE_URL`). Ana dal prod için ayrılmış (F8). PGlite `db:local` yedek seçenek olarak duruyor                                                                                                                                      |
 | Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                                                        |
 | GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                                         |
 | Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                                         |
@@ -34,7 +34,7 @@ _Son güncelleme: 2026-10-04 (klinik paneli: tüm ekranlar ve ayarlar)_
 
 ### Sıradaki işler
 
-1. Ürün ekibi: paneli gezip geri bildirim (`sahip@gulus.test`, parola `.env.local` yorumunda); `claude-4.5-haiku` test araması; `git stash drop`; lokal DB için Docker/Neon kararı
+1. Ürün ekibi: paneli gezip geri bildirim (`sahip@gulus.test`, parola `.env.local` yorumunda); hızlandırılmış asistanla test araması; `git stash drop`
 2. F5 kalanlar: Retell web call ile tarayıcıdan test araması, ses seçimi, tatiller/izinler (`time_off`), kişisel tercihler, özel rol arayüzü, Playwright E2E
 3. F6: Recall yönetim konsolu (klinik açma, organizasyon + ilk owner + ajan tek akışta)
 4. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
@@ -78,6 +78,14 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · Neon geliştirme dalı ve asistan hız ayarları · F8 (hazırlık), F1.8, ADR-003
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `chore/neon-ve-hiz` · **Commit'ler:** bu kaydı içeren commit
+
+- Ürün ekibi lokal geliştirme için Neon'u onayladı. Mevcut Neon projesinde (`falling-mud-37269187`, aws-eu-central-1) **`dev` dalı** açıldı; `.env.local` `DATABASE_URL` buna çevrildi (eski PGlite adresi yorum satırında, `DATABASE_POOL_MAX` kaldırıldı). Migrate, seed, Retell ajan bağlantısı (`voice:sync` → `updated`, yeni ajan açılmadı) ve test hesabı yeniden kuruldu. PGlite sunucusu durduruldu.
+- Asistan hızı: ürün ekibi haiku'yu "bir tık daha hızlı" istedi. `RETELL_VOICE_MODEL=eleven_flash_v2_5` (ek ücret yok) ve yeni `RETELL_LLM_HIGH_PRIORITY=true` (Retell `model_high_priority`, dakika başı ek ücret) açıldı; canlı ajana senkronlandı. Ayrıntı ADR-003.
+- `git stash drop` ürün ekibine bırakıldı (komut iletildi).
 
 ### 2026-10-04 · Klinik paneli ekranları, ayarlar ve ekip yönetimi · F5.2, F5.3, F5.4, F3.3, F3.5
 

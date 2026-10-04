@@ -31,6 +31,7 @@ Kaynak gerçek: [`.env.example`](../../.env.example) ve [`src/lib/env.ts`](../..
 | `RETELL_VOICE_ID`                                     | ✓ (senkron için) | Varsayılan ses; klinik kendi sesini seçebilir                                                 |
 | `RETELL_LLM_MODEL`                                    |                  | Varsayılan `claude-5-sonnet` ([ADR-003](../decisions/ADR-003-llm-model.md))                   |
 | `RETELL_VOICE_MODEL`                                  |                  | Seslendirme modeli, sesin sağlayıcısına ait olmalı (ElevenLabs için `eleven_multilingual_v2`) |
+| `RETELL_LLM_HIGH_PRIORITY`                            |                  | `true`: Retell'in öncelikli LLM havuzu (daha hızlı, dakika başı ek ücret). Varsayılan `false` |
 | `SMS_PROVIDER`                                        |                  | `console` (varsayılan) veya `netgsm`                                                          |
 | `NETGSM_USERCODE`, `NETGSM_PASSWORD`, `NETGSM_HEADER` | `netgsm` ise     |                                                                                               |
 | `CRON_SECRET`                                         | Prod             | Vercel Cron yetkilendirmesi                                                                   |

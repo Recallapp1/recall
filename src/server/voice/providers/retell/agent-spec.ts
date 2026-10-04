@@ -28,6 +28,8 @@ export interface AgentSpecInput {
   llmModel: string;
   defaultVoiceId: string | undefined;
   voiceModel?: string | undefined;
+  /** Retell's high-priority LLM pool: lower, steadier latency at a higher price. */
+  llmHighPriority?: boolean;
 }
 
 export const RETELL_ROUTES = {
@@ -128,6 +130,7 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
     llm: {
       model: input.llmModel as LlmParams["model"],
       model_temperature: 0,
+      ...(input.llmHighPriority && { model_high_priority: true }),
       start_speaker: "agent",
       begin_message: buildFirstMessage(clinic, settings),
       general_prompt: generalPrompt,

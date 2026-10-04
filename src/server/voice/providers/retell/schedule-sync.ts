@@ -29,6 +29,7 @@ export async function syncAssistantNow(clinicId: string): Promise<SyncResult | n
       llmModel: config.llmModel,
       defaultVoiceId: config.defaultVoiceId,
       voiceModel: config.voiceModel,
+      llmHighPriority: config.llmHighPriority,
     },
   });
 }

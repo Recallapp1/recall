@@ -143,5 +143,9 @@ describe("specHash", () => {
     const a = specHash(buildRetellAgentSpec(input()));
     expect(specHash(buildRetellAgentSpec(input()))).toBe(a);
     expect(specHash(buildRetellAgentSpec(input({ llmModel: "claude-4.5-haiku" })))).not.toBe(a);
+    expect(buildRetellAgentSpec(input({ llmHighPriority: true })).llm.model_high_priority).toBe(
+      true,
+    );
+    expect(buildRetellAgentSpec(input()).llm).not.toHaveProperty("model_high_priority");
   });
 });

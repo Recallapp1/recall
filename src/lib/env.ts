@@ -25,6 +25,11 @@ const envSchema = z.object({
   RETELL_LLM_MODEL: z.string().default("claude-5-sonnet"),
   /** TTS model for the voice; must belong to the voice's provider (e.g. eleven_multilingual_v2). */
   RETELL_VOICE_MODEL: optionalString,
+  /** "true": Retell's high-priority LLM pool (faster, steadier, costs more per minute). */
+  RETELL_LLM_HIGH_PRIORITY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   NETGSM_USERCODE: optionalString,
