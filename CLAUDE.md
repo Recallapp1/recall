@@ -40,6 +40,7 @@ Recall, kliniklere (diş, sağlık, güzellik) gelen telefon aramalarını karş
 pnpm dev            # lokal geliştirme (http://localhost:3000)
 pnpm build          # production build
 pnpm lint           # ESLint
+pnpm lint:tokens    # DESIGN.md token kuralı: hex/rgb/hazır palet yasak
 pnpm typecheck      # tsc --noEmit
 pnpm test           # Vitest
 pnpm format         # Prettier
@@ -54,7 +55,7 @@ pnpm voice:sync --clinic <slug>   # kliniğin Retell ajanını oluştur/güncell
 pnpm voice:send <inbound|function-call|call-ended>   # imzalı örnek webhook isteği
 ```
 
-Bir değişikliği bitmiş saymadan önce `pnpm lint && pnpm typecheck && pnpm test` çalıştır.
+Bir değişikliği bitmiş saymadan önce `pnpm lint && pnpm lint:tokens && pnpm typecheck && pnpm test` çalıştır. UI değişikliğinde stil rehberine bak: http://localhost:3000/dev/tasarim
 
 ## Klasör yapısı
 

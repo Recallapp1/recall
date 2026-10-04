@@ -37,19 +37,19 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 
 ## Faz durum özeti
 
-| Faz | Başlık                                                      | Durum                                                          | Bağımlılık                            |
-| --- | ----------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------- |
-| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                  | —                                     |
-| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                | F0                                    |
-| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                             | F1                                    |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ⏳ Önceki oturumun yarım işi `git stash` içinde (bkz. WORKLOG) | F0                                    |
-| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | ⏳                                                             | F0                                    |
-| F5  | Klinik paneli                                               | ⏳                                                             | F3, F4 (F1 ile paralel ilerleyebilir) |
-| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                             | F3, F1                                |
-| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                             | F5                                    |
-| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                             | F1, F3 (F2 gerçek numara için)        |
-| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                             | F1–F8                                 |
-| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                             | F9                                    |
+| Faz | Başlık                                                      | Durum                                                                       | Bağımlılık                            |
+| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------- |
+| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                               | —                                     |
+| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                             | F0                                    |
+| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                          | F1                                    |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ⏳ Önceki oturumun yarım işi `git stash` içinde (bkz. WORKLOG)              | F0                                    |
+| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.3 ✅ (görseller bekleniyor) · F4.2 panel bileşenleri sırada | F0                                    |
+| F5  | Klinik paneli                                               | ⏳                                                                          | F3, F4 (F1 ile paralel ilerleyebilir) |
+| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                                          | F3, F1                                |
+| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                          | F5                                    |
+| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                          | F1, F3 (F2 gerçek numara için)        |
+| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                          | F1–F8                                 |
+| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                          | F9                                    |
 
 **Önerilen sıra (2026-10-04 güncel):** F1 → F4 (tasarım temeli) → F3 (hesaplar) → F5 ve F6 (panel, konsol) → F7 → F8 (production) → **F2 (Netgsm: ürün ekibiyle birlikte, en son)** → F9. F1.8 ürün ekibinin Retell anahtarını girmesiyle paralel yürür.
 
@@ -231,12 +231,14 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F4.1 Token'lar ve temel
 
-- [ ] Font: Inter, `latin` + `latin-ext` (Türkçe karakterler). Geist kaldırılır. **Build ağdan bağımsız olmalı:** `next/font/google` build sırasında Google Fonts'u indirir ve ağsız ortamda build'i kırar (bağımsız denetim raporu bulgusu). Font dosyaları repoya alınıp `next/font/local` ile yüklenir
-- [ ] `globals.css` `@theme`: `--color-ink: #000`, `--color-surface-dark: #18181B`, `--color-surface-light: #F4F4F5`, `--color-accent: #34D399`, `--color-body: #71717A`, `--color-glass-border: rgb(255 255 255 / 0.1)`; radius: `--radius-section: 2.5rem`, `--radius-bento: 2rem`, `--radius-card: 1rem…1.5rem`; blur: 12px ve 20px; easing: `cubic-bezier(0.16, 1, 0.3, 1)`
-- [ ] Yardımcılar: `.glass`, `.glass-nav`, `.grain` (sabit SVG gürültü, %15 opaklık), `.bg-dark-gradient` (alttan ağırlıklı), `animate-fade-in-up`, `prefers-reduced-motion` desteği
-- [ ] Tipografi ölçeği: başlık (500–700, `-0.05em`, `1.05`), gövde (300–400, Zinc-500), etiket (700, 10px, `0.2em`, büyük harf)
-- [ ] **Erişilebilirlik kuralları** ([DESIGN-SYSTEM.md](04-panel/DESIGN-SYSTEM.md)): Zinc-500 metin Zinc-100 zeminde kontrast ≈ 4,4:1 (AA'nın 4,5:1 eşiğinin altında). Küçük gövde metni beyaz zeminde veya daha koyu tonda kullanılır. Emerald-400 yalnızca koyu zeminde metin, açık zeminde sadece dolgu/aksan olarak kullanılır. **Bu kurallar ürün ekibine onaylatılır**
-- [ ] DESIGN-SYSTEM.md'nin DESIGN.md türetmesi olarak yeniden yazılması: panel kabuğu, tablo, form, takvim, durum rozetleri, boş durum, iskelet yükleme, toast
+- [x] Font: Inter, `@fontsource-variable/inter` paketinden yerel (`latin-ext` dahil). Geist kaldırıldı. Build artık ağa bağımlı değil (doğrulandı). Not: `next/font/local` yerine paketin kendi `@font-face` CSS'i kullanıldı; dosya kopyalamaya gerek kalmadı
+- [x] `globals.css` `@theme`: DESIGN.md paleti, radius, blur, motion, sayfa genişliği. Eşleme tablosu: [DESIGN-SYSTEM.md §1](04-panel/DESIGN-SYSTEM.md#1-tokenlar)
+- [x] Yardımcılar: `glass`, `glass-nav`, `grain`, `bg-dark-gradient`, `surface-dark` (gradyan + grain + beyaz metin), `text-display`, `text-label`, `animate-fade-in-up`, `animate-status-bounce`, `prefers-reduced-motion`
+- [x] Tipografi ölçeği (`DisplayHeading`, `BodyText`, `Eyebrow`)
+- [ ] **Erişilebilirlik kuralları** yazıldı ([DESIGN-SYSTEM.md §4](04-panel/DESIGN-SYSTEM.md#4-erişilebilirlik)); **ürün ekibi onayı bekleniyor** (Açık soru 1)
+- [x] DESIGN-SYSTEM.md yeniden yazıldı: token eşlemesi, bileşenler, panel türetmeleri (kabuk, tablo, form, takvim, rozetler, boş durum, iskelet, toast). Panel türetmeleri F5 öncesi onaya sunulacak
+- [x] `pnpm lint:tokens` (CI'da): hex, `rgb()` ve hazır Tailwind paleti yasak
+- [x] Prettier Tailwind eklentisi `globals.css`'e bağlandı (özel token'lar doğru sıralanır)
 
 ### F4.2 Bileşen kütüphanesi
 
@@ -247,11 +249,11 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F4.3 Tanıtım sitesi (DESIGN.md bölümleri)
 
-- [ ] Yüzen cam navigasyon
-- [ ] Hero: 92vh, 2.5rem, soyut görsel %60, gradyan katmanı, 22vw dekoratif metin, sağda cam kartlar (örnek arama ve randevu metrikleri)
-- [ ] Açık özellik ızgarası: yapışkan başlık ve 2×3 ikon-etiket, görsel kart ve cam ilerleme paneli
-- [ ] Koyu "nasıl çalışır" bloğu: numaralı adımlar ve 3° döndürülmüş mock pencere (arama transkripti ve tool çağrısı), bounce durum etiketi
-- [ ] Bento fiyat ızgarası ([PRICING.md](00-product/PRICING.md) paketleri)
+- [x] Yüzen cam navigasyon
+- [x] Hero: 92vh, 2.5rem, gradyan katmanı, 22vw dekoratif metin, sağda cam kartlar. **Soyut görsel yerine geçici CSS zemini**; görsel gelince değişecek
+- [x] Açık özellik ızgarası: yapışkan başlık, 2×3 ikon-etiket, koyu görsel kart ve cam ilerleme paneli (görsel yerine CSS)
+- [x] Koyu "nasıl çalışır" bloğu: ızgara çizgi dokusu, numaralı adımlar, 3° döndürülmüş mock pencere, bounce durum etiketi
+- [x] Bento fiyat ızgarası (fiyatlar pilot sonrası)
 - [ ] Görsel varlıklar (bkz. Açık sorular: Recall logosu, hero görseli)
 
 ### F4.4 Kontroller

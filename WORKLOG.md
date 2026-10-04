@@ -10,19 +10,19 @@
 
 _Son güncelleme: 2026-10-04 (F1 oturumu)_
 
-| Konu                    | Durum                                                                                                                                                                      |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | **F1.8**: demo kliniğin Retell ajanı canlı oluşturuldu ve doğrulandı (`agent_d0b8…`). Sıradaki: Retell panelinden web call senaryo testleri, model/ses/ASR karşılaştırması |
-| Sıradaki faz            | **F4** (DESIGN.md tasarım sistemi), ardından F3 (hesaplar)                                                                                                                 |
-| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Vapi kodu tamamen silindi                                       |
-| Tasarım                 | **[DESIGN.md](DESIGN.md) tek kaynak** ([ADR-005](docs/decisions/ADR-005-design-system.md)). Kodda hâlâ eski teal + Geist teması var, F4.1'de taşınacak                     |
-| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                           |
-| Testler                 | **82 test** geçiyor (birim + PGlite entegrasyon). Lint, typecheck, format, `next build` temiz                                                                              |
-| Lokal DB                | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker)                                                                                                       |
-| GitHub                  | `origin` = https://github.com/recallapp0/recall (`main` push'lu)                                                                                                           |
-| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                            |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine): kontrast kuralı, kayıt dinleme rolleri                                     |
-| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                    |
+| Konu                    | Durum                                                                                                                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aktif faz               | **F4**: F4.1 ve F4.3 tamamlandı; sırada F4.2 (panel bileşenleri). **F1.8**: ajan `claude-4.5-haiku` ile gecikme testi bekliyor                                                      |
+| Sıradaki faz            | F4.2 → F3 (hesaplar)                                                                                                                                                                |
+| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Vapi kodu tamamen silindi                                                |
+| Tasarım                 | **[DESIGN.md](DESIGN.md) tek kaynak**, kodda uygulandı: token'lar `globals.css`, bileşenler `src/components/design`, stil rehberi `/dev/tasarim`, kural kontrolü `pnpm lint:tokens` |
+| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                    |
+| Testler                 | **107 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                             |
+| Lokal DB                | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker)                                                                                                                |
+| GitHub                  | `origin` = https://github.com/recallapp0/recall (`main` push'lu)                                                                                                                    |
+| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                     |
+| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine): kontrast kuralı, kayıt dinleme rolleri                                              |
+| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                             |
 
 ### Dallar ve saklanan işler
 
@@ -39,10 +39,10 @@ _Son güncelleme: 2026-10-04 (F1 oturumu)_
 4. F3: Better Auth (stash'teki yarım işi değerlendir)
 
 ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz | **F1.8**: demo kliniğin Retell ajanı canlı oluşturuldu ve doğrulandı (`agent_d0b8…`). Sıradaki: Retell panelinden web call senaryo testleri, model/ses/ASR karşılaştırması |
+| Aktif faz | **F4**: F4.1 ve F4.3 tamamlandı; sırada F4.2 (panel bileşenleri). **F1.8**: ajan `claude-4.5-haiku` ile gecikme testi bekliyor |
 | Ses sağlayıcısı | **Retell AI** ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Kodda hâlâ Vapi adaptörü var, F1.7'de kaldırılacak |
-| Tasarım | **[DESIGN.md](DESIGN.md) tek kaynak** ([ADR-005](docs/decisions/ADR-005-design-system.md)). Kodda hâlâ eski teal + Geist teması var, F4.1'de taşınacak |
-| Testler | 72 test geçiyor (birim + PGlite entegrasyon) |
+| Tasarım | **[DESIGN.md](DESIGN.md) tek kaynak**, kodda uygulandı: token'lar `globals.css`, bileşenler `src/components/design`, stil rehberi `/dev/tasarim`, kural kontrolü `pnpm lint:tokens` |
+| Testler | **107 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz |
 | Lokal DB | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker) |
 | Deploy | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. GitHub reposu ve Neon bekleniyor (F8) |
 | Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine) |
@@ -100,6 +100,37 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · DESIGN.md tasarım sistemi ve yeni tanıtım sayfası · F4.1, F4.3
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F4-design-system` → `main` · **Commit'ler:** bu kaydı içeren commit'ler
+
+**Ne yapıldı**
+
+- **F1.8 hazırlığı:** Ürün ekibi numara okuma ve hitap düzeltmelerini onayladı ("gayet iyi"). Gecikme deneyi için ajan `claude-4.5-haiku`'ya geçirildi (`.env.local` → `RETELL_LLM_MODEL`, `voice:sync` → `updated`). Karşılaştırma ekibin bir sonraki test aramasını bekliyor.
+- **F4.1:** [globals.css](src/app/globals.css) DESIGN.md token'larıyla yeniden yazıldı (palet, radius, blur, motion, `surface-dark` = gradyan + grain). Inter yerel paketten (`@fontsource-variable/inter`); build artık Google Fonts'a bağımlı değil (denetim raporu bulgusu kapandı). [`cn()`](src/lib/cn.ts) özel token'ları tanıyacak şekilde yapılandırıldı (yoksa `text-label` yanındaki `text-on-dark` düşüyordu; testli).
+- DESIGN.md §5 bileşenleri: [`src/components/design/`](src/components/design/) (`ActionButton/Link`, `GlassCard`, `GlassStatCard`, `StatusTag`, `SectionShell`, `PageContainer`, `FadeInUp`, `Eyebrow`, `DisplayHeading`, `BodyText`).
+- Canlı stil rehberi `/dev/tasarim` (production'da 404, doğrulandı).
+- `pnpm lint:tokens` ([check-design-tokens.ts](scripts/check-design-tokens.ts)) CI'a eklendi; ilk çalıştırmada bir ihlal yakaladı ve düzeltildi.
+- **F4.3:** Tanıtım sayfası DESIGN.md'nin dört bölümüyle yeniden kuruldu: hero (cam navigasyon, 22vw dekoratif metin, cam kartlar), açık özellik ızgarası, ızgara çizgili koyu "nasıl çalışır" bloğu ve 3° mock pencere, bento paketler. Hero görseli yerine geçici CSS zemini.
+- [DESIGN-SYSTEM.md](docs/04-panel/DESIGN-SYSTEM.md): token eşlemesi, bileşenler, panel türetme önerileri, durum rozetleri önerisi, erişilebilirlik (hesaplanmış kontrastlar), yazım tonu.
+
+**Neden**
+
+- Durum rozetleri renk yerine biçim ve metinle ayrışıyor: DESIGN.md tek vurgu rengi tanımlıyor ve renk tek başına anlam taşımamalı.
+- `body-strong` (Zinc-600) token'ı eklenmedi: kontrast kuralı ürün ekibinin onayını bekliyor.
+
+**Doğrulama**
+
+- `pnpm lint`, `lint:tokens`, `typecheck`, `format:check`, `test` (107/107), `build` temiz.
+- Tarayıcı: 1440 px ve 375 px'te yatay taşma yok; Inter ve Türkçe karakterler doğru. Mobilde gezinme çubuğundaki satır kırılması düzeltildi.
+
+**Açık kalanlar / dikkat**
+
+- Ürün ekibi onayı: kontrast kuralı, panel türetmeleri ve durum rozetleri (F5 öncesi).
+- Logo ve hero görseli birlikte üretilecek.
+- Sıradaki: F4.2 panel bileşenleri (form, tablo, dialog, takvim…), ardından F3.
+- Prettier Tailwind eklentisinin `tailwindStylesheet` ayarı olmadan özel sınıfları yanlış sıralıyor; ayar `.prettierrc.json` içinde.
 
 ### 2026-10-04 · Sayıların sesli okunması ve hitap kuralı · F1.8
 
