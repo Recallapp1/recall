@@ -10,7 +10,7 @@ import { Pool } from "pg";
 
 import { normalizePhone } from "../../lib/phone";
 import type { ClinicSettingsInput } from "../domain/clinic-settings";
-import { addLocalDays, isoWeekday, localToday, localToUtc, timeToMinutes } from "../domain/time";
+import { addLocalDays, localToday, localToUtc, timeToMinutes } from "../domain/time";
 import * as schema from "./schema";
 
 config({ path: [".env.local", ".env"], quiet: true });
@@ -99,6 +99,12 @@ async function main() {
         .innerJoin(schema.clinics, eq(schema.clinics.id, schema.voiceAgents.clinicId))
         .where(eq(schema.clinics.slug, DEMO_SLUG));
 
+      // Keep the clinic's team (Better Auth organization) across reseeds too.
+      const [previousClinic] = await tx
+        .select({ organizationId: schema.clinics.organizationId })
+        .from(schema.clinics)
+        .where(eq(schema.clinics.slug, DEMO_SLUG));
+
       await tx.delete(schema.clinics).where(eq(schema.clinics.slug, DEMO_SLUG));
       // Free the number if another local clinic was using it.
       await tx.delete(schema.phoneNumbers).where(eq(schema.phoneNumbers.e164, phoneNumber));
@@ -108,6 +114,7 @@ async function main() {
         .values({
           slug: DEMO_SLUG,
           name: "Gülüş Diş Kliniği",
+          organizationId: previousClinic?.organizationId ?? null,
           timezone: TIME_ZONE,
           transferPhoneNumber: null,
           address: "Moda Caddesi No:12, Kadıköy, İstanbul",
@@ -183,29 +190,137 @@ async function main() {
         })),
       );
 
-      // One existing appointment on the next weekday, so availability has something to avoid.
+      // A sample week for the panel: past, today and upcoming appointments
+      // (fictional patients), a few calls and open callback requests.
       const today = localToday(new Date(), TIME_ZONE);
-      let date = addLocalDays(today, 1);
-      while (isoWeekday(date) > 5) date = addLocalDays(date, 1);
-      const cleaning = services.find((s) => s.name === "Diş Taşı Temizliği")!;
-      const [patient] = await tx
+      const byName = (name: string) => services.find((s) => s.name === name)!;
+      const samplePatients = await tx
         .insert(schema.patients)
-        .values({ clinicId: clinic.id, fullName: "Ayşe Yılmaz", phone: "+905321234567" })
+        .values(
+          [
+            ["Ayşe Yılmaz", "+905321234567"],
+            ["Mehmet Kaya", "+905331112233"],
+            ["Zeynep Arslan", "+905442223344"],
+            ["Can Öztürk", "+905053334455"],
+            ["Elif Şahin", "+905324445566"],
+            ["Burak Demir", "+905365556677"],
+            ["Selin Aydın", "+905426667788"],
+            ["Emre Çelik", "+905557778899"],
+          ].map(([fullName, phone]) => ({
+            clinicId: clinic.id,
+            fullName: fullName!,
+            phone: phone!,
+          })),
+        )
         .returning();
-      const startsAt = localToUtc(date, timeToMinutes("10:00"), TIME_ZONE);
-      await tx.insert(schema.appointments).values({
-        clinicId: clinic.id,
-        patientId: patient.id,
-        practitionerId: elif.id,
-        serviceId: cleaning.id,
-        startsAt,
-        endsAt: new Date(startsAt.getTime() + cleaning.durationMinutes * 60_000),
-        source: "panel",
-      });
+
+      type Sample = [
+        dayOffset: number,
+        time: string,
+        patient: number,
+        practitioner: "can" | "elif",
+        service: string,
+        status: schema.Appointment["status"],
+        source: schema.Appointment["source"],
+      ];
+      const sample: Sample[] = [
+        [-2, "09:30", 0, "elif", "Muayene / Kontrol", "completed", "voice"],
+        [-2, "11:00", 1, "can", "Dolgu", "completed", "panel"],
+        [-1, "10:00", 2, "elif", "Diş Taşı Temizliği", "no_show", "voice"],
+        [-1, "14:00", 3, "can", "Kanal Tedavisi", "completed", "panel"],
+        [0, "09:00", 4, "elif", "Muayene / Kontrol", "confirmed", "voice"],
+        [0, "10:00", 5, "can", "Diş Çekimi", "scheduled", "voice"],
+        [0, "10:15", 6, "elif", "Diş Taşı Temizliği", "cancelled", "voice"],
+        [0, "11:30", 7, "elif", "Dolgu", "scheduled", "panel"],
+        [0, "14:00", 0, "can", "İmplant Görüşmesi", "confirmed", "voice"],
+        [0, "15:30", 2, "elif", "Diş Beyazlatma", "scheduled", "voice"],
+        [1, "10:00", 1, "elif", "Diş Taşı Temizliği", "scheduled", "panel"],
+        [1, "13:30", 3, "can", "Muayene / Kontrol", "scheduled", "voice"],
+        [2, "09:30", 5, "elif", "Dolgu", "confirmed", "voice"],
+        [3, "16:00", 6, "can", "Kanal Tedavisi", "scheduled", "voice"],
+      ];
+      const appointmentRows = sample.map(
+        ([offset, time, patient, who, serviceName, status, source]) => {
+          const service = byName(serviceName);
+          const startsAt = localToUtc(addLocalDays(today, offset), timeToMinutes(time), TIME_ZONE);
+          return {
+            clinicId: clinic.id,
+            patientId: samplePatients[patient]!.id,
+            practitionerId: who === "can" ? can.id : elif.id,
+            serviceId: service.id,
+            startsAt,
+            endsAt: new Date(startsAt.getTime() + service.durationMinutes * 60_000),
+            status,
+            source,
+            cancelledAt: status === "cancelled" ? new Date() : null,
+          };
+        },
+      );
+      await tx.insert(schema.appointments).values(appointmentRows);
+
+      const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
+      const sampleCalls = await tx
+        .insert(schema.calls)
+        .values(
+          [
+            {
+              minutes: 25,
+              duration: 142,
+              outcome: "booked",
+              summary: "Arayan diş taşı temizliği için randevu aldı.",
+            },
+            {
+              minutes: 70,
+              duration: 64,
+              outcome: "info",
+              summary: "Arayan otopark ve ödeme seçeneklerini sordu.",
+            },
+            {
+              minutes: 140,
+              duration: 95,
+              outcome: "callback",
+              summary:
+                "Arayan implant fiyatı için hekimle görüşmek istedi; geri arama talebi oluşturuldu.",
+            },
+            { minutes: 300, duration: 12, outcome: "abandoned", summary: null },
+          ].map((c, index) => ({
+            clinicId: clinic.id,
+            provider: "retell",
+            providerCallId: `seed_call_${index}`,
+            fromNumber: samplePatients[index]!.phone,
+            toNumber: phoneNumber,
+            startedAt: minutesAgo(c.minutes),
+            endedAt: minutesAgo(c.minutes - Math.ceil(c.duration / 60)),
+            durationSeconds: c.duration,
+            outcome: c.outcome as schema.Call["outcome"],
+            summary: c.summary,
+            createdAt: minutesAgo(c.minutes),
+          })),
+        )
+        .returning();
+
+      await tx.insert(schema.callbackRequests).values([
+        {
+          clinicId: clinic.id,
+          callId: sampleCalls[2]!.id,
+          patientName: samplePatients[2]!.fullName,
+          phone: samplePatients[2]!.phone,
+          reason: "İmplant tedavisinin fiyatı ve süresi hakkında hekimle görüşmek istiyor.",
+        },
+        {
+          clinicId: clinic.id,
+          callId: null,
+          patientName: null,
+          phone: "+905309998877",
+          reason: "Çocuğu için pedodonti hizmeti olup olmadığını sordu.",
+        },
+      ]);
 
       console.info(`Seeded "${clinic.name}" (${clinic.id}) on ${phoneNumber}`);
       console.info(`  practitioners: ${can.title} ${can.name}, ${elif.title} ${elif.name}`);
-      console.info(`  services: ${services.length}, sample appointment: ${date} 10:00`);
+      console.info(
+        `  services: ${services.length}, sample appointments: ${appointmentRows.length}, calls: ${sampleCalls.length}`,
+      );
     });
   } finally {
     await pool.end();

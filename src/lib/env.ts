@@ -11,6 +11,11 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_URL: z.url(),
   DATABASE_URL: z.url(),
+  /**
+   * Connection pool size. `pnpm db:local` (PGlite socket server) becomes
+   * unstable with concurrent connections and must use 1.
+   */
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(50).default(10),
 
   // Optional so the panel runs without voice; voice code asserts them via retellConfig().
   RETELL_API_KEY: optionalString,

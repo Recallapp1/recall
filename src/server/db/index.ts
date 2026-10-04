@@ -16,7 +16,8 @@ export type Executor = Database | Transaction;
 const globalForDb = globalThis as unknown as { recallDb?: Database };
 
 function createDb(): Database {
-  const pool = new Pool({ connectionString: env().DATABASE_URL, max: 10 });
+  const config = env();
+  const pool = new Pool({ connectionString: config.DATABASE_URL, max: config.DATABASE_POOL_MAX });
   // Lets Vercel Fluid Compute close idle connections before an instance is suspended.
   attachDatabasePool(pool);
   return drizzle({ client: pool, schema, casing: "snake_case" });
