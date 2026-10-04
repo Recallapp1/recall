@@ -17,6 +17,8 @@ import {
 } from "@/components/design";
 import { env } from "@/lib/env";
 
+import { PanelShowcase } from "./panel-showcase";
+
 export const metadata: Metadata = { title: "Tasarım sistemi", robots: { index: false } };
 
 const swatches = [
@@ -31,6 +33,9 @@ const swatches = [
   { name: "heading", note: "Başlık metni", className: "bg-heading" },
   { name: "body", note: "Gövde metni (7,6:1)", className: "bg-body" },
   { name: "success", note: "Olumlu durum", className: "bg-success" },
+  { name: "success-soft", note: "Olumlu rozet zemini", className: "bg-success-soft" },
+  { name: "danger", note: "Hata ve yıkıcı eylem (panel)", className: "bg-danger" },
+  { name: "danger-soft", note: "Hata rozeti / uyarı zemini", className: "bg-danger-soft" },
   { name: "hairline", note: "Kenarlık ve ayırıcı", className: "bg-hairline" },
 ];
 
@@ -98,7 +103,7 @@ export default async function DesignSystemPage() {
           <Eyebrow className="text-body">Tipografi</Eyebrow>
           <DisplayHeading>Başlık · display</DisplayHeading>
           <BodyText>
-            Gövde metni: 300–400 ağırlık, Zinc-500. Türkçe karakterler: ğüşıöç ĞÜŞİÖÇ.
+            Gövde metni: Montserrat 400, `body` token (7,6:1). Türkçe karakterler: ğüşıöç ĞÜŞİÖÇ.
           </BodyText>
           <Eyebrow className="text-heading">Etiket · 10px · 0.2em</Eyebrow>
         </div>
@@ -116,6 +121,15 @@ export default async function DesignSystemPage() {
             </li>
           ))}
         </ul>
+      </SectionShell>
+
+      <SectionShell tone="light" className="px-6 py-12 sm:px-12">
+        <Eyebrow className="text-primary">Panel bileşenleri · F4.2</Eyebrow>
+        <p className="mt-2 mb-8 max-w-2xl text-sm text-body">
+          shadcn/ui (Radix) tabanlı, DESIGN.md token&apos;larıyla yeniden temalandı. Türetmeler
+          docs/04-panel/DESIGN-SYSTEM.md §3&apos;te; F5 öncesi ürün ekibinin onayını bekliyor.
+        </p>
+        <PanelShowcase />
       </SectionShell>
     </PageContainer>
   );
