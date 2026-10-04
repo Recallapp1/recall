@@ -5,6 +5,35 @@ import { extendTailwindMerge } from "tailwind-merge";
  * tailwind-merge must know our custom utilities; otherwise it treats
  * `text-label` as a text colour and silently drops `text-on-dark` next to it.
  */
+/** Colour tokens from globals.css `@theme` (kept in sync by cn.test.ts). */
+export const DESIGN_COLORS = [
+  "ink",
+  "surface-dark",
+  "surface-darker",
+  "surface-dark-hover",
+  "surface-raised",
+  "primary",
+  "primary-hover",
+  "primary-soft",
+  "success",
+  "success-soft",
+  "danger",
+  "danger-hover",
+  "danger-soft",
+  "canvas",
+  "paper",
+  "accent",
+  "body",
+  "heading",
+  "hairline",
+  "glass",
+  "glass-strong",
+  "glass-border",
+  "on-dark",
+  "on-dark-muted",
+  "on-dark-soft",
+] as const;
+
 type CustomGroups = "text-display" | "text-label" | "glass" | "dark-surface" | "grain";
 
 const twMerge = extendTailwindMerge<CustomGroups>({
@@ -17,29 +46,7 @@ const twMerge = extendTailwindMerge<CustomGroups>({
       grain: ["grain"],
     },
     theme: {
-      color: [
-        "ink",
-        "surface-dark",
-        "surface-darker",
-        "surface-dark-hover",
-        "surface-raised",
-        "primary",
-        "primary-hover",
-        "primary-soft",
-        "success",
-        "canvas",
-        "paper",
-        "accent",
-        "body",
-        "heading",
-        "hairline",
-        "glass",
-        "glass-strong",
-        "glass-border",
-        "on-dark",
-        "on-dark-muted",
-        "on-dark-soft",
-      ],
+      color: [...DESIGN_COLORS],
       radius: ["section", "bento", "card", "card-sm"],
     },
   },

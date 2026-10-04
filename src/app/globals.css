@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /*
  * Design tokens. Single source: DESIGN.md (ADR-005, palette: ADR-007).
@@ -21,6 +22,10 @@
   --color-primary-soft: #dbeafe; /* icon chips, highlights on light */
   --color-accent: #60a5fa; /* highlight on dark only (6.9:1 on navy; 2.5:1 on white) */
   --color-success: #15803d; /* positive status text and dots (5.0:1 on white) */
+  --color-success-soft: #dcfce7; /* positive badge background (success text 4.6:1) */
+  --color-danger: #b91c1c; /* errors and destructive actions, panel (6.5:1 on white) */
+  --color-danger-hover: #991b1b;
+  --color-danger-soft: #fee2e2; /* error badge / alert background (danger text 5.3:1) */
   --color-body: #475569; /* body text on light (7.6:1 on white) */
   --color-heading: #0b1736; /* headings on light */
   --color-hairline: #e3e8f2; /* borders and dividers on light */
@@ -77,6 +82,70 @@
   }
 }
 
+/* ─── Radix state variants ───────────────────────────────────────────────── */
+/* Used by src/components/ui (shadcn/ui): `data-open:`, `data-checked:` …
+   Copied from shadcn's tailwind.css (MIT) so the CLI is not a dependency. */
+
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-checked {
+  &:where([data-state="checked"]),
+  &:where([data-checked]:not([data-checked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-unchecked {
+  &:where([data-state="unchecked"]),
+  &:where([data-unchecked]:not([data-unchecked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-selected {
+  &:where([data-selected="true"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-active {
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-horizontal {
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-vertical {
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
+}
+
 /* ─── Utilities ─────────────────────────────────────────────────────────── */
 
 /* Glass panel: every glass element carries the 1px 10% white border (DESIGN.md §6). */
@@ -129,6 +198,8 @@
 
 @utility surface-dark {
   @apply grain bg-dark-gradient text-on-dark;
+  /* primary is only 2.6:1 on navy; the focus ring switches to the accent. */
+  --focus-ring: var(--color-accent);
 }
 
 /* Display headings: 500–700 weight, -0.05em tracking, 1.05 line-height. */
@@ -160,8 +231,17 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Tailwind 4 defaults borders to currentColor; DESIGN.md borders are hairline. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-hairline);
+  }
+
+  /* Focus indicator needs 3:1 against its surface (WCAG 1.4.11): primary on
+     light (6.7:1), accent inside dark surfaces (6.9:1, set by surface-dark). */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--focus-ring, var(--color-primary));
     outline-offset: 2px;
   }
 

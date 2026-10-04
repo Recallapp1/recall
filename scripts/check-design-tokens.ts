@@ -20,6 +20,13 @@ const RULES: Array<{ pattern: RegExp; message: string }> = [
       /\b(bg|text|border|from|via|to|ring|fill|stroke|outline|decoration|shadow)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|white|black)(-\d{2,3})?\b/g,
     message: "Tailwind palette colour (use a DESIGN.md token)",
   },
+  {
+    // shadcn/ui's own theme names do not exist here (ADR-008); a freshly added
+    // component would render unstyled without any build error.
+    pattern:
+      /\b(bg|text|border|ring|outline|fill|stroke|from|via|to|divide|placeholder|caret)-(background|foreground|muted|muted-foreground|popover|popover-foreground|card|card-foreground|secondary|secondary-foreground|accent-foreground|primary-foreground|destructive|input|ring|border|sidebar[\w-]*|chart-\d)(?![\w-])/g,
+    message: "shadcn theme token (map it to a DESIGN.md token, see ADR-008)",
+  },
 ];
 
 function files(dir: string): string[] {
