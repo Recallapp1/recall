@@ -27,12 +27,19 @@ export interface TestClinic {
   ctx: ClinicContext;
   practitionerId: string;
   serviceId: string;
+  phoneNumber: string;
+  /** Retell agent id linked to this clinic, as if `voice:sync` had run. */
+  agentId: string;
 }
 
 /** A clinic open weekdays 09:00–17:00 with one practitioner and a 30-minute service. */
 export async function createTestClinic(
   db: Database,
-  overrides: { settings?: ClinicSettingsInput; phoneNumber?: string } = {},
+  overrides: {
+    settings?: ClinicSettingsInput;
+    phoneNumber?: string;
+    transferPhoneNumber?: string;
+  } = {},
 ): Promise<TestClinic> {
   counter += 1;
   const settings: ClinicSettingsInput = overrides.settings ?? {
@@ -43,10 +50,23 @@ export async function createTestClinic(
     .values({
       slug: `test-clinic-${counter}`,
       name: `Test Kliniği ${counter}`,
-      phoneNumber: overrides.phoneNumber ?? `+90212000${String(counter).padStart(4, "0")}`,
+      transferPhoneNumber: overrides.transferPhoneNumber ?? null,
       settings,
     })
     .returning();
+  const phoneNumber = overrides.phoneNumber ?? `+90212000${String(counter).padStart(4, "0")}`;
+  const agentId = `agent_test_${counter}`;
+  await db
+    .insert(schema.phoneNumbers)
+    .values({ clinicId: clinic.id, e164: phoneNumber, provider: "retell" });
+  await db.insert(schema.voiceAgents).values({
+    clinicId: clinic.id,
+    provider: "retell",
+    externalAgentId: agentId,
+    externalLlmId: `llm_test_${counter}`,
+    agentVersion: 0,
+    status: "synced",
+  });
   const [practitioner] = await db
     .insert(schema.practitioners)
     .values({ clinicId: clinic.id, name: "Can Demir", title: "Dt." })
@@ -68,5 +88,7 @@ export async function createTestClinic(
     ctx: { clinic, settings: parseClinicSettings(clinic.settings) },
     practitionerId: practitioner.id,
     serviceId: service.id,
+    phoneNumber,
+    agentId,
   };
 }

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { rescheduleAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
+import { DomainError } from "../../domain/errors";
 import { spokenDate } from "../../domain/time";
 import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
 import { defineTool } from "./define";
@@ -22,6 +23,9 @@ export const rescheduleAppointmentTool = defineTool({
     phone: phone.optional(),
   }),
   async handler(ctx, input) {
+    if (ctx.clinic.clinic.status === "paused") {
+      throw new DomainError("CLINIC_PAUSED", "Klinik şu anda yeni randevu almıyor.");
+    }
     const { clinic, settings } = ctx.clinic;
     const { previous, appointment } = await rescheduleAppointment(ctx.db, ctx.clinic, {
       ...input,

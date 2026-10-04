@@ -20,7 +20,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/server/db/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "voice:sync": "tsx --conditions=react-server scripts/voice-sync.ts",
+    "voice:voices": "tsx --conditions=react-server scripts/voice-voices.ts",
+    "voice:send": "tsx --conditions=react-server scripts/retell-send.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
@@ -31,6 +34,7 @@
     "pg": "^8.23.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "retell-sdk": "^6.0.1",
     "server-only": "^0.0.1",
     "zod": "^4.6.5"
   },

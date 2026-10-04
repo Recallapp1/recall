@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseClinicSettings } from "../domain/clinic-settings";
 import {
+  buildCallVariables,
   buildFirstMessage,
   buildSystemPrompt,
   isWithinClinicHours,
@@ -14,13 +15,16 @@ const clinicHours = [1, 2, 3, 4, 5].map((weekday) => ({
   endTime: "18:00:00",
 }));
 
+const clinic = {
+  name: "Gülüş Diş Kliniği",
+  address: "Moda Cad. No:1 Kadıköy",
+  timezone: "Europe/Istanbul",
+  transferPhoneNumber: null as string | null,
+};
+
 function promptInput(overrides: Partial<PromptInput> = {}): PromptInput {
   return {
-    clinic: {
-      name: "Gülüş Diş Kliniği",
-      address: "Moda Cad. No:1 Kadıköy",
-      timezone: "Europe/Istanbul",
-    },
+    clinic,
     settings: parseClinicSettings({ assistant: { name: "Elif" } }),
     directory: {
       clinicHours,
@@ -36,22 +40,38 @@ function promptInput(overrides: Partial<PromptInput> = {}): PromptInput {
         },
       ],
     },
-    callerPhone: "+905321234567",
-    transferAvailable: false,
-    now: new Date("2026-10-04T09:00:00Z"), // Sunday 12:00 in Istanbul
+    placeholders: {
+      now: "<NOW>",
+      calendar: "<CAL>",
+      callerPhone: "<CALLER>",
+      transferAvailable: "<TRANSFER>",
+      clinicStatus: "<STATUS>",
+    },
+    toolNames: { endCall: "end_call", transferCall: "transfer_call" },
     ...overrides,
   };
 }
 
 describe("buildSystemPrompt", () => {
-  it("includes the clinic, today's local date and the directory with ids", () => {
+  it("includes the clinic identity and directory with ids", () => {
     const prompt = buildSystemPrompt(promptInput());
     expect(prompt).toContain("Sen Gülüş Diş Kliniği için çalışan telefon asistanısın. Adın Elif.");
-    expect(prompt).toContain("4 Ekim 2026 Pazar, saat 12:00");
     expect(prompt).toContain("- Dt. Can Demir (id: p-1)");
     expect(prompt).toContain("Diş Taşı Temizliği [temizlik, detertraj]: 30 dk (id: s-1)");
     expect(prompt).toContain("- Pazartesi: 09:00-18:00");
     expect(prompt).toContain("- Pazar: kapalı");
+  });
+
+  it("references call-time values only through placeholders", () => {
+    const prompt = buildSystemPrompt(promptInput());
+    expect(prompt).toContain("Şu an: <NOW> (saat dilimi Europe/Istanbul)");
+    expect(prompt).toContain("<CAL>");
+    expect(prompt).toContain('Arayan numara: "<CALLER>"');
+    expect(prompt).toContain('Klinik durumu: "<STATUS>"');
+  });
+
+  it("is identical for every call, so it can be synced ahead of time", () => {
+    expect(buildSystemPrompt(promptInput())).toBe(buildSystemPrompt(promptInput()));
   });
 
   it("hides prices unless the clinic allows them", () => {
@@ -61,26 +81,25 @@ describe("buildSystemPrompt", () => {
     expect(buildSystemPrompt(promptInput({ settings }))).toContain("1.500 TL ile 2.500 TL arası");
   });
 
-  it("routes humans to a transfer or a callback depending on availability", () => {
-    expect(buildSystemPrompt(promptInput({ transferAvailable: true }))).toContain(
-      "transferCall kullan",
+  it("offers transfer only when the clinic has a transfer number, gated by availability", () => {
+    expect(buildSystemPrompt(promptInput())).not.toContain("transfer_call");
+
+    const withTransfer = buildSystemPrompt(
+      promptInput({ clinic: { ...clinic, transferPhoneNumber: "+905550000000" } }),
     );
-    expect(buildSystemPrompt(promptInput({ transferAvailable: false }))).toContain(
-      "create_callback_request ile not bırak",
+    expect(withTransfer).toContain(
+      '"<TRANSFER>" değeri "evet" ise transfer_call ile kliniğe aktar',
     );
   });
 
-  it("asks for a phone number when caller ID is withheld", () => {
-    expect(buildSystemPrompt(promptInput({ callerPhone: null }))).toContain("Arayan numara: gizli");
-  });
-
-  it("always keeps the safety rules", () => {
+  it("always keeps the safety rules and appends clinic instructions", () => {
     const settings = parseClinicSettings({
       assistant: { extraInstructions: "İmplant için muayene öner." },
     });
     const prompt = buildSystemPrompt(promptInput({ settings }));
     expect(prompt).toContain("Tıbbi tavsiye");
     expect(prompt).toContain("112");
+    expect(prompt).toContain("end_call");
     expect(prompt).toContain("# Klinik özel talimatları\nİmplant için muayene öner.");
   });
 });
@@ -100,6 +119,31 @@ describe("buildFirstMessage", () => {
     expect(buildFirstMessage({ name: "Bella" }, settings)).toBe(
       "Bella'ya hoş geldiniz! Size nasıl yardımcı olabilirim?",
     );
+  });
+});
+
+describe("buildCallVariables", () => {
+  const MONDAY_NOON = new Date("2026-10-05T09:00:00Z"); // 12:00 Istanbul
+  const SUNDAY_NOON = new Date("2026-10-04T09:00:00Z");
+  const base = { status: "active" as const, timezone: "Europe/Istanbul" };
+
+  it("allows transfer only with a number and during clinic hours", () => {
+    const withNumber = { ...base, transferPhoneNumber: "+905550000000" };
+    expect(buildCallVariables(withNumber, clinicHours, MONDAY_NOON).transfer_available).toBe(
+      "evet",
+    );
+    expect(buildCallVariables(withNumber, clinicHours, SUNDAY_NOON).transfer_available).toBe(
+      "hayır",
+    );
+    expect(
+      buildCallVariables({ ...base, transferPhoneNumber: null }, clinicHours, MONDAY_NOON)
+        .transfer_available,
+    ).toBe("hayır");
+  });
+
+  it("passes the clinic status through", () => {
+    const paused = { ...base, status: "paused" as const, transferPhoneNumber: null };
+    expect(buildCallVariables(paused, clinicHours, MONDAY_NOON).clinic_status).toBe("paused");
   });
 });
 

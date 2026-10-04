@@ -12,14 +12,12 @@ const envSchema = z.object({
   APP_URL: z.url(),
   DATABASE_URL: z.url(),
 
-  VAPI_WEBHOOK_SECRET: z.string().min(16, "VAPI_WEBHOOK_SECRET must be at least 16 characters"),
-  VAPI_API_KEY: optionalString,
-
-  VOICE_LLM_MODEL: z.string().default("claude-opus-5-5"),
-  VOICE_TRANSCRIBER_PROVIDER: z.string().default("deepgram"),
-  VOICE_TRANSCRIBER_MODEL: z.string().default("nova-2"),
-  VOICE_TTS_PROVIDER: z.string().default("azure"),
-  VOICE_TTS_VOICE_ID: z.string().default("tr-TR-EmelNeural"),
+  // Optional so the panel runs without voice; voice code asserts them via retellConfig().
+  RETELL_API_KEY: optionalString,
+  /** Default voice for clinics that have not picked one (`pnpm voice:voices`). */
+  RETELL_VOICE_ID: optionalString,
+  /** One of Retell's supported LLM ids; see docs/decisions/ADR-003-llm-model.md. */
+  RETELL_LLM_MODEL: z.string().default("claude-5-sonnet"),
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   NETGSM_USERCODE: optionalString,

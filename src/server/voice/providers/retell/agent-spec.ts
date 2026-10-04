@@ -1,0 +1,165 @@
+import "server-only";
+
+import { createHash } from "node:crypto";
+
+import type Retell from "retell-sdk";
+
+import type { Clinic } from "../../../db/schema";
+import type { ClinicSettings } from "../../../domain/clinic-settings";
+import type { ClinicDirectory } from "../../../domain/clinics";
+import { practitionerDisplayName } from "../../../domain/clinics";
+import { buildFirstMessage, buildSystemPrompt, type CallVariables } from "../../prompt";
+import { toolParameters, tools } from "../../tools";
+
+type LlmParams = Retell.LlmCreateParams;
+type AgentParams = Omit<Retell.AgentCreateParams, "response_engine">;
+
+export interface RetellAgentSpec {
+  llm: LlmParams;
+  agent: AgentParams;
+}
+
+export interface AgentSpecInput {
+  clinic: Clinic;
+  settings: ClinicSettings;
+  directory: ClinicDirectory;
+  appUrl: string;
+  llmModel: string;
+  defaultVoiceId: string | undefined;
+}
+
+export const RETELL_ROUTES = {
+  inbound: "/api/voice/retell/inbound",
+  tools: "/api/voice/retell/tools",
+  events: "/api/voice/retell/events",
+} as const;
+
+const TOOL_NAMES = { endCall: "end_call", transferCall: "transfer_call" } as const;
+
+/** Fallbacks for our call variables, used when no inbound webhook ran (web and test calls). */
+const DEFAULT_CALL_VARIABLES: CallVariables = {
+  transfer_available: "hayır",
+  clinic_status: "active",
+};
+
+const MAX_BOOSTED_KEYWORDS = 100;
+
+/**
+ * Everything Retell needs to run a clinic's assistant, derived purely from our
+ * data. Call-time values use Retell's built-in variables (clock, caller) and
+ * ours (transfer availability, clinic status), so this spec only changes when
+ * the clinic's configuration changes.
+ */
+export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
+  const { clinic, settings, directory, appUrl } = input;
+  const voiceId = settings.assistant.voiceId ?? input.defaultVoiceId;
+  if (!voiceId) {
+    throw new Error(
+      "No voice configured: set RETELL_VOICE_ID or the clinic's assistant.voiceId (pnpm voice:voices).",
+    );
+  }
+  const url = (path: string) => new URL(path, appUrl).toString();
+  const tz = clinic.timezone;
+
+  const generalPrompt = buildSystemPrompt({
+    clinic,
+    settings,
+    directory,
+    toolNames: TOOL_NAMES,
+    placeholders: {
+      now: `{{current_time_${tz}}}`,
+      calendar: `{{current_calendar_${tz}}}`,
+      callerPhone: "{{user_number}}",
+      transferAvailable: "{{transfer_available}}",
+      clinicStatus: "{{clinic_status}}",
+    },
+  });
+
+  const customTools: LlmParams["general_tools"] = tools.map((tool) => ({
+    type: "custom" as const,
+    name: tool.name,
+    description: tool.description,
+    url: url(RETELL_ROUTES.tools),
+    method: "POST" as const,
+    // Zod emits a JSON Schema object; Retell types `properties` loosely.
+    parameters: toolParameters(tool) as unknown as Retell.LlmCreateParams.CustomTool.Parameters,
+    speak_during_execution: Boolean(tool.fillerMessage),
+    ...(tool.fillerMessage && {
+      execution_message_description: tool.fillerMessage,
+      execution_message_type: "static_text" as const,
+    }),
+    speak_after_execution: true,
+    timeout_ms: 10_000,
+  }));
+
+  const builtInTools: NonNullable<LlmParams["general_tools"]> = [
+    {
+      type: "end_call",
+      name: TOOL_NAMES.endCall,
+      description:
+        "Hasta ile vedalaştıktan sonra, görüşme doğal olarak bittiğinde aramayı sonlandırır.",
+    },
+  ];
+  if (clinic.transferPhoneNumber) {
+    builtInTools.push({
+      type: "transfer_call",
+      name: TOOL_NAMES.transferCall,
+      description:
+        "Aramayı klinik ekibine aktarır. Sadece transfer_available 'evet' iken, acil durumda veya hasta insanla görüşmek istediğinde kullan.",
+      transfer_destination: { type: "predefined", number: clinic.transferPhoneNumber },
+      transfer_option: { type: "cold_transfer" },
+      speak_during_execution: true,
+      execution_message_description: "Sizi klinikteki arkadaşıma aktarıyorum, lütfen hatta kalın.",
+      execution_message_type: "static_text",
+    });
+  }
+
+  return {
+    llm: {
+      model: input.llmModel as LlmParams["model"],
+      model_temperature: 0,
+      start_speaker: "agent",
+      begin_message: buildFirstMessage(clinic, settings),
+      general_prompt: generalPrompt,
+      general_tools: [...(customTools ?? []), ...builtInTools],
+      default_dynamic_variables: { ...DEFAULT_CALL_VARIABLES },
+    },
+    agent: {
+      agent_name: `Recall · ${clinic.name}`.slice(0, 100),
+      voice_id: voiceId,
+      language: "tr-TR",
+      timezone: tz,
+      webhook_url: url(RETELL_ROUTES.events),
+      webhook_events: ["call_started", "call_ended", "call_analyzed"],
+      boosted_keywords: boostedKeywords(directory),
+      end_call_after_silence_ms: 20_000,
+      max_call_duration_ms: 15 * 60_000,
+    },
+  };
+}
+
+/** Clinic-specific words the speech recogniser should favour: names and services. */
+function boostedKeywords(directory: ClinicDirectory): string[] {
+  const words = [
+    ...directory.practitioners.map((p) => practitionerDisplayName(p)),
+    ...directory.practitioners.map((p) => p.name),
+    ...directory.services.flatMap((s) => [s.name, ...s.aliases]),
+  ];
+  return [...new Set(words.map((w) => w.trim()).filter(Boolean))].slice(0, MAX_BOOSTED_KEYWORDS);
+}
+
+/** Stable digest of a spec; unchanged specs are not pushed again. */
+export function specHash(spec: RetellAgentSpec): string {
+  return createHash("sha256").update(stableStringify(spec)).digest("hex");
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}

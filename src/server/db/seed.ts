@@ -91,9 +91,17 @@ async function main() {
 
   try {
     await db.transaction(async (tx) => {
+      // Keep the link to the remote Retell agent across reseeds; otherwise the
+      // next `voice:sync` would create a duplicate agent on Retell.
+      const [previous] = await tx
+        .select({ agent: schema.voiceAgents })
+        .from(schema.voiceAgents)
+        .innerJoin(schema.clinics, eq(schema.clinics.id, schema.voiceAgents.clinicId))
+        .where(eq(schema.clinics.slug, DEMO_SLUG));
+
       await tx.delete(schema.clinics).where(eq(schema.clinics.slug, DEMO_SLUG));
       // Free the number if another local clinic was using it.
-      await tx.delete(schema.clinics).where(eq(schema.clinics.phoneNumber, phoneNumber));
+      await tx.delete(schema.phoneNumbers).where(eq(schema.phoneNumbers.e164, phoneNumber));
 
       const [clinic] = await tx
         .insert(schema.clinics)
@@ -101,12 +109,28 @@ async function main() {
           slug: DEMO_SLUG,
           name: "Gülüş Diş Kliniği",
           timezone: TIME_ZONE,
-          phoneNumber,
           transferPhoneNumber: null,
           address: "Moda Caddesi No:12, Kadıköy, İstanbul",
           settings,
         })
         .returning();
+
+      await tx
+        .insert(schema.phoneNumbers)
+        .values({ clinicId: clinic.id, e164: phoneNumber, provider: "retell" });
+
+      if (previous) {
+        const { externalAgentId, externalLlmId, agentVersion, provider } = previous.agent;
+        // Spec hash is dropped so the next sync pushes the reseeded data.
+        await tx.insert(schema.voiceAgents).values({
+          clinicId: clinic.id,
+          provider,
+          externalAgentId,
+          externalLlmId,
+          agentVersion,
+          status: "pending",
+        });
+      }
 
       const [can, elif] = await tx
         .insert(schema.practitioners)

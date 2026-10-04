@@ -3,7 +3,15 @@ import "server-only";
 import { and, asc, eq, isNull } from "drizzle-orm";
 
 import type { Executor } from "../db";
-import { clinics, practitioners, services, workingHours, type Clinic } from "../db/schema";
+import {
+  clinics,
+  phoneNumbers,
+  practitioners,
+  services,
+  voiceAgents,
+  workingHours,
+  type Clinic,
+} from "../db/schema";
 import { parseClinicSettings, type ClinicSettings } from "./clinic-settings";
 
 export interface ClinicContext {
@@ -11,12 +19,44 @@ export interface ClinicContext {
   settings: ClinicSettings;
 }
 
-export async function findClinicByPhoneNumber(
-  exec: Executor,
-  phoneNumber: string,
-): Promise<ClinicContext | null> {
-  const [clinic] = await exec.select().from(clinics).where(eq(clinics.phoneNumber, phoneNumber));
+function toContext(clinic: Clinic | undefined): ClinicContext | null {
   return clinic ? { clinic, settings: parseClinicSettings(clinic.settings) } : null;
+}
+
+export async function findClinicById(exec: Executor, clinicId: string) {
+  const [clinic] = await exec.select().from(clinics).where(eq(clinics.id, clinicId));
+  return toContext(clinic);
+}
+
+export async function findClinicBySlug(exec: Executor, slug: string) {
+  const [clinic] = await exec.select().from(clinics).where(eq(clinics.slug, slug));
+  return toContext(clinic);
+}
+
+/** The clinic that owns an active inbound number (E.164). */
+export async function findClinicByPhoneNumber(exec: Executor, e164: string) {
+  const [row] = await exec
+    .select({ clinic: clinics })
+    .from(phoneNumbers)
+    .innerJoin(clinics, eq(clinics.id, phoneNumbers.clinicId))
+    .where(and(eq(phoneNumbers.e164, e164), eq(phoneNumbers.isActive, true)));
+  return toContext(row?.clinic);
+}
+
+/** The clinic whose synced voice agent has this provider-side id. */
+export async function findClinicByAgentId(
+  exec: Executor,
+  provider: string,
+  externalAgentId: string,
+) {
+  const [row] = await exec
+    .select({ clinic: clinics })
+    .from(voiceAgents)
+    .innerJoin(clinics, eq(clinics.id, voiceAgents.clinicId))
+    .where(
+      and(eq(voiceAgents.provider, provider), eq(voiceAgents.externalAgentId, externalAgentId)),
+    );
+  return toContext(row?.clinic);
 }
 
 /** Everything the assistant needs to know about a clinic at the start of a call. */

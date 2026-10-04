@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { bookAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
+import { DomainError } from "../../domain/errors";
 import { spokenDate } from "../../domain/time";
 import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
 import { defineTool } from "./define";
@@ -24,6 +25,9 @@ export const bookAppointmentTool = defineTool({
     notes: z.string().max(500).optional().describe("Hastanın belirttiği kısa not (şikâyet vb.)"),
   }),
   async handler(ctx, input) {
+    if (ctx.clinic.clinic.status === "paused") {
+      throw new DomainError("CLINIC_PAUSED", "Klinik şu anda yeni randevu almıyor.");
+    }
     const { clinic, settings } = ctx.clinic;
     const { appointment, created } = await bookAppointment(ctx.db, ctx.clinic, {
       ...input,

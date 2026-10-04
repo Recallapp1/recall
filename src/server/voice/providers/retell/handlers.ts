@@ -1,0 +1,206 @@
+import "server-only";
+
+import { and, eq, isNotNull } from "drizzle-orm";
+import { verify } from "retell-sdk";
+import type { z } from "zod";
+
+import { normalizePhone } from "@/lib/phone";
+
+import type { Database } from "../../../db";
+import { voiceAgents } from "../../../db/schema";
+import { completeCall, upsertCall } from "../../../domain/calls";
+import {
+  findClinicByAgentId,
+  findClinicByPhoneNumber,
+  loadClinicDirectory,
+  type ClinicContext,
+} from "../../../domain/clinics";
+import { buildCallVariables } from "../../prompt";
+import { runTool } from "../../tools";
+import { RETELL_PROVIDER } from "./config";
+import { callEvent, functionCall, inboundWebhook, type RetellCall } from "./schemas";
+
+export interface RetellHandlerDeps {
+  db: Database;
+  apiKey: string;
+  now: () => Date;
+  defer: (task: () => Promise<void>) => void;
+}
+
+/**
+ * `call_inbound`: maps the dialled number to its clinic, pins the call to the
+ * clinic's synced agent and hands over call-time variables. Retell waits up to
+ * 10 s for this, so it stays small: a few indexed reads, no external calls.
+ */
+export async function handleInbound(request: Request, deps: RetellHandlerDeps) {
+  const parsed = await readVerified(request, deps.apiKey, inboundWebhook);
+  if (!parsed.ok) return parsed.response;
+  const inbound = parsed.data.call_inbound;
+
+  const number = normalizePhone(inbound.to_number);
+  const ctx = number ? await findClinicByPhoneNumber(deps.db, number) : null;
+  if (!ctx) {
+    log("warn", "retell.inbound.clinic_not_found");
+    return Response.json({ call_inbound: { reject: true } });
+  }
+
+  const [agent] = await deps.db
+    .select()
+    .from(voiceAgents)
+    .where(
+      and(
+        eq(voiceAgents.clinicId, ctx.clinic.id),
+        eq(voiceAgents.provider, RETELL_PROVIDER),
+        isNotNull(voiceAgents.externalAgentId),
+      ),
+    );
+  if (!agent?.externalAgentId) {
+    log("error", "retell.inbound.agent_not_synced", { clinicId: ctx.clinic.id });
+    return Response.json({ call_inbound: { reject: true } });
+  }
+
+  const now = deps.now();
+  const [directory] = await Promise.all([
+    loadClinicDirectory(deps.db, ctx.clinic.id),
+    inbound.call_id
+      ? upsertCall(deps.db, {
+          clinicId: ctx.clinic.id,
+          provider: RETELL_PROVIDER,
+          providerCallId: inbound.call_id,
+          fromNumber: inbound.from_number,
+          toNumber: inbound.to_number,
+          startedAt: now,
+        })
+      : null,
+  ]);
+
+  return Response.json({
+    call_inbound: {
+      override_agent_id: agent.externalAgentId,
+      ...(agent.agentVersion != null && { override_agent_version: agent.agentVersion }),
+      dynamic_variables: buildCallVariables(ctx.clinic, directory.clinicHours, now),
+      metadata: { clinic_id: ctx.clinic.id },
+    },
+  });
+}
+
+/** Custom function call: runs one provider-agnostic tool inside the call's clinic. */
+export async function handleFunctionCall(request: Request, deps: RetellHandlerDeps) {
+  const parsed = await readVerified(request, deps.apiKey, functionCall);
+  if (!parsed.ok) return parsed.response;
+  const { name, args, call } = parsed.data;
+
+  const ctx = await resolveClinic(deps.db, call);
+  if (!ctx) return errorResponse(404, "CLINIC_NOT_FOUND", "No clinic for this agent");
+
+  const callerPhone = normalizePhone(call.from_number);
+  const callRow = await upsertCall(deps.db, {
+    clinicId: ctx.clinic.id,
+    provider: RETELL_PROVIDER,
+    providerCallId: call.call_id,
+    fromNumber: callerPhone,
+    toNumber: call.to_number,
+    startedAt: timestamp(call.start_timestamp),
+  });
+
+  const result = await runTool(name, args, {
+    db: deps.db,
+    clinic: ctx,
+    callId: callRow.id,
+    callerPhone,
+    now: deps.now(),
+    defer: deps.defer,
+  });
+  return Response.json(result);
+}
+
+/** Lifecycle events: keeps our call record (duration, transcript, summary, cost) current. */
+export async function handleCallEvent(request: Request, deps: RetellHandlerDeps) {
+  const parsed = await readVerified(request, deps.apiKey, callEvent);
+  if (!parsed.ok) return parsed.response;
+  const { event, call } = parsed.data;
+
+  const ctx = await resolveClinic(deps.db, call);
+  if (!ctx) {
+    // Acknowledge anyway: retrying cannot fix an unknown agent.
+    log("warn", "retell.event.clinic_not_found", { event });
+    return Response.json({});
+  }
+
+  const callRow = await upsertCall(deps.db, {
+    clinicId: ctx.clinic.id,
+    provider: RETELL_PROVIDER,
+    providerCallId: call.call_id,
+    fromNumber: call.from_number,
+    toNumber: call.to_number,
+    startedAt: timestamp(call.start_timestamp),
+  });
+
+  if (event === "call_ended" || event === "call_analyzed") {
+    const combinedCostCents = call.call_cost?.combined_cost;
+    await completeCall(deps.db, callRow, {
+      startedAt: timestamp(call.start_timestamp),
+      endedAt: timestamp(call.end_timestamp),
+      durationSeconds: call.duration_ms != null ? call.duration_ms / 1000 : null,
+      endedReason: call.disconnection_reason,
+      transcript: call.transcript,
+      recordingUrl: ctx.settings.assistant.recordCalls ? call.recording_url : null,
+      summary: call.call_analysis?.call_summary,
+      costUsd: combinedCostCents != null ? combinedCostCents / 100 : null,
+    });
+  }
+  return Response.json({});
+}
+
+/**
+ * The tenant comes from the agent that handled the call — never from model
+ * output. When the inbound webhook also stamped a clinic id, both must agree.
+ */
+async function resolveClinic(db: Database, call: RetellCall): Promise<ClinicContext | null> {
+  const ctx = await findClinicByAgentId(db, RETELL_PROVIDER, call.agent_id);
+  const stamped = call.metadata?.clinic_id;
+  if (ctx && typeof stamped === "string" && stamped !== ctx.clinic.id) {
+    log("error", "retell.tenant_mismatch", { clinicId: ctx.clinic.id });
+    return null;
+  }
+  return ctx;
+}
+
+type Verified<T> = { ok: true; data: T } | { ok: false; response: Response };
+
+/** Verifies `X-Retell-Signature` against the raw body, then parses it. */
+async function readVerified<S extends z.ZodType>(
+  request: Request,
+  apiKey: string,
+  schema: S,
+): Promise<Verified<z.infer<S>>> {
+  const raw = await request.text();
+  const signature = request.headers.get("x-retell-signature");
+  if (!signature || !(await verify(raw, apiKey, signature))) {
+    return { ok: false, response: errorResponse(401, "UNAUTHORIZED", "Invalid signature") };
+  }
+
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    return { ok: false, response: errorResponse(400, "BAD_REQUEST", "Body is not JSON") };
+  }
+  const result = schema.safeParse(json);
+  if (!result.success) {
+    return { ok: false, response: errorResponse(400, "BAD_REQUEST", "Unexpected payload") };
+  }
+  return { ok: true, data: result.data };
+}
+
+function timestamp(ms: number | null | undefined): Date | null {
+  return ms != null ? new Date(ms) : null;
+}
+
+function errorResponse(status: number, code: string, message: string) {
+  return Response.json({ error: { code, message } }, { status });
+}
+
+function log(level: "warn" | "error", msg: string, fields: Record<string, unknown> = {}) {
+  console[level](JSON.stringify({ msg, ...fields }));
+}

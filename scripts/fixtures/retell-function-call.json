@@ -1,0 +1,11 @@
+{
+  "name": "find_appointments",
+  "args": {},
+  "call": {
+    "call_id": "call_local_test_1",
+    "agent_id": "__AGENT_ID__",
+    "call_type": "phone_call",
+    "from_number": "+905321234567",
+    "to_number": "+902120000000"
+  }
+}

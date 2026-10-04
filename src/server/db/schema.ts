@@ -60,6 +60,8 @@ export const callOutcome = pgEnum("call_outcome", [
 
 export const callbackStatus = pgEnum("callback_status", ["open", "done"]);
 
+export const voiceAgentStatus = pgEnum("voice_agent_status", ["pending", "synced", "error"]);
+
 /** Statuses that occupy a practitioner's time. Mirrored in the overlap exclusion constraint. */
 export const ACTIVE_APPOINTMENT_STATUSES = ["scheduled", "confirmed"] as const;
 
@@ -70,8 +72,6 @@ export const clinics = pgTable("clinics", {
   slug: text().notNull().unique(),
   name: text().notNull(),
   timezone: text().notNull().default("Europe/Istanbul"),
-  /** E.164 number connected to the voice platform; identifies the tenant on inbound calls. */
-  phoneNumber: text().unique(),
   transferPhoneNumber: text(),
   address: text(),
   settings: jsonb().$type<ClinicSettingsInput>().notNull().default({}),
@@ -79,6 +79,47 @@ export const clinics = pgTable("clinics", {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
+
+// ─── Voice ───────────────────────────────────────────────────────────────────
+
+/**
+ * The clinic's agent on the voice platform. Our database is the source of
+ * truth; the remote agent is a synced copy (docs/decisions/ADR-004).
+ */
+export const voiceAgents = pgTable("voice_agents", {
+  id: id(),
+  clinicId: clinicRef().unique(),
+  provider: text().notNull(),
+  externalAgentId: text().unique(),
+  externalLlmId: text(),
+  /** Agent version calls are pinned to, so a call never sees a half-applied update. */
+  agentVersion: integer(),
+  /** Hash of the last spec pushed, to skip no-op syncs. */
+  specHash: text(),
+  status: voiceAgentStatus().notNull().default("pending"),
+  /** Provider error message; never contains patient data. */
+  lastError: text(),
+  syncedAt: timestamp({ withTimezone: true }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/** Inbound numbers. The dialled number identifies the tenant on phone calls. */
+export const phoneNumbers = pgTable(
+  "phone_numbers",
+  {
+    id: id(),
+    clinicId: clinicRef(),
+    /** E.164 */
+    e164: text().notNull().unique(),
+    provider: text().notNull(),
+    /** Telephony carrier behind the number, e.g. "netgsm". */
+    carrier: text(),
+    isActive: boolean().notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.clinicId)],
+);
 
 // ─── Staff & services ────────────────────────────────────────────────────────
 
@@ -277,3 +318,5 @@ export type Patient = typeof patients.$inferSelect;
 export type Appointment = typeof appointments.$inferSelect;
 export type Call = typeof calls.$inferSelect;
 export type CallbackRequest = typeof callbackRequests.$inferSelect;
+export type VoiceAgent = typeof voiceAgents.$inferSelect;
+export type PhoneNumber = typeof phoneNumbers.$inferSelect;

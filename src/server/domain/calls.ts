@@ -90,29 +90,38 @@ export interface CallReport {
 
 const ABANDONED_UNDER_SECONDS = 10;
 
+/**
+ * Records what is known about a finished call. Providers may report in
+ * several events (ended, then analyzed) and retry them, so only fields present
+ * in this report are written and earlier values are never erased.
+ */
 export async function completeCall(exec: Executor, call: Call, report: CallReport) {
-  let outcome = call.outcome;
-  if (!outcome) {
-    const reason = report.endedReason?.toLowerCase() ?? "";
-    if (reason.includes("transfer") || reason.includes("forward")) outcome = "transferred";
-    else if ((report.durationSeconds ?? 0) < ABANDONED_UNDER_SECONDS) outcome = "abandoned";
-    else outcome = "info";
+  const updates: Partial<typeof calls.$inferInsert> = {};
+  if (report.startedAt) updates.startedAt = report.startedAt;
+  if (report.endedAt) updates.endedAt = report.endedAt;
+  if (report.durationSeconds != null) updates.durationSeconds = Math.round(report.durationSeconds);
+  if (report.endedReason) updates.endedReason = report.endedReason;
+  if (report.summary) updates.summary = report.summary;
+  if (report.transcript) updates.transcript = report.transcript;
+  if (report.recordingUrl) updates.recordingUrl = report.recordingUrl;
+  if (report.costUsd != null) updates.costUsd = report.costUsd.toFixed(4);
+
+  if (Object.keys(updates).length > 0) {
+    await exec
+      .update(calls)
+      .set(updates)
+      .where(and(eq(calls.id, call.id), eq(calls.clinicId, call.clinicId)));
   }
 
-  await exec
-    .update(calls)
-    .set({
-      startedAt: report.startedAt ?? call.startedAt,
-      endedAt: report.endedAt ?? new Date(),
-      durationSeconds: report.durationSeconds != null ? Math.round(report.durationSeconds) : null,
-      endedReason: report.endedReason ?? null,
-      summary: report.summary ?? null,
-      transcript: report.transcript ?? null,
-      recordingUrl: report.recordingUrl ?? null,
-      costUsd: report.costUsd != null ? report.costUsd.toFixed(4) : null,
-      outcome,
-    })
-    .where(and(eq(calls.id, call.id), eq(calls.clinicId, call.clinicId)));
+  // Derived outcomes go through the priority guard, so a booking made during
+  // the call is never overwritten by "info".
+  const reason = (report.endedReason ?? call.endedReason ?? "").toLowerCase();
+  const duration = report.durationSeconds ?? call.durationSeconds;
+  let derived: Outcome | null = null;
+  if (reason.includes("transfer") || reason.includes("forward")) derived = "transferred";
+  else if (duration != null && duration < ABANDONED_UNDER_SECONDS) derived = "abandoned";
+  else if (duration != null || report.endedAt) derived = "info";
+  if (derived) await markCallOutcome(exec, call.clinicId, call.id, derived);
 }
 
 export async function createCallbackRequest(
