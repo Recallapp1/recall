@@ -25,6 +25,7 @@ Kaynak gerçek: [`.env.example`](../../.env.example) ve [`src/lib/env.ts`](../..
 | Değişken                                              | Zorunlu          | Açıklama                                                                                      |
 | ----------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`                                        | ✓                | Postgres bağlantısı (Neon: pooled URL)                                                        |
+| `DATABASE_POOL_MAX`                                   |                  | Bağlantı havuzu (varsayılan 10). Yalnızca lokal PGlite için `1`                               |
 | `APP_URL`                                             | ✓                | Uygulamanın public URL'i (Retell webhook ve tool URL'leri bundan üretilir)                    |
 | `RETELL_API_KEY`                                      | ✓ (ses için)     | Retell API anahtarı (webhook rozetli); imza doğrulama da bununla yapılır                      |
 | `RETELL_VOICE_ID`                                     | ✓ (senkron için) | Varsayılan ses; klinik kendi sesini seçebilir                                                 |

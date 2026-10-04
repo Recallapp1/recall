@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04 (F3.1–F3.2 hesaplar, F5.1 panel kabuğu)_
+_Son güncelleme: 2026-10-04 (F3.4 denetim kaydı, F5.2 Bugün ekranı)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,8 +17,8 @@ _Son güncelleme: 2026-10-04 (F3.1–F3.2 hesaplar, F5.1 panel kabuğu)_
 | Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
 | Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
 | E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
-| Testler                 | **197 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
-| Lokal DB                | `pnpm db:local` (PGlite) veya `pnpm db:up` (Docker). PGlite verisi 2026-10-04 tarihinde bozuldu; yedek `.pglite.corrupt-20261004`. Uzun süreli kullanımda Docker tercih edilmeli                                                                                                               |
+| Testler                 | **205 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
+| Lokal DB                | `pnpm db:local` (PGlite, `DATABASE_POOL_MAX=1`, 5 dk'da bir `.pglite-snapshot.tar.gz`, açılmazsa otomatik geri yükler) veya `pnpm db:up` (Docker). Kurtarma adımları: 2026-10-04 "Bugün ekranı" kaydı                                                                                          |
 | Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                               |
 | GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
 | Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                |
@@ -77,6 +77,18 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · Denetim kaydı, Bugün ekranı ve lokal veritabanı olayı · F3.4, F5.2
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F5.2-bugun` · **Commit'ler:** bu kaydı içeren commit'ler
+
+- **F3.4:** `audit_events` tablosu ve `recordAudit()`. Giriş (Better Auth `session.create.after`), Recall ekibinin üye eklemesi ve davet kabulü kaydediliyor; metadata'da kişisel veri yok (testli).
+- **Panel veri katmanı** `src/server/domain/panel.ts`: randevu listesi (tarih, durum, kaynak, hekim, arama filtresi), günlük özet, asistanın son randevuları, geri arama listesi/durumu, durum geçişleri (`STATUS_TRANSITIONS`, iptal geri alınamaz), not güncelleme, takvim saat aralığı. Hekim rolü yalnızca kendi takvimini görür (`requirePanelScope`). Testler: kiracı izolasyonu, hekim kapsamı, geçişler.
+- **Bugün ekranı** (`/panel`): lacivert özet bandı (bugünkü randevu, asistanın bugün aldığı, bugünkü arama, açık geri arama; izinlere göre), hekim kolonlu gün takvimi ve "şimdi" çizgisi, asistanın son aldığı randevular, geri aranacaklar. Tarayıcıda doğrulandı.
+- **Seed:** klinik yeniden oluşturulurken organizasyon bağı korunuyor; bir haftalık örnek randevu (14), arama (4) ve geri arama (2) eklendi (hayali hastalar).
+- **Lokal DB olayı:** PGlite soket sunucusu, arka plan görev süresi dolup kabuk kapanınca ve ardından dev sunucusunun eşzamanlı bağlantılarıyla bozuldu (ECONNRESET, sonra WASM `Aborted()`). Yedek de bozuktu. Sıfırdan kuruldu. Önlemler: `DATABASE_POOL_MAX=1` (`.env.local`), `db:local` 5 dakikada bir anlık görüntü alıp açılmayan dizini otomatik geri yüklüyor. Bozuk dizinler `.pglite.corrupt-*` (gitignore).
+- **Kurtarma adımları (yeniden gerekirse):** `pnpm db:local` → `pnpm db:migrate` → `pnpm db:seed` → `voice_agents` satırını elle ekle (`agent_d0b8d67285431ede3db2c75201`, `llm_9a1ea885e8b399803b5f448102b4`, sürüm 0; yoksa `voice:sync` ikinci ajan açar) → `pnpm voice:sync --clinic gulus-dis` (`updated` görülmeli) → `pnpm clinic:member --clinic gulus-dis --email sahip@gulus.test --name "Deneme Sahip" --role owner` ve terminaldeki bağlantıyla parola.
+- Uzun vadede lokal geliştirme için Docker veya Neon geliştirme dalı önerilir (ürün ekibine soruldu).
 
 ### 2026-10-04 · Hesaplar, giriş, davet, roller ve panel kabuğu · F3.1, F3.2, F5.1, ADR-009
 

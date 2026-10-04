@@ -208,8 +208,8 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F3.4 Denetim kaydı (audit log)
 
-- [ ] `audit_events`: `id, clinic_id, actor_user_id, action, target_type, target_id, metadata (kişisel veri yok), created_at`
-- [ ] Kaydedilenler: giriş, rol değişikliği, davet, ayar değişikliği, hasta anonimleştirme, kayıt dinleme
+- [x] `audit_events`: `id, clinic_id, actor_user_id, action, target_type, target_id, metadata (kişisel veri yok), created_at` (migration `0005`); `recordAudit()` hata fırlatmaz, transaction içinde savepoint kullanır
+- [x] Kaydedilenler (şimdilik): giriş, Recall ekibinin üye eklemesi, davet kabulü. Rol değişikliği, davet, ayar, anonimleştirme, kayıt dinleme ilgili Server Action'larla birlikte (eylem adları `src/server/domain/audit.ts`)
 
 ### F3.5 Panel kişiselleştirme altyapısı
 
@@ -285,7 +285,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 | Ekran            | Rota                | İçerik                                                                                                         | Gerekli izin                                      |
 | ---------------- | ------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Bugün            | `/panel`            | Özet kartları (cam stat kartları), günün zaman çizelgesi, asistanın yeni aldığı randevular, açık geri aramalar | `appointments.read`                               |
+| Bugün ✅         | `/panel`            | Özet kartları (cam stat kartları), günün zaman çizelgesi, asistanın yeni aldığı randevular, açık geri aramalar | `appointments.read`                               |
 | Takvim           | `/panel/takvim`     | Gün/hafta, hekim kolonları, boş slota tıklayarak randevu, randevu detay paneli                                 | `appointments.read` / `create`                    |
 | Randevular       | `/panel/randevular` | Filtreli tablo, durum değiştirme (onayla, iptal, gelmedi, tamamlandı)                                          | `appointments.*`                                  |
 | Aramalar         | `/panel/aramalar`   | Liste (maskeli numara), detay: özet, transkript, kayıt oynatıcı, bağlı randevu                                 | `calls.read`, kayıt için `calls.listen_recording` |
