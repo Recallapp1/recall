@@ -11,7 +11,7 @@ import { Logo } from "./logo";
  */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 px-4 pt-3 sm:px-6">
+    <header className="sticky top-3 z-50 mt-8 px-8 sm:mt-11 sm:px-12">
       <HeaderSurface>
         <Link href="/" aria-label="Recall ana sayfa">
           <Logo className="transition-colors duration-300 group-data-[tone=light]/nav:text-heading" />

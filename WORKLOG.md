@@ -78,6 +78,18 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-04 · Navbar ile hero arasındaki oran · F4.3
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit
+
+**Ne yapıldı**
+
+- Navbar hero kartının üst kenarına yapışıktı. Header artık `sticky top-3 mt-8 sm:mt-11 px-8 sm:px-12`, navbar sabit `h-14`; hero `mt-4 sm:mt-6`; `main` negatif üst boşluğu header yüksekliği + üst boşluk kadar (`-mt-[5.5rem] sm:-mt-[6.25rem]`). Yüzey ölçüm noktası `PROBE_Y` 36 → 40.
+
+**Doğrulama (ölçüm)**
+
+- 375 px: navbar hero'nun üstünden ve iki yanından 16 px. 1280 px: üstten 20 px, yanlarda içerikle aynı hiza (56 / 1208). 1680 px: aynı hiza (257 / 1409). Kaydırırken üstten 12 px. Taşma yok. Lint, typecheck temiz.
+
 ### 2026-10-04 · Tanıtım sayfası geri bildirimi: şeffaf navbar, köşeli hero ve footer · F4.3
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit

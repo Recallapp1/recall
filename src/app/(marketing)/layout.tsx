@@ -5,8 +5,8 @@ export default function MarketingLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader />
-      {/* Pulled up under the sticky header so the hero starts at the top edge. */}
-      <main className="-mt-[4.25rem] flex flex-1 flex-col">{children}</main>
+      {/* Pulled up by the header height (h-14) plus its top margin, so the header floats inside the hero. */}
+      <main className="-mt-[5.5rem] flex flex-1 flex-col sm:-mt-[6.25rem]">{children}</main>
       <SiteFooter />
     </div>
   );

@@ -11,7 +11,7 @@ export function Hero() {
   return (
     <section
       data-header-tone="dark"
-      className="surface-dark relative mx-4 mt-3 overflow-hidden rounded-section px-4 pt-32 pb-20 sm:mx-6 sm:px-6 lg:pt-40 lg:pb-28"
+      className="surface-dark relative mx-4 mt-4 overflow-hidden rounded-section px-4 pt-32 pb-20 sm:mx-6 sm:mt-6 sm:px-6 lg:pt-40 lg:pb-28"
     >
       {/* Soft blue light from the top right; depth without a photo. */}
       <div
