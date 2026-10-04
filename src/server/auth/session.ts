@@ -5,11 +5,12 @@ import { headers } from "next/headers";
 import { forbidden, redirect } from "next/navigation";
 import { cache } from "react";
 
-import { builtInRolesAllow, type Permissions } from "@/lib/permissions";
+import { builtInRolesAllow, memberRoles, type Permissions } from "@/lib/permissions";
 
 import { db } from "../db";
 import { clinics, members } from "../db/schema";
 import { findClinicById, type ClinicContext } from "../domain/clinics";
+import { scopeFor, type PanelScope } from "../domain/panel";
 import { auth } from ".";
 
 /** The signed-in user's session for this request, or null. Cached per request. */
@@ -79,4 +80,27 @@ export async function requirePermission(permissions: Permissions): Promise<Panel
   const context = await requireClinic();
   if (!(await can(permissions))) forbidden();
   return context;
+}
+
+/** Matches no practitioner: a practitioner member not yet linked sees an empty calendar. */
+const NO_PRACTITIONER = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Query scope for the panel. Members whose only role is "practitioner" see
+ * their own calendar (members.practitioner_id); everyone else the whole clinic.
+ */
+export async function requirePanelScope(permissions: Permissions): Promise<{
+  context: PanelContext;
+  scope: PanelScope;
+}> {
+  const context = await requirePermission(permissions);
+  const roles = memberRoles(context.member.role);
+  const practitionerOnly = roles.length > 0 && roles.every((role) => role === "practitioner");
+  return {
+    context,
+    scope: scopeFor(
+      context,
+      practitionerOnly ? (context.member.practitionerId ?? NO_PRACTITIONER) : null,
+    ),
+  };
 }

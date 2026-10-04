@@ -7,6 +7,7 @@ import type { RoleName } from "@/lib/permissions";
 import type { Executor } from "../db";
 import { db } from "../db";
 import { accounts, clinics, invitations, members, organizations, users } from "../db/schema";
+import { recordAudit } from "../domain/audit";
 import { DomainError } from "../domain/errors";
 import { auth } from ".";
 
@@ -92,6 +93,16 @@ export async function addClinicMember(input: {
       .values({ organizationId, userId: user!.id, role: input.role })
       .onConflictDoNothing()
       .returning({ id: members.id });
+    if (inserted.length > 0) {
+      await recordAudit(tx, {
+        clinicId: input.clinicId,
+        actorUserId: null,
+        action: "team.member_added",
+        targetType: "user",
+        targetId: user!.id,
+        metadata: { role: input.role, via: "recall_team" },
+      });
+    }
     return {
       userId: user!.id,
       userCreated,
@@ -199,6 +210,18 @@ export async function acceptInvitationAsNewUser(input: {
       .update(invitations)
       .set({ status: "accepted" })
       .where(eq(invitations.id, invitation.id));
+    const [clinic] = await tx
+      .select({ id: clinics.id })
+      .from(clinics)
+      .where(eq(clinics.organizationId, invitation.organizationId));
+    await recordAudit(tx, {
+      clinicId: clinic?.id ?? null,
+      actorUserId: user!.id,
+      action: "team.invitation_accepted",
+      targetType: "invitation",
+      targetId: invitation.id,
+      metadata: { role: invitation.role ?? "staff", newAccount: true },
+    });
     return { email };
   });
 }

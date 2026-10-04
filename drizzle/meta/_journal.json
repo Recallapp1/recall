@@ -36,6 +36,13 @@
       "when": 1791129428673,
       "tag": "0004_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791130337147,
+      "tag": "0005_audit_events",
+      "breakpoints": true
     }
   ]
 }

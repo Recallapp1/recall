@@ -110,6 +110,18 @@ describe("account provisioning", () => {
     expect(sent.length).toBe(before);
   });
 
+  it("audits the addition and the sign-in", async () => {
+    const events = await testDb
+      .select({ action: schema.auditEvents.action, metadata: schema.auditEvents.metadata })
+      .from(schema.auditEvents)
+      .where(eq(schema.auditEvents.clinicId, clinicId));
+    const actions = events.map((event) => event.action);
+    expect(actions).toContain("team.member_added");
+    expect(actions).toContain("auth.sign_in");
+    // No personal data in audit metadata.
+    expect(JSON.stringify(events)).not.toContain("klinik.test");
+  });
+
   it("keeps public sign-up closed", async () => {
     await expect(
       modules.auth().api.signUpEmail({

@@ -443,6 +443,27 @@ export const callbackRequests = pgTable(
   (t) => [index().on(t.clinicId, t.status)],
 );
 
+// ─── Audit ───────────────────────────────────────────────────────────────────
+
+/**
+ * Who did what in a clinic (F3.4). `metadata` never holds personal data:
+ * ids, role names and changed setting keys only (KVKK).
+ */
+export const auditEvents = pgTable(
+  "audit_events",
+  {
+    id: id(),
+    clinicId: uuid().references(() => clinics.id, { onDelete: "cascade" }),
+    actorUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    action: text().notNull(),
+    targetType: text(),
+    targetId: text(),
+    metadata: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.clinicId, t.createdAt)],
+);
+
 // ─── Platform (not tenant-scoped) ────────────────────────────────────────────
 
 /** Demo requests from the public landing page; handled by the Recall team (F6). */
@@ -476,3 +497,4 @@ export type CallbackRequest = typeof callbackRequests.$inferSelect;
 export type VoiceAgent = typeof voiceAgents.$inferSelect;
 export type PhoneNumber = typeof phoneNumbers.$inferSelect;
 export type DemoRequest = typeof demoRequests.$inferSelect;
+export type AuditEvent = typeof auditEvents.$inferSelect;

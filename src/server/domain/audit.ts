@@ -1,0 +1,62 @@
+import "server-only";
+
+import { desc, eq } from "drizzle-orm";
+
+import { safeError } from "@/lib/safe-error";
+
+import type { Executor } from "../db";
+import { auditEvents } from "../db/schema";
+
+/** Audited actions (F3.4). Keep names stable: they are stored and filtered on. */
+export type AuditAction =
+  | "auth.sign_in"
+  | "team.invitation_created"
+  | "team.invitation_cancelled"
+  | "team.invitation_accepted"
+  | "team.member_added"
+  | "team.member_role_changed"
+  | "team.member_removed"
+  | "team.role_saved"
+  | "team.role_deleted"
+  | "settings.updated"
+  | "patient.anonymized"
+  | "call.recording_played"
+  | "appointment.created"
+  | "appointment.updated"
+  | "appointment.status_changed";
+
+export interface AuditInput {
+  clinicId: string | null;
+  actorUserId: string | null;
+  action: AuditAction;
+  targetType?: string;
+  targetId?: string;
+  /** Ids, role names, setting keys. Never names, phone numbers or free text. */
+  metadata?: Record<string, string | number | boolean | null | string[]>;
+}
+
+/**
+ * Records an audit event. Failures are logged, never thrown: an audit hiccup
+ * must not undo the user's action, which has already been committed.
+ */
+export async function recordAudit(exec: Executor, input: AuditInput): Promise<void> {
+  try {
+    // Savepoint inside a transaction: a failed insert must not abort the caller's work.
+    await exec.transaction((tx) =>
+      tx.insert(auditEvents).values({ ...input, metadata: input.metadata ?? {} }),
+    );
+  } catch (error) {
+    console.error(
+      JSON.stringify({ msg: "audit.write_failed", action: input.action, error: safeError(error) }),
+    );
+  }
+}
+
+export async function listAuditEvents(exec: Executor, clinicId: string, limit = 100) {
+  return exec
+    .select()
+    .from(auditEvents)
+    .where(eq(auditEvents.clinicId, clinicId))
+    .orderBy(desc(auditEvents.createdAt))
+    .limit(limit);
+}

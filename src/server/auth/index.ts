@@ -21,6 +21,7 @@ import {
   users,
   verifications,
 } from "../db/schema";
+import { recordAudit } from "../domain/audit";
 import { invitationEmail, passwordEmail } from "../notifications/email-templates";
 import { sendEmail } from "../notifications/email";
 
@@ -104,6 +105,21 @@ function createAuth() {
             return {
               data: { ...session, activeOrganizationId: membership?.organizationId ?? null },
             };
+          },
+          async after(session) {
+            const organizationId = (session as { activeOrganizationId?: string | null })
+              .activeOrganizationId;
+            const [clinic] = organizationId
+              ? await db()
+                  .select({ id: clinics.id })
+                  .from(clinics)
+                  .where(eq(clinics.organizationId, organizationId))
+              : [];
+            await recordAudit(db(), {
+              clinicId: clinic?.id ?? null,
+              actorUserId: session.userId,
+              action: "auth.sign_in",
+            });
           },
         },
       },
