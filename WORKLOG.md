@@ -101,6 +101,23 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-04 · Sayıların sesli okunması ve hitap kuralı · F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit
+
+**Ne yapıldı**
+
+- Ürün ekibi geri bildirimi: ses iyi, isimde ton değişimi geçti; **telefon numarası geri okunurken ses değişti**. Döküm (`call_dcab36dbd90b88b5f27b66a0f8c`): numara rakamla yazılmış. Ayrıca asistan yine "Mehmet Bey" dedi; özet Türkçe ve ad içermiyor (önceki düzeltme tuttu). TTS p50 161 → 461 ms (`eleven_multilingual_v2` beklenen maliyeti).
+- [speech.ts](src/server/domain/speech.ts): `numberToWords` (0–9999), `spokenTime`, `spokenDate` (kelimeyle gün), `spokenPhone` (dikte grupları). Yazılı biçim `time.ts` içinde `displayDate` olarak yeniden adlandırıldı (SMS kullanır).
+- Tool sonuçlarına `spokenTime`; `spokenDate` artık kelimeyle.
+- Prompt: "Sayılar ve kısaltmalar" bölümü (rakam yasağı, telefon örneği, Dt./Dr./Uzm.) ve örnekli ayrı "Hitap" bölümü.
+- Ajan güncellendi (`updated`), kurallar Retell'de doğrulandı. Testler 105/105.
+
+**Açık kalanlar / dikkat**
+
+- Ürün ekibinin yeniden test etmesi gerekiyor: numara okuma ve "Bey" hitabı.
+- Gecikme hâlâ açık konu (ADR-003); sıradaki deneme `claude-4.5-haiku`.
+
 ### 2026-10-04 · İlk web call testi ve düzeltmeler · F1.8
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit

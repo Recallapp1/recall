@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { pickSpreadSlots } from "../../domain/availability";
 import { findAvailability } from "../../domain/scheduling";
-import { spokenDate } from "../../domain/time";
+import { spokenDate, spokenTime } from "../../domain/speech";
 import { defineTool } from "./define";
 import { entityId, localDate } from "./schemas";
 
@@ -35,6 +35,7 @@ export const checkAvailability = defineTool({
       spokenDate: spokenDate(input.date),
       slots: offered.map((slot) => ({
         time: slot.time,
+        spokenTime: spokenTime(slot.time),
         practitionerId: slot.practitionerId,
         practitionerName: slot.practitionerName,
       })),
@@ -44,7 +45,7 @@ export const checkAvailability = defineTool({
       })),
       hint:
         offered.length > 0
-          ? "Hastaya en fazla 3 seçenek sun."
+          ? "Hastaya en fazla 3 seçenek sun. Saatleri spokenTime ile söyle; time alanını sadece tool argümanlarında kullan."
           : "Bu gün uygun saat yok; nextAvailableDates içindeki günleri öner.",
     };
   },

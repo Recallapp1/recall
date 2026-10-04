@@ -3,7 +3,7 @@ import "server-only";
 import { env } from "@/lib/env";
 import { maskPhone } from "@/lib/phone";
 
-import { spokenDate } from "../domain/time";
+import { displayDate } from "../domain/time";
 import type { AppointmentSummary } from "../domain/appointments";
 
 export interface SmsProvider {
@@ -71,15 +71,15 @@ export function smsProvider(): SmsProvider {
 
 export const smsTemplates = {
   confirmation: (clinicName: string, a: AppointmentSummary, address?: string | null) =>
-    `${clinicName}: Sayın ${a.patientName}, ${spokenDate(a.date)} ${a.time} tarihli ${a.serviceName} randevunuz oluşturuldu.` +
+    `${clinicName}: Sayın ${a.patientName}, ${displayDate(a.date)} ${a.time} tarihli ${a.serviceName} randevunuz oluşturuldu.` +
     (address ? ` Adres: ${address}.` : "") +
     ` Değişiklik için bu numarayı arayabilirsiniz.`,
 
   cancellation: (clinicName: string, a: AppointmentSummary) =>
-    `${clinicName}: ${spokenDate(a.date)} ${a.time} tarihli randevunuz iptal edilmiştir. Yeni randevu için bizi arayabilirsiniz.`,
+    `${clinicName}: ${displayDate(a.date)} ${a.time} tarihli randevunuz iptal edilmiştir. Yeni randevu için bizi arayabilirsiniz.`,
 
   rescheduled: (clinicName: string, a: AppointmentSummary) =>
-    `${clinicName}: Randevunuz ${spokenDate(a.date)} ${a.time} olarak güncellenmiştir.`,
+    `${clinicName}: Randevunuz ${displayDate(a.date)} ${a.time} olarak güncellenmiştir.`,
 };
 
 /** Sends without throwing: an SMS failure must never undo or fail a booking. */

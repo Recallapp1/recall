@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { cancelAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
-import { spokenDate } from "../../domain/time";
+import { spokenDate, spokenTime } from "../../domain/speech";
 import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
 import { defineTool } from "./define";
 import { entityId, phone } from "./schemas";
@@ -46,6 +46,7 @@ export const cancelAppointmentTool = defineTool({
         date: appointment.date,
         spokenDate: spokenDate(appointment.date),
         time: appointment.time,
+        spokenTime: spokenTime(appointment.time),
         service: appointment.serviceName,
       },
       hint: "Hastaya yeni bir randevu almak isteyip istemediğini sor.",

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { rescheduleAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
 import { DomainError } from "../../domain/errors";
-import { spokenDate } from "../../domain/time";
+import { spokenDate, spokenTime } from "../../domain/speech";
 import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
 import { defineTool } from "./define";
 import { entityId, localDate, localTime, phone } from "./schemas";
@@ -50,12 +50,13 @@ export const rescheduleAppointmentTool = defineTool({
 
     return {
       ok: true,
-      previous: { spokenDate: spokenDate(previous.date), time: previous.time },
+      previous: { spokenDate: spokenDate(previous.date), spokenTime: spokenTime(previous.time) },
       appointment: {
         appointmentId: appointment.id,
         date: appointment.date,
         spokenDate: spokenDate(appointment.date),
         time: appointment.time,
+        spokenTime: spokenTime(appointment.time),
         service: appointment.serviceName,
         practitioner: appointment.practitionerName,
       },

@@ -34,7 +34,11 @@ Retell'de Türkçe destekleyen TTS sağlayıcıları (2026-10): **ElevenLabs, Ca
 
 ### Asistanın söyledikleri (TTS girdisi)
 
-LLM'e verilen kural: saat ve tarihleri **konuşma diliyle yaz**. Ek güvence olarak sunucu, tool sonuçlarında hem makine (`"14:30"`) hem de sözlü (`"saat on dört otuz"`) biçimi döner.
+**Kural: seslendirme motoruna rakam gitmez.** Testlerde rakamlı bölümlerde (isim, telefon numarası) ses tonu değişti (2026-10-04). Bu yüzden:
+
+- Sunucu, tool sonuçlarında tarihi ve saati hazır kelime olarak döner: `spokenDate` ("beş Kasım Perşembe"), `spokenTime` ("on dört otuz"). Makine biçimi (`date`, `time`) yalnızca tool argümanları içindir. Kaynak: [`src/server/domain/speech.ts`](../../src/server/domain/speech.ts).
+- Prompt, rakam kullanmayı yasaklar; telefon numarasını dikte gruplarıyla kelimeyle okutur ve kısaltmaları açtırır.
+- SMS gibi yazılı metinler rakamlı `displayDate` kullanır.
 
 | Yazılı     | Söylenmesi gereken           |
 | ---------- | ---------------------------- |

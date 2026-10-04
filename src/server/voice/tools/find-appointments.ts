@@ -5,7 +5,7 @@ import { z } from "zod";
 import { maskName } from "@/lib/phone";
 
 import { findUpcomingAppointments } from "../../domain/appointments";
-import { spokenDate } from "../../domain/time";
+import { spokenDate, spokenTime } from "../../domain/speech";
 import { defineTool } from "./define";
 import { phone } from "./schemas";
 
@@ -30,6 +30,7 @@ export const findAppointments = defineTool({
         date: a.date,
         spokenDate: spokenDate(a.date),
         time: a.time,
+        spokenTime: spokenTime(a.time),
         service: a.serviceName,
         practitioner: a.practitionerName,
         // Initials only: enough to confirm identity without disclosing data.

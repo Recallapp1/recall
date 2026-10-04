@@ -131,7 +131,7 @@ describe("custom functions", () => {
       date: "2026-10-05",
     });
     expect(availability.status).toBe(200);
-    expect(availability.body).toMatchObject({ ok: true, spokenDate: "5 Ekim Pazartesi" });
+    expect(availability.body).toMatchObject({ ok: true, spokenDate: "beş Ekim Pazartesi" });
     const [slot] = availability.body.slots;
 
     const booking = await tool("book_appointment", {

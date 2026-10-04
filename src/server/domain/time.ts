@@ -72,8 +72,8 @@ export function diffLocalDays(from: LocalDate, to: LocalDate): number {
   return Math.round((toUtc(to) - toUtc(from)) / 86_400_000);
 }
 
-/** Spoken Turkish date: "5 Kasım Perşembe". */
-export function spokenDate(date: LocalDate): string {
+/** Written Turkish date for texts like SMS: "5 Kasım Perşembe". */
+export function displayDate(date: LocalDate): string {
   const [y, m, d] = date.split("-").map(Number);
   return format(new Date(y, m - 1, d), "d MMMM EEEE", { locale: tr });
 }

@@ -75,7 +75,14 @@ describe("buildSystemPrompt", () => {
   });
 
   it("does not guess gendered titles from names", () => {
-    expect(buildSystemPrompt(promptInput())).toContain('"Bey" veya "Hanım" ekleme');
+    expect(buildSystemPrompt(promptInput())).toContain('"Bey" veya "Hanım" kullanma');
+  });
+
+  it("asks for numbers in words so speech synthesis reads them naturally", () => {
+    const prompt = buildSystemPrompt(promptInput());
+    expect(prompt).toContain("asla rakam kullanma");
+    expect(prompt).toContain("spokenDate ve spokenTime");
+    expect(prompt).toContain("sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi");
   });
 
   it("hides prices unless the clinic allows them", () => {
