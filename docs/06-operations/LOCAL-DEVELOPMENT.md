@@ -4,7 +4,7 @@
 
 - Node 24 (`.nvmrc`)
 - pnpm 12 (`corepack enable` veya `npm i -g pnpm`)
-- Docker Desktop (lokal Postgres için)
+- Lokal Postgres için **ya** Docker Desktop **ya da** hiçbir şey (`pnpm db:local`, aşağıda)
 
 ## İlk kurulum
 
@@ -21,11 +21,23 @@ pnpm dev
 - Sağlık: http://localhost:3000/api/health
 - DB arayüzü: `pnpm db:studio`
 
+### Docker olmadan: `pnpm db:local`
+
+Docker yoksa veya açılmıyorsa `pnpm db:up` yerine ayrı bir terminalde şunu çalıştır:
+
+```bash
+pnpm db:local      # PGlite: Postgres uyumlu sunucu, port 5433, veri .pglite/ içinde
+```
+
+Aynı `DATABASE_URL` ile çalışır; `db:migrate`, `db:seed` ve `dev` komutları değişmez. Sadece geliştirme içindir. Gerçek Postgres'e yakın davranış gerektiren işler (performans, eşzamanlılık) için Docker veya Neon kullan.
+
 ## Veritabanını sıfırlama
 
 ```bash
-pnpm db:reset      # container + volume siler, yeniden oluşturur, migrate + seed
+pnpm db:reset      # Docker: container + volume siler, yeniden oluşturur, migrate + seed
 ```
+
+`db:local` kullanıyorsan: sunucuyu durdur, `.pglite/` klasörünü sil, yeniden başlatıp `pnpm db:migrate && pnpm db:seed` çalıştır.
 
 ## Sesli asistanı lokalde test etme
 

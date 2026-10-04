@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
+    "db:local": "tsx scripts/local-db.ts",
     "db:reset": "docker compose down -v && docker compose up -d --wait db && drizzle-kit migrate && tsx src/server/db/seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24.19.1",
     "@types/pg": "^8.23.1",

@@ -11,7 +11,7 @@ Gereksinimler: Node 24, pnpm 12, Docker.
 ```bash
 pnpm install
 cp .env.example .env.local     # değerleri doldur
-pnpm db:up                     # lokal Postgres
+pnpm db:up                     # lokal Postgres (Docker yoksa: pnpm db:local)
 pnpm db:migrate
 pnpm db:seed                   # demo klinik
 pnpm dev
