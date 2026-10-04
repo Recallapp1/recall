@@ -101,6 +101,23 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-04 · F1.8 kurulum desteği: 4. adım (tünel) · F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit
+
+**Ne yapıldı**
+
+- Ürün ekibi kurulumun tünel adımında takıldı. Kontrol sonucu:
+  - `cloudflared` kurulu (`C:\Program Files (x86)\cloudflared\`, PATH'te) ama terminal kurulumdan önce açıldığı için komut bulunamıyordu → yeni terminal veya tam yol.
+  - `.env.local` içinde `APP_URL` **boş** → tüm komutlar `Invalid environment variables` ile duruyordu.
+  - `RETELL_VOICE_ID` alanına bir **ajan kimliği** (`agent_…`) yazılmıştı; ses kimliği olmalı (`11labs-…`). Ekip Retell panelinde elle bir ajan oluşturmuş; kullanılmayacak.
+- `RETELL_API_KEY` doğrulandı: Retell ses listesi (300 ses) başarıyla alındı.
+- [RETELL-SETUP.md](docs/02-voice-agent/RETELL-SETUP.md) sorun giderme tablosuna bu üç durum eklendi.
+
+**Açık kalanlar / dikkat**
+
+- Ekip `APP_URL` ve `RETELL_VOICE_ID` değerlerini düzeltince `pnpm voice:sync --clinic gulus-dis` çalıştırılacak (ilk canlı Retell çağrısı).
+
 ### 2026-10-04 · Retell geçişi ve sesli asistan çekirdeği · F1.1–F1.7
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F1-retell` → `main` · **Commit'ler:** bu kaydı içeren commit'ler

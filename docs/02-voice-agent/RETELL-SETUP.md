@@ -179,16 +179,20 @@ Bilgi için; bunları elle girmeniz gerekmez. Kaynak: [`agent-spec.ts`](../../sr
 
 ## Sorun giderme
 
-| Belirti                                           | Neden ve çözüm                                                                                                                                         |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `RETELL_API_KEY is not set`                       | 2. adım. `.env.local` kaydedildi mi?                                                                                                                   |
-| `No voice configured`                             | 4. adım: `RETELL_VOICE_ID` boş                                                                                                                         |
-| `APP_URL must be a public https URL`              | 5. adım: `APP_URL` hâlâ `http://localhost:3000`                                                                                                        |
-| `voice:sync` Retell hatası (`400 …`)              | Mesaj Retell'in kendi açıklamasıdır (ör. geçersiz ses kimliği veya model). Düzeltip tekrar çalıştırın; yarım kalan ilerleme korunur, çift ajan oluşmaz |
-| Asistan konuşuyor ama "sistemde sorun var" diyor  | Tool çağrısı sunucuya ulaşmadı: tünel kapandı, adres değişti (7. adımı tekrarla) veya `pnpm dev` kapalı                                                |
-| `pnpm dev` loglarında `401` / `Invalid signature` | Kullanılan anahtar webhook rozetli değil veya bilgisayar saati yanlış (5 dk tolerans)                                                                  |
-| Tool çağrısı `404 CLINIC_NOT_FOUND`               | Test edilen ajan Retell panelinde elle oluşturulmuş. Sadece `voice:sync` ile oluşturulan ajanı kullanın                                                |
-| Türkçe anlamada zorluk                            | F1.8'de ASR sağlayıcıları karşılaştırılacak; isim ve hizmet adları zaten `boosted_keywords` içinde                                                     |
+| Belirti                                                        | Neden ve çözüm                                                                                                                                                                                       |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RETELL_API_KEY is not set`                                    | 2. adım. `.env.local` kaydedildi mi?                                                                                                                                                                 |
+| `cloudflared` tanınmıyor ("is not recognized")                 | Kurulum, açık olan terminalin PATH'ine yansımaz. Terminali kapatıp yenisini açın veya tam yolu kullanın: `& "C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel --url http://localhost:3000` |
+| Herhangi bir komutta `Invalid environment variables … APP_URL` | `APP_URL` boş veya geçersiz. Tünel adresini yazın; tünel yokken geçici olarak `http://localhost:3000` yazabilirsiniz                                                                                 |
+| `RETELL_VOICE_ID` `agent_` ile başlıyor                        | Ses kimliği yerine ajan kimliği yazılmış. Ses kimlikleri `11labs-…`, `cartesia-…`, `openai-…` biçimindedir (`pnpm voice:voices`)                                                                     |
+| Retell panelinde elle ajan oluşturuldu                         | Gerekmez ve kullanılmaz; silinebilir. Ajanı `pnpm voice:sync` oluşturur                                                                                                                              |
+| `No voice configured`                                          | 4. adım: `RETELL_VOICE_ID` boş                                                                                                                                                                       |
+| `APP_URL must be a public https URL`                           | 5. adım: `APP_URL` hâlâ `http://localhost:3000`                                                                                                                                                      |
+| `voice:sync` Retell hatası (`400 …`)                           | Mesaj Retell'in kendi açıklamasıdır (ör. geçersiz ses kimliği veya model). Düzeltip tekrar çalıştırın; yarım kalan ilerleme korunur, çift ajan oluşmaz                                               |
+| Asistan konuşuyor ama "sistemde sorun var" diyor               | Tool çağrısı sunucuya ulaşmadı: tünel kapandı, adres değişti (7. adımı tekrarla) veya `pnpm dev` kapalı                                                                                              |
+| `pnpm dev` loglarında `401` / `Invalid signature`              | Kullanılan anahtar webhook rozetli değil veya bilgisayar saati yanlış (5 dk tolerans)                                                                                                                |
+| Tool çağrısı `404 CLINIC_NOT_FOUND`                            | Test edilen ajan Retell panelinde elle oluşturulmuş. Sadece `voice:sync` ile oluşturulan ajanı kullanın                                                                                              |
+| Türkçe anlamada zorluk                                         | F1.8'de ASR sağlayıcıları karşılaştırılacak; isim ve hizmet adları zaten `boosted_keywords` içinde                                                                                                   |
 
 ## Sonraki adımlar
 
