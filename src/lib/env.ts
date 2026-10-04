@@ -26,6 +26,15 @@ const envSchema = z.object({
   NETGSM_PASSWORD: optionalString,
   NETGSM_HEADER: optionalString,
 
+  /** Signs session cookies and tokens. Required in production (min. 32 chars). */
+  BETTER_AUTH_SECRET: z.string().min(32).optional(),
+  /** Origin of the panel (sign-in, email links). Defaults to APP_URL. */
+  BETTER_AUTH_URL: z.url().optional(),
+
+  EMAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
+  RESEND_API_KEY: optionalString,
+  EMAIL_FROM: z.string().default("Recall <bildirim@recall.local>"),
+
   CRON_SECRET: optionalString,
 });
 
@@ -55,6 +64,13 @@ export function env(): Env {
     if (missing.length > 0) {
       throw new Error(`SMS_PROVIDER=netgsm requires: ${missing.join(", ")}`);
     }
+  }
+
+  if (result.data.EMAIL_PROVIDER === "resend" && !result.data.RESEND_API_KEY) {
+    throw new Error("EMAIL_PROVIDER=resend requires RESEND_API_KEY");
+  }
+  if (result.data.NODE_ENV === "production" && !result.data.BETTER_AUTH_SECRET) {
+    throw new Error("BETTER_AUTH_SECRET is required in production");
   }
 
   cached = result.data;

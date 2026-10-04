@@ -12,7 +12,9 @@ export type DomainErrorCode =
   | "SLOT_UNAVAILABLE"
   | "PHONE_REQUIRED"
   | "NOT_FOUND"
-  | "TOO_LATE_TO_CANCEL";
+  | "TOO_LATE_TO_CANCEL"
+  | "INVITATION_INVALID"
+  | "ACCOUNT_EXISTS";
 
 export class DomainError extends Error {
   constructor(
