@@ -10,11 +10,11 @@ Hasta → PSTN → Türk operatör (Netgsm/Verimor) → SIP trunk → Vapi → R
 
 ## Operatör seçenekleri
 
-| Operatör | Not |
-|---|---|
-| **Netgsm** | Yaygın; sanal santral ve SIP trunk; SMS de aynı hesapta |
-| **Verimor** | Bulut santral ve SIP; geliştirici dostu API |
-| Diğer yerel VoIP sağlayıcıları | Değerlendirilebilir |
+| Operatör                       | Not                                                     |
+| ------------------------------ | ------------------------------------------------------- |
+| **Netgsm**                     | Yaygın; sanal santral ve SIP trunk; SMS de aynı hesapta |
+| **Verimor**                    | Bulut santral ve SIP; geliştirici dostu API             |
+| Diğer yerel VoIP sağlayıcıları | Değerlendirilebilir                                     |
 
 **Seçim kriterleri:** SIP trunk desteği (Vapi ile uyumlu SIP INVITE, codec G.711), sabit IP veya kimlik doğrulama, dakika fiyatı, numara tipi (0850, coğrafi 0212/0216/0232…), numara taşıma desteği, BTK uyumu.
 
@@ -22,11 +22,11 @@ Hasta → PSTN → Türk operatör (Netgsm/Verimor) → SIP trunk → Vapi → R
 
 ## Numara stratejileri
 
-| Strateji | Nasıl | Artı | Eksi |
-|---|---|---|---|
+| Strateji                          | Nasıl                                                                                                                   | Artı                                         | Eksi                                                                             |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------- |
 | **A. Yönlendirme (önerilen MVP)** | Klinik mevcut numarasında operatör üzerinden "meşgulse / cevap yoksa / her zaman" yönlendirmesi kurar → Recall numarası | Klinik numarasını değiştirmez; hızlı kurulum | Yönlendirme ücreti kliniğe yansıyabilir; caller ID'nin korunması operatöre bağlı |
-| **B. Yeni numara** | Recall kliniğe yeni bir numara verir | Tam kontrol | Klinik, numarasını değiştirmek istemez |
-| **C. Numara taşıma** | Kliniğin numarası Recall operatörüne taşınır | En temiz çözüm | Bürokrasi ve süre; güven gerektirir |
+| **B. Yeni numara**                | Recall kliniğe yeni bir numara verir                                                                                    | Tam kontrol                                  | Klinik, numarasını değiştirmek istemez                                           |
+| **C. Numara taşıma**              | Kliniğin numarası Recall operatörüne taşınır                                                                            | En temiz çözüm                               | Bürokrasi ve süre; güven gerektirir                                              |
 
 Detay: [CALL-ROUTING.md](CALL-ROUTING.md)
 

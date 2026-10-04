@@ -10,24 +10,24 @@ Tüm klinikler aynı veritabanını ve tabloları paylaşır. Her satırda `clin
 
 ## Kiracı nereden gelir?
 
-| Giriş noktası | Kiracı kaynağı | Asla |
-|---|---|---|
+| Giriş noktası           | Kiracı kaynağı                         | Asla                             |
+| ----------------------- | -------------------------------------- | -------------------------------- |
 | Sesli asistan webhook'u | Aranan numara → `clinics.phone_number` | LLM'in ürettiği tool argümanları |
-| Panel | Oturumdaki aktif organizasyon → klinik | URL veya form alanı |
-| Cron | Her kliniği sırayla dolaşır | — |
+| Panel                   | Oturumdaki aktif organizasyon → klinik | URL veya form alanı              |
+| Cron                    | Her kliniği sırayla dolaşır            | —                                |
 
 ## Kurallar
 
 1. **Domain fonksiyonları `clinicId`'yi ilk parametre olarak alır.**
    ```ts
-   findAvailableSlots(db, clinicId, { serviceId, date })
+   findAvailableSlots(db, clinicId, { serviceId, date });
    ```
 2. **Her sorgu `clinic_id` ile filtrelenir**, ID ile tekil kayıt çekerken bile:
    ```ts
    // ✅
-   where(and(eq(appointments.id, id), eq(appointments.clinicId, clinicId)))
+   where(and(eq(appointments.id, id), eq(appointments.clinicId, clinicId)));
    // ❌ başka kliniğin randevusunu iptal edebilir
-   where(eq(appointments.id, id))
+   where(eq(appointments.id, id));
    ```
 3. **Tool context'i sunucuda kurulur:** `ToolContext { clinicId, callId, callerPhone, timezone }` webhook'ta oluşturulur ve tool'a enjekte edilir.
 4. **İlişki doğrulaması:** Bir randevu oluşturulurken `practitionerId` ve `serviceId`'nin aynı kliniğe ait olduğu kontrol edilir.

@@ -1,9 +1,9 @@
 # ADR-002: Ses Platformu
 
-| | |
-|---|---|
+|       |                                                            |
+| ----- | ---------------------------------------------------------- |
 | Durum | Kabul edildi (Faz 1 POC sonrası yeniden değerlendirilecek) |
-| Tarih | 2026-10-04 |
+| Tarih | 2026-10-04                                                 |
 
 ## Bağlam
 
@@ -11,12 +11,12 @@ Gerçek zamanlı telefon görüşmesi için SIP/PSTN bağlantısı, STT, LLM dö
 
 ## Seçenekler
 
-| Seçenek | Artı | Eksi |
-|---|---|---|
-| **Vapi** | STT, LLM ve TTS bileşen bazında seçilebilir; BYO SIP; `assistant-request` ile dinamik asistan; olgun tool webhook'ları | Platform ücreti; satıcı bağımlılığı |
-| Retell AI | Benzer özellikler, iyi gecikme | Bileşen esnekliği daha sınırlı |
-| ElevenLabs Agents | Çok iyi Türkçe TTS | LLM ve STT esnekliği daha sınırlı |
-| LiveKit Agents (kendimiz host ederiz) | En düşük birim maliyet, tam kontrol | Ayrı altyapı (Fly.io/Railway), SIP ve operasyon yükü; küçük ekip için erken |
+| Seçenek                               | Artı                                                                                                                   | Eksi                                                                        |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Vapi**                              | STT, LLM ve TTS bileşen bazında seçilebilir; BYO SIP; `assistant-request` ile dinamik asistan; olgun tool webhook'ları | Platform ücreti; satıcı bağımlılığı                                         |
+| Retell AI                             | Benzer özellikler, iyi gecikme                                                                                         | Bileşen esnekliği daha sınırlı                                              |
+| ElevenLabs Agents                     | Çok iyi Türkçe TTS                                                                                                     | LLM ve STT esnekliği daha sınırlı                                           |
+| LiveKit Agents (kendimiz host ederiz) | En düşük birim maliyet, tam kontrol                                                                                    | Ayrı altyapı (Fly.io/Railway), SIP ve operasyon yükü; küçük ekip için erken |
 
 ## Karar
 

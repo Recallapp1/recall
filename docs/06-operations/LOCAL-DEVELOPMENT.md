@@ -52,24 +52,25 @@ curl -X POST http://localhost:3000/api/voice/vapi \
   -H "x-vapi-secret: $VAPI_WEBHOOK_SECRET" \
   -d @scripts/fixtures/vapi-tool-calls.json
 ```
+
 `scripts/fixtures/` altında örnek `assistant-request` ve `tool-calls` payload'ları bulunur.
 
 ## Faydalı komutlar
 
-| Komut | Ne yapar |
-|---|---|
-| `pnpm lint` | ESLint |
-| `pnpm typecheck` | TypeScript kontrolü |
-| `pnpm test` / `pnpm test:watch` | Vitest |
-| `pnpm format` | Prettier |
-| `pnpm db:generate` | Şema değişikliğinden migration üret |
-| `pnpm db:studio` | Drizzle Studio |
+| Komut                           | Ne yapar                            |
+| ------------------------------- | ----------------------------------- |
+| `pnpm lint`                     | ESLint                              |
+| `pnpm typecheck`                | TypeScript kontrolü                 |
+| `pnpm test` / `pnpm test:watch` | Vitest                              |
+| `pnpm format`                   | Prettier                            |
+| `pnpm db:generate`              | Şema değişikliğinden migration üret |
+| `pnpm db:studio`                | Drizzle Studio                      |
 
 ## Sorun giderme
 
-| Belirti | Çözüm |
-|---|---|
-| `ECONNREFUSED 5433` | `pnpm db:up` çalıştır; Docker açık mı? |
-| `Invalid environment variables` | `.env.local` dosyasını `.env.example` ile karşılaştır |
-| Webhook 401 | `x-vapi-secret` ile `VAPI_WEBHOOK_SECRET` eşleşmiyor |
-| Webhook 404 `CLINIC_NOT_FOUND` | Aranan numara `clinics.phone_number` ile eşleşmiyor (E.164 biçimi?) |
+| Belirti                         | Çözüm                                                               |
+| ------------------------------- | ------------------------------------------------------------------- |
+| `ECONNREFUSED 5433`             | `pnpm db:up` çalıştır; Docker açık mı?                              |
+| `Invalid environment variables` | `.env.local` dosyasını `.env.example` ile karşılaştır               |
+| Webhook 401                     | `x-vapi-secret` ile `VAPI_WEBHOOK_SECRET` eşleşmiyor                |
+| Webhook 404 `CLINIC_NOT_FOUND`  | Aranan numara `clinics.phone_number` ile eşleşmiyor (E.164 biçimi?) |

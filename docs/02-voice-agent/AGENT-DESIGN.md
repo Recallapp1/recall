@@ -13,6 +13,7 @@ Hasta sesi → [VAD/endpointing] → STT (tr) → LLM (Claude + tool'lar) → TT
 ```
 
 Pipeline Vapi tarafından yönetilir. Biz şunları kontrol ederiz:
+
 - **Asistan yapılandırması:** Her aramada `assistant-request` ile dinamik olarak üretilir ([`src/server/voice/providers/vapi/assistant.ts`](../../src/server/voice/providers/vapi/assistant.ts)).
 - **System prompt:** Klinik verisinden üretilir. Bkz. [SYSTEM-PROMPT.md](SYSTEM-PROMPT.md).
 - **Tool'lar:** Bkz. [TOOLS.md](TOOLS.md).
@@ -20,50 +21,57 @@ Pipeline Vapi tarafından yönetilir. Biz şunları kontrol ederiz:
 ## Konuşma tasarımı
 
 ### Kısa ve sözlü
+
 - Cevaplar 1–2 cümle. Telefonda uzun paragraf dinlenmez.
 - Liste okunmaz; **en fazla 2–3 seçenek** sunulur: "Yarın 10:00 ya da 14:30 uygun, hangisini istersiniz?"
 - Markdown, emoji, madde işareti kullanılmaz (TTS bunları okur).
 - Sayılar ve saatler konuşma diliyle söylenir: "14:30" yerine "iki buçuk" ya da "on dört otuz". Tarih "5 Kasım Çarşamba" biçiminde söylenir.
 
 ### Teyit (read-back)
+
 Kalıcı bir işlemden önce (randevu oluşturma, iptal, erteleme) asistan bilgileri **geri okur** ve açık onay alır:
+
 > "Teyit ediyorum: Ayşe Yılmaz adına, 5 Kasım Çarşamba saat 14:30'da Dt. Can Demir ile diş taşı temizliği. Onaylıyor musunuz?"
 
 ### İsimler
+
 - STT isimlerde hata yapabilir. İsim alındıktan sonra tekrar edilir: "Ayşe Yılmaz, doğru mu?"
 - Emin olunamazsa harf harf istenmez (telefonda yorucudur). İsim olduğu gibi kaydedilir; SMS ve panel düzeltme imkânı verir.
 
 ### Söz kesme (barge-in)
+
 Hasta asistan konuşurken söze girerse asistan durur ve dinler. Vapi'de varsayılan olarak açıktır; `stopSpeakingPlan` ile ayarlanır.
 
 ### Sessizlik
+
 - 6 sn sessizlik: "Orada mısınız?"
 - 15 sn daha sessizlik: Kibar bir kapanışla arama sonlandırılır.
 
 ### Bekleme sesleri
+
 Tool çağrısı sürerken asistan kısa bir dolgu cümlesi söyler ("Hemen bakıyorum…"). Tool tanımında `messages: request-start` ile yapılandırılır.
 
 ## Kapsam sınırları
 
-| Yapar | Yapmaz |
-|---|---|
-| Randevu oluşturma, iptal, erteleme | Tıbbi tavsiye, teşhis, ilaç önerisi |
-| Hizmet, hekim, saat, adres bilgisi | Config'de olmayan bilgiyi uydurmak |
+| Yapar                                              | Yapmaz                                  |
+| -------------------------------------------------- | --------------------------------------- |
+| Randevu oluşturma, iptal, erteleme                 | Tıbbi tavsiye, teşhis, ilaç önerisi     |
+| Hizmet, hekim, saat, adres bilgisi                 | Config'de olmayan bilgiyi uydurmak      |
 | Fiyat (sadece klinik izin verdiyse, aralık olarak) | Kesin fiyat taahhüdü, indirim pazarlığı |
-| İnsana devretme, geri arama notu | Başka hastanın bilgisini paylaşmak |
-| Acil durumda 112 yönlendirmesi | Acil durumu geçiştirmek |
+| İnsana devretme, geri arama notu                   | Başka hastanın bilgisini paylaşmak      |
+| Acil durumda 112 yönlendirmesi                     | Acil durumu geçiştirmek                 |
 
 Ayrıntılar: [ESCALATION.md](ESCALATION.md)
 
 ## Gecikme
 
-| Kaldıraç | Etki |
-|---|---|
-| LLM seçimi ve effort ayarı | En büyük etken. Bkz. [ADR-003](../decisions/ADR-003-llm-model.md) |
-| Kısa system prompt | İlk token süresini düşürür |
-| Endpointing ayarı | Agresif olursa hastanın sözü kesilir, gevşek olursa yavaş hissettirir. Türkçe için ayarlanmalı |
-| Tool webhook süresi | Hedef < 300 ms: aynı bölge, indeksli sorgular, soğuk başlatma yok (Fluid Compute) |
-| TTS streaming | Vapi varsayılanı |
+| Kaldıraç                   | Etki                                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------------------- |
+| LLM seçimi ve effort ayarı | En büyük etken. Bkz. [ADR-003](../decisions/ADR-003-llm-model.md)                              |
+| Kısa system prompt         | İlk token süresini düşürür                                                                     |
+| Endpointing ayarı          | Agresif olursa hastanın sözü kesilir, gevşek olursa yavaş hissettirir. Türkçe için ayarlanmalı |
+| Tool webhook süresi        | Hedef < 300 ms: aynı bölge, indeksli sorgular, soğuk başlatma yok (Fluid Compute)              |
+| TTS streaming              | Vapi varsayılanı                                                                               |
 
 Ölçüm: her aramada Vapi'nin raporladığı tur gecikmeleri `calls` tablosuna ve izleme panosuna yazılır. Bkz. [MONITORING.md](../06-operations/MONITORING.md).
 

@@ -4,14 +4,14 @@ MVP'de Recall paneli **tek doğru kaynak**tır (source of truth). Entegrasyonlar
 
 ## Yol haritası
 
-| Entegrasyon | Faz | Yön | Not |
-|---|---|---|---|
-| Google Calendar | V1 | İki yönlü | Hekim başına takvim; dış etkinlikler "meşgul" olarak müsaitliği bloke eder |
-| Outlook / Microsoft 365 | V2 | İki yönlü | |
-| Türk klinik yazılımları (diş klinikleri için yaygın yazılımlar) | V2 | Yazılıma göre | API olup olmadığı yazılım bazında araştırılacak |
-| Webhook (genel) | V1 | Giden | `appointment.created`, `appointment.cancelled`, `call.completed`: kliniğin kendi sistemine |
-| iyzico / Stripe | V1 | — | Faturalandırma |
-| Resend | V1 | Giden | Haftalık rapor e-postası |
+| Entegrasyon                                                     | Faz | Yön           | Not                                                                                        |
+| --------------------------------------------------------------- | --- | ------------- | ------------------------------------------------------------------------------------------ |
+| Google Calendar                                                 | V1  | İki yönlü     | Hekim başına takvim; dış etkinlikler "meşgul" olarak müsaitliği bloke eder                 |
+| Outlook / Microsoft 365                                         | V2  | İki yönlü     |                                                                                            |
+| Türk klinik yazılımları (diş klinikleri için yaygın yazılımlar) | V2  | Yazılıma göre | API olup olmadığı yazılım bazında araştırılacak                                            |
+| Webhook (genel)                                                 | V1  | Giden         | `appointment.created`, `appointment.cancelled`, `call.completed`: kliniğin kendi sistemine |
+| iyzico / Stripe                                                 | V1  | —             | Faturalandırma                                                                             |
+| Resend                                                          | V1  | Giden         | Haftalık rapor e-postası                                                                   |
 
 ## Tasarım ilkeleri
 

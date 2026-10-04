@@ -1,10 +1,10 @@
 # ADR-00X: Başlık
 
-| | |
-|---|---|
-| Durum | Önerildi / Kabul edildi / Reddedildi / Yerini aldı: ADR-00Y |
-| Tarih | YYYY-AA-GG |
-| Karar verenler | |
+|                |                                                             |
+| -------------- | ----------------------------------------------------------- |
+| Durum          | Önerildi / Kabul edildi / Reddedildi / Yerini aldı: ADR-00Y |
+| Tarih          | YYYY-AA-GG                                                  |
+| Karar verenler |                                                             |
 
 ## Bağlam
 

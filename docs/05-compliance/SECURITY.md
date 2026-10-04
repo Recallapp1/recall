@@ -2,15 +2,15 @@
 
 ## Tehdit modeli (özet)
 
-| Tehdit | Önlem |
-|---|---|
-| Kiracılar arası veri sızıntısı | Satır seviyesi izolasyon kuralları ve testleri ([MULTI-TENANCY.md](../01-architecture/MULTI-TENANCY.md)) |
-| Sahte webhook çağrısı (randevu manipülasyonu) | `x-vapi-secret` sabit zamanlı doğrulama; HTTPS zorunlu |
-| Prompt injection ile veri çekme | Tool'lar arayan ve kiracı ile sınırlı; toplu okuma tool'u yok |
-| Hesap ele geçirme (panel) | Better Auth; güçlü parola, oturum süresi; 2FA (Faz 3) |
-| Gizli anahtarların sızması | Sadece Vercel env; repo'da `.env*` yok (`.env.example` hariç) |
-| Loglarda kişisel veri | Log kuralları (aşağıda) |
-| Bağımlılık açıkları | Dependabot / `pnpm audit` |
+| Tehdit                                        | Önlem                                                                                                    |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Kiracılar arası veri sızıntısı                | Satır seviyesi izolasyon kuralları ve testleri ([MULTI-TENANCY.md](../01-architecture/MULTI-TENANCY.md)) |
+| Sahte webhook çağrısı (randevu manipülasyonu) | `x-vapi-secret` sabit zamanlı doğrulama; HTTPS zorunlu                                                   |
+| Prompt injection ile veri çekme               | Tool'lar arayan ve kiracı ile sınırlı; toplu okuma tool'u yok                                            |
+| Hesap ele geçirme (panel)                     | Better Auth; güçlü parola, oturum süresi; 2FA (Faz 3)                                                    |
+| Gizli anahtarların sızması                    | Sadece Vercel env; repo'da `.env*` yok (`.env.example` hariç)                                            |
+| Loglarda kişisel veri                         | Log kuralları (aşağıda)                                                                                  |
+| Bağımlılık açıkları                           | Dependabot / `pnpm audit`                                                                                |
 
 ## Kimlik doğrulama ve yetkilendirme
 
@@ -32,13 +32,13 @@
 
 ## Gizli anahtarlar
 
-| Değişken | Nerede |
-|---|---|
-| `DATABASE_URL` | Vercel (Neon entegrasyonu otomatik ekler) |
-| `VAPI_WEBHOOK_SECRET`, `VAPI_API_KEY` | Vercel env |
-| `BETTER_AUTH_SECRET` | Vercel env (32+ byte rastgele) |
-| `NETGSM_*` | Vercel env |
-| `CRON_SECRET` | Vercel env |
+| Değişken                              | Nerede                                    |
+| ------------------------------------- | ----------------------------------------- |
+| `DATABASE_URL`                        | Vercel (Neon entegrasyonu otomatik ekler) |
+| `VAPI_WEBHOOK_SECRET`, `VAPI_API_KEY` | Vercel env                                |
+| `BETTER_AUTH_SECRET`                  | Vercel env (32+ byte rastgele)            |
+| `NETGSM_*`                            | Vercel env                                |
+| `CRON_SECRET`                         | Vercel env                                |
 
 Rotasyon: Yılda bir veya şüphe anında. Webhook secret rotasyonu sırasında geçiş dönemi için iki değer kabul edilebilir (Faz 2).
 

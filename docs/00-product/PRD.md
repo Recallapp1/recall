@@ -1,10 +1,10 @@
 # PRD: Recall
 
-| | |
-|---|---|
-| Durum | Taslak v0.1 |
-| Sahip | Ürün |
-| Son güncelleme | 2026-10-04 |
+|                |             |
+| -------------- | ----------- |
+| Durum          | Taslak v0.1 |
+| Sahip          | Ürün        |
+| Son güncelleme | 2026-10-04  |
 
 ## 1. Problem
 
@@ -36,6 +36,7 @@ Detay: [USER-PERSONAS.md](USER-PERSONAS.md)
 ## 4. MVP kapsamı
 
 ### Dahil
+
 - Kliniğe özel sesli asistan: karşılama, hizmet ve hekim bilgisi, çalışma saatleri.
 - Randevu **oluşturma, iptal ve erteleme** (telefon numarası ile hasta tanıma).
 - Gerçek zamanlı müsaitlik hesabı (hekim çalışma saatleri, izinler, mevcut randevular, hizmet süresi).
@@ -45,6 +46,7 @@ Detay: [USER-PERSONAS.md](USER-PERSONAS.md)
 - KVKK: arama başında aydınlatma anonsu, veri saklama politikası.
 
 ### Hariç (V1+)
+
 - Dış takvim/klinik yazılımı entegrasyonları (Google Calendar, Dentsoft vb.).
 - Giden arama (hatırlatma için asistanın araması).
 - Çoklu dil (İngilizce, Arapça; sağlık turizmi için).
@@ -53,25 +55,25 @@ Detay: [USER-PERSONAS.md](USER-PERSONAS.md)
 
 ## 5. Başarı metrikleri
 
-| Metrik | MVP hedefi |
-|---|---|
-| Asistanın insana devretmeden tamamladığı arama oranı | ≥ %70 |
-| Randevu talebi olan aramalarda randevu oluşturma oranı | ≥ %80 |
+| Metrik                                                      | MVP hedefi                 |
+| ----------------------------------------------------------- | -------------------------- |
+| Asistanın insana devretmeden tamamladığı arama oranı        | ≥ %70                      |
+| Randevu talebi olan aramalarda randevu oluşturma oranı      | ≥ %80                      |
 | Yanıt gecikmesi (hasta konuşmayı bitirdikten sonra ilk ses) | p50 < 1,0 sn, p95 < 1,8 sn |
-| Yanlış randevu (yanlış saat/hekim/hizmet) | < %1 |
-| Kaçan arama | ~%0 (7/24 cevap) |
-| Klinik memnuniyeti (NPS) | ≥ 40 |
+| Yanlış randevu (yanlış saat/hekim/hizmet)                   | < %1                       |
+| Kaçan arama                                                 | ~%0 (7/24 cevap)           |
+| Klinik memnuniyeti (NPS)                                    | ≥ 40                       |
 
 ## 6. Kısıtlar ve riskler
 
-| Risk | Etki | Önlem |
-|---|---|---|
-| Türkçe STT, isim ve tıbbi terimlerde hata yapar | Yanlış kayıt | Telaffuz sözlüğü, kritik bilgiyi geri okuyarak teyit, SMS onayı. Bkz. [VOICE-AND-LANGUAGE.md](../02-voice-agent/VOICE-AND-LANGUAGE.md) |
-| Gecikme doğallığı bozar | Hasta kapatır | Düşük gecikmeli model ve sağlayıcı seçimi, bölge yakınlığı. Bkz. [AGENT-DESIGN.md](../02-voice-agent/AGENT-DESIGN.md) |
-| Asistanın tıbbi tavsiye vermesi | Hukuki ve sağlık riski | Katı kapsam, acil durumda 112 yönlendirmesi. Bkz. [ESCALATION.md](../02-voice-agent/ESCALATION.md) |
-| KVKK: sağlık verisi özel nitelikli kişisel veridir | Ceza, itibar | Aydınlatma, açık rıza, veri minimizasyonu, AB bölgesi. Bkz. [KVKK.md](../05-compliance/KVKK.md) |
-| Türk numaralarının SIP ile bağlanması | Lansman gecikmesi | Erken operatör seçimi ve POC. Bkz. [TELEPHONY.md](../03-telephony/TELEPHONY.md) |
-| Dakika başı maliyet | Kâr marjı | Maliyet modeli ve izleme. Bkz. [COST-MODEL.md](../06-operations/COST-MODEL.md) |
+| Risk                                               | Etki                   | Önlem                                                                                                                                  |
+| -------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Türkçe STT, isim ve tıbbi terimlerde hata yapar    | Yanlış kayıt           | Telaffuz sözlüğü, kritik bilgiyi geri okuyarak teyit, SMS onayı. Bkz. [VOICE-AND-LANGUAGE.md](../02-voice-agent/VOICE-AND-LANGUAGE.md) |
+| Gecikme doğallığı bozar                            | Hasta kapatır          | Düşük gecikmeli model ve sağlayıcı seçimi, bölge yakınlığı. Bkz. [AGENT-DESIGN.md](../02-voice-agent/AGENT-DESIGN.md)                  |
+| Asistanın tıbbi tavsiye vermesi                    | Hukuki ve sağlık riski | Katı kapsam, acil durumda 112 yönlendirmesi. Bkz. [ESCALATION.md](../02-voice-agent/ESCALATION.md)                                     |
+| KVKK: sağlık verisi özel nitelikli kişisel veridir | Ceza, itibar           | Aydınlatma, açık rıza, veri minimizasyonu, AB bölgesi. Bkz. [KVKK.md](../05-compliance/KVKK.md)                                        |
+| Türk numaralarının SIP ile bağlanması              | Lansman gecikmesi      | Erken operatör seçimi ve POC. Bkz. [TELEPHONY.md](../03-telephony/TELEPHONY.md)                                                        |
+| Dakika başı maliyet                                | Kâr marjı              | Maliyet modeli ve izleme. Bkz. [COST-MODEL.md](../06-operations/COST-MODEL.md)                                                         |
 
 ## 7. Açık sorular
 

@@ -21,14 +21,15 @@ Vapi'nin **Server URL**'i. Tüm Vapi mesajları buraya gelir.
 
 ### Mesaj tipleri
 
-| `message.type` | Ne zaman | Yanıt |
-|---|---|---|
-| `assistant-request` | Arama başlarken | `{ assistant: {...} }`: kliniğe özel asistan |
-| `tool-calls` | LLM bir tool çağırdığında | `{ results: [{ toolCallId, result }] }` |
-| `end-of-call-report` | Arama bittiğinde | `200 {}`: arama kaydı yazılır |
-| `status-update`, diğerleri | Bilgilendirme | `200 {}` |
+| `message.type`             | Ne zaman                  | Yanıt                                        |
+| -------------------------- | ------------------------- | -------------------------------------------- |
+| `assistant-request`        | Arama başlarken           | `{ assistant: {...} }`: kliniğe özel asistan |
+| `tool-calls`               | LLM bir tool çağırdığında | `{ results: [{ toolCallId, result }] }`      |
+| `end-of-call-report`       | Arama bittiğinde          | `200 {}`: arama kaydı yazılır                |
+| `status-update`, diğerleri | Bilgilendirme             | `200 {}`                                     |
 
 #### `assistant-request` yanıtı (özet)
+
 ```json
 {
   "assistant": {
@@ -48,13 +49,13 @@ Vapi'nin **Server URL**'i. Tüm Vapi mesajları buraya gelir.
 ```
 
 #### `tool-calls` yanıtı
+
 ```json
 {
-  "results": [
-    { "toolCallId": "call_abc", "result": "{\"ok\":true,\"slots\":[...]}" }
-  ]
+  "results": [{ "toolCallId": "call_abc", "result": "{\"ok\":true,\"slots\":[...]}" }]
 }
 ```
+
 `result` bir **string**'dir (JSON serileştirilmiş). Hata durumunda da `200` döneriz ve `result` içinde `{ "ok": false, "error": "SLOT_TAKEN", "message": "…" }` olur. Böylece LLM hatayı hastaya doğal dille açıklayabilir.
 
 Tool listesi ve şemaları: [TOOLS.md](../02-voice-agent/TOOLS.md).

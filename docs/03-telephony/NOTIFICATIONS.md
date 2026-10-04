@@ -2,20 +2,20 @@
 
 ## Kanallar
 
-| Kanal | Faz | Sağlayıcı |
-|---|---|---|
-| SMS | MVP | Netgsm |
-| WhatsApp | V2 | WhatsApp Business API |
-| E-posta (kliniğe rapor) | V1 | Resend |
+| Kanal                   | Faz | Sağlayıcı             |
+| ----------------------- | --- | --------------------- |
+| SMS                     | MVP | Netgsm                |
+| WhatsApp                | V2  | WhatsApp Business API |
+| E-posta (kliniğe rapor) | V1  | Resend                |
 
 ## SMS tipleri
 
-| Tip | Tetikleyici | Şablon |
-|---|---|---|
-| Onay | Randevu oluşturuldu | `{{clinic}}: Sayın {{name}}, {{date}} {{time}} tarihli {{service}} randevunuz oluşturuldu. Adres: {{address}}. İptal/değişiklik için bu numarayı arayabilirsiniz.` |
-| İptal | Randevu iptal edildi | `{{clinic}}: {{date}} {{time}} tarihli randevunuz iptal edilmiştir. Yeni randevu için bizi arayabilirsiniz.` |
-| Erteleme | Randevu ertelendi | `{{clinic}}: Randevunuz {{date}} {{time}} olarak güncellenmiştir.` |
-| Hatırlatma | Randevudan N saat önce (cron) | `{{clinic}}: Yarın {{time}}'de randevunuz bulunmaktadır. Gelemeyecekseniz lütfen bizi arayın.` |
+| Tip        | Tetikleyici                   | Şablon                                                                                                                                                             |
+| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Onay       | Randevu oluşturuldu           | `{{clinic}}: Sayın {{name}}, {{date}} {{time}} tarihli {{service}} randevunuz oluşturuldu. Adres: {{address}}. İptal/değişiklik için bu numarayı arayabilirsiniz.` |
+| İptal      | Randevu iptal edildi          | `{{clinic}}: {{date}} {{time}} tarihli randevunuz iptal edilmiştir. Yeni randevu için bizi arayabilirsiniz.`                                                       |
+| Erteleme   | Randevu ertelendi             | `{{clinic}}: Randevunuz {{date}} {{time}} olarak güncellenmiştir.`                                                                                                 |
+| Hatırlatma | Randevudan N saat önce (cron) | `{{clinic}}: Yarın {{time}}'de randevunuz bulunmaktadır. Gelemeyecekseniz lütfen bizi arayın.`                                                                     |
 
 - Şablonlar 160 karakterin altında tutulur (Türkçe karakterler UCS-2 kodlamaya geçirir ve limiti 70'e düşürebilir; Netgsm'in Türkçe karakter desteği ile ölçülecek).
 - Gönderici adı (başlık): Recall'un onaylı başlığı veya kliniğin kendi başlığı (Faz 3).

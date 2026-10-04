@@ -8,6 +8,7 @@
 - **Endişe:** "Robotla konuşuyorum, anlamayacak." Asistan anlamazsa insana ulaşabilmeli.
 
 **Varyasyonlar**
+
 - **Yaşlı hasta (70+):** Yavaş konuşur, teknolojiye mesafelidir. Asistan sabırlı olmalı, kısa cümleler kurmalı, bilgiyi tekrar etmeli.
 - **İlk kez arayan:** Hizmetler, fiyat, adres ve otopark gibi bilgi soruları sorar.
 - **Acil durumdaki hasta:** Şiddetli ağrı, kanama veya şişlik. Hemen insana veya 112'ye yönlendirilmeli.
@@ -39,9 +40,9 @@
 
 ## Panel rol eşlemesi
 
-| Persona | Panel rolü | Yetki |
-|---|---|---|
-| Klinik sahibi | `owner` | Her şey, faturalandırma ve üye yönetimi dahil |
-| Klinik yöneticisi | `admin` | Ayarlar, personel, hizmetler, tüm randevular |
-| Sekreter | `member` | Randevular, aramalar, hastalar |
-| Hekim | `member` (+ `practitionerId`) | Kendi takvimi (V1'de kısıtlama) |
+| Persona           | Panel rolü                    | Yetki                                         |
+| ----------------- | ----------------------------- | --------------------------------------------- |
+| Klinik sahibi     | `owner`                       | Her şey, faturalandırma ve üye yönetimi dahil |
+| Klinik yöneticisi | `admin`                       | Ayarlar, personel, hizmetler, tüm randevular  |
+| Sekreter          | `member`                      | Randevular, aramalar, hastalar                |
+| Hekim             | `member` (+ `practitionerId`) | Kendi takvimi (V1'de kısıtlama)               |

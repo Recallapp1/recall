@@ -16,35 +16,37 @@
 
 ## Renkler (semantik token'lar)
 
-| Token | Kullanım | Açık tema |
-|---|---|---|
-| `--primary` | Ana aksiyon, marka | Teal 600 `#0d9488` |
-| `--background` | Sayfa | `#ffffff` |
-| `--muted` | İkincil yüzey | Slate 50 |
-| `--foreground` | Metin | Slate 900 |
-| `--destructive` | İptal, sil | Red 600 |
+| Token           | Kullanım           | Açık tema          |
+| --------------- | ------------------ | ------------------ |
+| `--primary`     | Ana aksiyon, marka | Teal 600 `#0d9488` |
+| `--background`  | Sayfa              | `#ffffff`          |
+| `--muted`       | İkincil yüzey      | Slate 50           |
+| `--foreground`  | Metin              | Slate 900          |
+| `--destructive` | İptal, sil         | Red 600            |
 
 ### Durum renkleri (randevu)
-| Durum | Renk |
-|---|---|
-| scheduled | Mavi |
-| confirmed | Teal |
-| completed | Gri |
+
+| Durum     | Renk                  |
+| --------- | --------------------- |
+| scheduled | Mavi                  |
+| confirmed | Teal                  |
+| completed | Gri                   |
 | cancelled | Kırmızı (üstü çizili) |
-| no_show | Turuncu |
+| no_show   | Turuncu               |
 
 ### Kaynak rozeti
+
 - `voice` → 🎙 "Asistan" rozeti (primary, açık ton)
 - `panel` → "Panel" rozeti (nötr)
 
 ## Tipografi ölçeği
 
-| Rol | Sınıf |
-|---|---|
+| Rol           | Sınıf                                   |
+| ------------- | --------------------------------------- |
 | Sayfa başlığı | `text-2xl font-semibold tracking-tight` |
-| Bölüm başlığı | `text-lg font-medium` |
-| Gövde | `text-sm` |
-| Yardımcı | `text-xs text-muted-foreground` |
+| Bölüm başlığı | `text-lg font-medium`                   |
+| Gövde         | `text-sm`                               |
+| Yardımcı      | `text-xs text-muted-foreground`         |
 
 ## Boşluk ve düzen
 

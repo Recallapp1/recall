@@ -17,12 +17,12 @@ Kaynak: [`src/server/voice/tools/`](../../src/server/voice/tools/). Her tool bir
 
 Uygun randevu saatlerini döner.
 
-| Argüman | Tip | Zorunlu | Not |
-|---|---|---|---|
-| serviceId | uuid | ✓ | |
-| date | `YYYY-MM-DD` | ✓ | Aranan gün |
-| practitionerId | uuid | | Belirtilmezse hizmeti veren tüm hekimler |
-| timeOfDay | `morning` / `afternoon` / `evening` / `any` | | Varsayılan `any` |
+| Argüman        | Tip                                         | Zorunlu | Not                                      |
+| -------------- | ------------------------------------------- | ------- | ---------------------------------------- |
+| serviceId      | uuid                                        | ✓       |                                          |
+| date           | `YYYY-MM-DD`                                | ✓       | Aranan gün                               |
+| practitionerId | uuid                                        |         | Belirtilmezse hizmeti veren tüm hekimler |
+| timeOfDay      | `morning` / `afternoon` / `evening` / `any` |         | Varsayılan `any`                         |
 
 ```json
 {
@@ -35,29 +35,30 @@ Uygun randevu saatlerini döner.
   "nextAvailableDates": []
 }
 ```
+
 O gün slot yoksa `slots: []` ve sonraki 3 uygun gün `nextAvailableDates` içinde döner. En fazla 6 slot döner; LLM bunlardan 2–3 tanesini sunar.
 
 ## `find_appointments`
 
 Hastanın gelecekteki aktif randevularını bulur.
 
-| Argüman | Tip | Zorunlu | Not |
-|---|---|---|---|
-| phone | string | | Belirtilmezse arayan numara kullanılır |
+| Argüman | Tip    | Zorunlu | Not                                    |
+| ------- | ------ | ------- | -------------------------------------- |
+| phone   | string |         | Belirtilmezse arayan numara kullanılır |
 
 Güvenlik: Dönüşte sadece randevu tarihi, saati, hizmet ve hekim bilgisi bulunur. Hasta adı, "Ayşe Hanım adına mı?" teyidi için ilk harf ve soyadı maskeli olarak verilir (`A*** Y***`).
 
 ## `book_appointment`
 
-| Argüman | Tip | Zorunlu |
-|---|---|---|
-| serviceId | uuid | ✓ |
-| practitionerId | uuid | ✓ |
-| date | `YYYY-MM-DD` | ✓ |
-| time | `HH:mm` | ✓ |
-| patientName | string | ✓ |
-| patientPhone | string | Arayan numara gizliyse ✓ |
-| notes | string | |
+| Argüman        | Tip          | Zorunlu                  |
+| -------------- | ------------ | ------------------------ |
+| serviceId      | uuid         | ✓                        |
+| practitionerId | uuid         | ✓                        |
+| date           | `YYYY-MM-DD` | ✓                        |
+| time           | `HH:mm`      | ✓                        |
+| patientName    | string       | ✓                        |
+| patientPhone   | string       | Arayan numara gizliyse ✓ |
+| notes          | string       |                          |
 
 Akış: hasta bul veya oluştur → slotun hâlâ uygun olduğunu doğrula → transaction içinde ekle (exclusion constraint son savunma hattı) → SMS kuyruğa al.
 
@@ -65,38 +66,38 @@ Hatalar: `SLOT_UNAVAILABLE`, `INVALID_SERVICE`, `INVALID_PRACTITIONER`, `OUTSIDE
 
 ## `cancel_appointment`
 
-| Argüman | Tip | Zorunlu |
-|---|---|---|
-| appointmentId | uuid | ✓ |
+| Argüman       | Tip  | Zorunlu |
+| ------------- | ---- | ------- |
+| appointmentId | uuid | ✓       |
 
 Randevu arayan hastaya ait olmalıdır (telefon eşleşmesi). Hatalar: `NOT_FOUND`, `TOO_LATE_TO_CANCEL`.
 
 ## `reschedule_appointment`
 
-| Argüman | Tip | Zorunlu |
-|---|---|---|
-| appointmentId | uuid | ✓ |
-| date, time | | ✓ |
-| practitionerId | uuid | | Belirtilmezse aynı hekim |
+| Argüman        | Tip  | Zorunlu |
+| -------------- | ---- | ------- |
+| appointmentId  | uuid | ✓       |
+| date, time     |      | ✓       |
+| practitionerId | uuid |         | Belirtilmezse aynı hekim |
 
 Atomiktir: yeni slot ayrılamazsa eski randevu korunur.
 
 ## `create_callback_request`
 
-| Argüman | Tip | Zorunlu |
-|---|---|---|
-| reason | string | ✓ |
-| patientName | string | |
-| phone | string | | Belirtilmezse arayan numara |
+| Argüman     | Tip    | Zorunlu |
+| ----------- | ------ | ------- |
+| reason      | string | ✓       |
+| patientName | string |         |
+| phone       | string |         | Belirtilmezse arayan numara |
 
 Panelde "Geri aranacaklar" listesine düşer.
 
 ## Platform tool'ları (Vapi yerleşik)
 
-| Tool | Ne zaman eklenir |
-|---|---|
+| Tool           | Ne zaman eklenir                                               |
+| -------------- | -------------------------------------------------------------- |
 | `transferCall` | `clinics.transfer_phone_number` tanımlıysa. Hedef bu numaradır |
-| `endCall` | Her zaman. Görüşme doğal olarak bittiğinde |
+| `endCall`      | Her zaman. Görüşme doğal olarak bittiğinde                     |
 
 ## Yeni tool ekleme
 

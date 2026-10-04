@@ -35,6 +35,7 @@ sequenceDiagram
 ```
 
 **Adımlar ve kurallar**
+
 1. **Karşılama:** Klinik adı, kayıt ve aydınlatma anonsu (KVKK), "Size nasıl yardımcı olabilirim?"
 2. **Niyet tespiti:** Yeni randevu, iptal, erteleme, bilgi veya diğer.
 3. **Hizmet tespiti:** Hasta hizmeti belirtmezse kısa bir soru sorulur ("Muayene mi, temizlik mi?"). Bilinmiyorsa varsayılan hizmet "Muayene / Kontrol" olur.

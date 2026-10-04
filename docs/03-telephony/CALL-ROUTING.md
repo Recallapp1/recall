@@ -2,11 +2,11 @@
 
 ## Yönlendirme modları (klinik seçer)
 
-| Mod | Ne zaman Recall'a gider | Kimin için |
-|---|---|---|
-| **Her zaman** | Tüm aramalar | Sekreteri olmayan veya yoğun klinik |
-| **Meşgul / cevapsız** | Sekreter meşgulse veya X saniye açmazsa | Sekreteri olan klinik (en yaygın) |
-| **Mesai dışı** | Klinik kapalıyken | Başlangıç için düşük riskli seçenek |
+| Mod                   | Ne zaman Recall'a gider                 | Kimin için                          |
+| --------------------- | --------------------------------------- | ----------------------------------- |
+| **Her zaman**         | Tüm aramalar                            | Sekreteri olmayan veya yoğun klinik |
+| **Meşgul / cevapsız** | Sekreter meşgulse veya X saniye açmazsa | Sekreteri olan klinik (en yaygın)   |
+| **Mesai dışı**        | Klinik kapalıyken                       | Başlangıç için düşük riskli seçenek |
 
 Yönlendirme kliniğin **kendi operatöründe** (veya santralinde) kurulur. Recall ekibi onboarding sırasında adım adım yardım eder ([ONBOARDING.md](../04-panel/ONBOARDING.md)).
 

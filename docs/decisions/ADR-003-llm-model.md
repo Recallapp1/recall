@@ -1,13 +1,14 @@
 # ADR-003: Sesli Asistan LLM'i
 
-| | |
-|---|---|
+|       |                                           |
+| ----- | ----------------------------------------- |
 | Durum | Önerildi: Faz 1 ölçümleriyle kesinleşecek |
-| Tarih | 2026-10-04 |
+| Tarih | 2026-10-04                                |
 
 ## Bağlam
 
 Sesli asistanın LLM'i aynı anda şunları sağlamalı:
+
 1. **Düşük gecikme:** İlk token süresi, tur gecikmesinin en büyük parçası.
 2. **Güvenilir tool kullanımı:** Doğru ID'ler, doğru tarih çözümleme, teyitsiz işlem yapmama.
 3. **Doğal Türkçe** ve talimatlara sıkı bağlılık (tıbbi tavsiye yok, uydurma yok).
@@ -15,11 +16,11 @@ Sesli asistanın LLM'i aynı anda şunları sağlamalı:
 
 ## Adaylar (Anthropic, 2026-09)
 
-| Model | ID | Not |
-|---|---|---|
-| Claude Opus 5.5 | `claude-opus-5-5` | En yetenekli Opus. Effort ayarı ile hız ve kalite dengelenebilir. Thinking kapatılamaz; `low` effort kullanılır |
-| Claude Sonnet 5.5 | `claude-sonnet-5-5` | Hız ve yetenek dengesi, daha düşük maliyet |
-| Claude Haiku 4.5 | `claude-haiku-4-5` | En hızlı ve en ucuz; karmaşık akışlarda zayıf kalabilir |
+| Model             | ID                  | Not                                                                                                             |
+| ----------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Claude Opus 5.5   | `claude-opus-5-5`   | En yetenekli Opus. Effort ayarı ile hız ve kalite dengelenebilir. Thinking kapatılamaz; `low` effort kullanılır |
+| Claude Sonnet 5.5 | `claude-sonnet-5-5` | Hız ve yetenek dengesi, daha düşük maliyet                                                                      |
+| Claude Haiku 4.5  | `claude-haiku-4-5`  | En hızlı ve en ucuz; karmaşık akışlarda zayıf kalabilir                                                         |
 
 ## Önerilen karar
 

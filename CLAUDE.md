@@ -8,20 +8,20 @@ Recall, kliniklere (diş, sağlık, güzellik) gelen telefon aramalarını karş
 
 ## Stack
 
-| Katman | Seçim |
-|---|---|
-| Framework | Next.js 16 (App Router, Turbopack), React 19.2, TypeScript strict |
-| Stil | Tailwind CSS 4, shadcn/ui |
-| Veritabanı | PostgreSQL (lokal: Docker, prod: Neon / Vercel Marketplace) |
-| ORM | Drizzle ORM + drizzle-kit (`pg` sürücüsü) |
-| Kimlik doğrulama | Better Auth (organization plugin = klinik) |
-| Doğrulama | Zod (env, API girdileri, tool argümanları) |
-| Sesli asistan | Vapi (Türk operatöründen BYO SIP trunk) |
-| LLM | Claude (bkz. [ADR-003](docs/decisions/ADR-003-llm-model.md)) |
-| SMS | Netgsm |
-| Test | Vitest |
-| Deploy | Vercel (bölge `fra1`) |
-| Paket yöneticisi | pnpm (Node 24) |
+| Katman           | Seçim                                                             |
+| ---------------- | ----------------------------------------------------------------- |
+| Framework        | Next.js 16 (App Router, Turbopack), React 19.2, TypeScript strict |
+| Stil             | Tailwind CSS 4, shadcn/ui                                         |
+| Veritabanı       | PostgreSQL (lokal: Docker, prod: Neon / Vercel Marketplace)       |
+| ORM              | Drizzle ORM + drizzle-kit (`pg` sürücüsü)                         |
+| Kimlik doğrulama | Better Auth (organization plugin = klinik)                        |
+| Doğrulama        | Zod (env, API girdileri, tool argümanları)                        |
+| Sesli asistan    | Vapi (Türk operatöründen BYO SIP trunk)                           |
+| LLM              | Claude (bkz. [ADR-003](docs/decisions/ADR-003-llm-model.md))      |
+| SMS              | Netgsm                                                            |
+| Test             | Vitest                                                            |
+| Deploy           | Vercel (bölge `fra1`)                                             |
+| Paket yöneticisi | pnpm (Node 24)                                                    |
 
 ## Komutlar
 

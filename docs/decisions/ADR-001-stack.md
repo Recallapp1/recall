@@ -1,9 +1,9 @@
 # ADR-001: Uygulama Stack'i
 
-| | |
-|---|---|
+|       |              |
+| ----- | ------------ |
 | Durum | Kabul edildi |
-| Tarih | 2026-10-04 |
+| Tarih | 2026-10-04   |
 
 ## Bağlam
 

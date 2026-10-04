@@ -68,9 +68,20 @@ Tüm alanların varsayılanı vardır; boş `{}` geçerli bir config'tir.
     "greeting": "Bella Estetik'e hoş geldiniz, ben Deniz!",
     "speakPrices": true,
     "recordCalls": true,
-    "faq": [{ "q": "Lazer epilasyon kaç seans?", "a": "Genellikle 6 ile 8 seans arası; uzmanımız ilk görüşmede netleştirir." }]
+    "faq": [
+      {
+        "q": "Lazer epilasyon kaç seans?",
+        "a": "Genellikle 6 ile 8 seans arası; uzmanımız ilk görüşmede netleştirir."
+      }
+    ]
   },
-  "booking": { "slotIntervalMinutes": 30, "minNoticeMinutes": 60, "maxDaysAhead": 60, "cancellationMinNoticeHours": 12, "allowPractitionerChoice": false }
+  "booking": {
+    "slotIntervalMinutes": 30,
+    "minNoticeMinutes": 60,
+    "maxDaysAhead": 60,
+    "cancellationMinNoticeHours": 12,
+    "allowPractitionerChoice": false
+  }
 }
 ```
 
