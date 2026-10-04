@@ -1,29 +1,35 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Single source: DESIGN.md (ADR-005).
+ * Design tokens. Single source: DESIGN.md (ADR-005, palette: ADR-007).
  * Components use these tokens only; no raw hex or rgba values elsewhere.
  * Panel derivations: docs/04-panel/DESIGN-SYSTEM.md
  */
 
 @theme {
-  /* ─── Palette (DESIGN.md §1) ─────────────────────────────────────────── */
-  --color-ink: #000000; /* Primary Dark */
-  --color-surface-dark: #18181b; /* Dark Surface, Zinc-900 */
-  --color-surface-darker: #09090b; /* Zinc-950: bottom of dark gradients */
-  --color-surface-dark-hover: #3f3f46; /* Zinc-700: action button icon hover (DESIGN.md §5) */
-  --color-canvas: #f4f4f5; /* Light Background, Zinc-100 */
-  --color-paper: #ffffff; /* Light cards (bento) */
-  --color-accent: #34d399; /* Accent, Emerald-400 */
-  --color-body: #71717a; /* Body text on light, Zinc-500 */
-  --color-heading: #18181b; /* Headings on light */
-  --color-hairline: #f4f4f5; /* Light Card Border, Zinc-100 */
+  /* ─── Palette (DESIGN.md §1): deep navy + white, one blue accent ───────── */
+  /* Contrast ratios are listed in docs/04-panel/DESIGN-SYSTEM.md §4. */
+  --color-ink: #050b1f; /* deepest navy: footer, gradient bottom */
+  --color-surface-dark: #0b1736; /* navy 900: dark sections */
+  --color-surface-darker: #060e24; /* navy 950: lower half of dark gradients */
+  --color-surface-raised: #13254f; /* cards placed on dark sections */
+  --color-surface-dark-hover: #1a2b57; /* hover on dark controls */
+  --color-canvas: #f4f7fc; /* cool off-white page background */
+  --color-paper: #ffffff; /* cards, light sections */
+  --color-primary: #1d4ed8; /* buttons and links on light (white text 6.7:1) */
+  --color-primary-hover: #1e40af;
+  --color-primary-soft: #dbeafe; /* icon chips, highlights on light */
+  --color-accent: #60a5fa; /* highlight on dark only (6.9:1 on navy; 2.5:1 on white) */
+  --color-success: #15803d; /* positive status text and dots (5.0:1 on white) */
+  --color-body: #475569; /* body text on light (7.6:1 on white) */
+  --color-heading: #0b1736; /* headings on light */
+  --color-hairline: #e3e8f2; /* borders and dividers on light */
   --color-glass: rgb(255 255 255 / 0.05);
   --color-glass-strong: rgb(255 255 255 / 0.1);
-  --color-glass-border: rgb(255 255 255 / 0.1); /* Subtle Border (dark) */
+  --color-glass-border: rgb(255 255 255 / 0.12);
   --color-on-dark: #ffffff;
-  --color-on-dark-muted: rgb(255 255 255 / 0.6);
-  --color-on-dark-soft: rgb(255 255 255 / 0.8);
+  --color-on-dark-muted: #a5b4cf; /* secondary text on navy (8.4:1) */
+  --color-on-dark-soft: rgb(255 255 255 / 0.85);
 
   /* ─── Typography (DESIGN.md §1) ──────────────────────────────────────── */
   --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -103,7 +109,7 @@
   );
 }
 
-/* Grain overlay at 15% opacity; needs a positioned parent. */
+/* Subtle grain overlay; needs a positioned parent. */
 @utility grain {
   position: relative;
   isolation: isolate;
@@ -115,7 +121,7 @@
     z-index: -1;
     pointer-events: none;
     border-radius: inherit;
-    opacity: 0.15;
+    opacity: 0.08;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-size: 200px 200px;
   }

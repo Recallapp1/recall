@@ -20,12 +20,18 @@ import { env } from "@/lib/env";
 export const metadata: Metadata = { title: "Tasarım sistemi", robots: { index: false } };
 
 const swatches = [
-  { name: "ink", note: "Primary Dark · siyah", className: "bg-ink" },
-  { name: "surface-dark", note: "Dark Surface · Zinc-900", className: "bg-surface-dark" },
-  { name: "canvas", note: "Light Background · Zinc-100", className: "bg-canvas" },
-  { name: "paper", note: "Kart zemini · beyaz", className: "bg-paper" },
-  { name: "accent", note: "Accent · Emerald-400", className: "bg-accent" },
-  { name: "body", note: "Gövde metni · Zinc-500", className: "bg-body" },
+  { name: "ink", note: "En koyu lacivert · footer", className: "bg-ink" },
+  { name: "surface-dark", note: "Lacivert · koyu bölümler", className: "bg-surface-dark" },
+  { name: "surface-raised", note: "Koyu zeminde kart", className: "bg-surface-raised" },
+  { name: "primary", note: "Buton ve link · mavi", className: "bg-primary" },
+  { name: "primary-soft", note: "Açık zeminde ikon zemini", className: "bg-primary-soft" },
+  { name: "accent", note: "Yalnızca koyu zeminde vurgu", className: "bg-accent" },
+  { name: "canvas", note: "Sayfa zemini · soğuk beyaz", className: "bg-canvas" },
+  { name: "paper", note: "Kart ve açık bölüm · beyaz", className: "bg-paper" },
+  { name: "heading", note: "Başlık metni", className: "bg-heading" },
+  { name: "body", note: "Gövde metni (7,6:1)", className: "bg-body" },
+  { name: "success", note: "Olumlu durum", className: "bg-success" },
+  { name: "hairline", note: "Kenarlık ve ayırıcı", className: "bg-hairline" },
 ];
 
 const radii = [
@@ -50,11 +56,14 @@ export default async function DesignSystemPage() {
             DESIGN.md bileşenleri ve token&apos;ları
           </DisplayHeading>
           <p className="max-w-2xl text-on-dark-muted">
-            Koyu bölüm: alttan ağırlıklı gradyan ve %15 grain. Kaynak: DESIGN.md, ADR-005.
+            Koyu bölüm: lacivert, alttan koyulaşan gradyan ve hafif grain. Kaynak: DESIGN.md
+            (ADR-005, ADR-007).
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <ActionButton>Demo talep et</ActionButton>
-            <ActionButton icon={CalendarCheck}>Randevu oluştur</ActionButton>
+            <ActionButton icon={CalendarCheck} variant="primary">
+              Randevu oluştur
+            </ActionButton>
             <StatusTag>Asistan aktif</StatusTag>
           </div>
         </FadeInUp>
