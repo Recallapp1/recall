@@ -40,3 +40,14 @@ export function maskName(name: string): string {
     .map((part) => `${part.charAt(0).toLocaleUpperCase("tr-TR")}***`)
     .join(" ");
 }
+
+/** Readable Turkish format for staff screens: +905321234567 → "0532 123 45 67". */
+export function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return "—";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("90")) {
+    const local = digits.slice(2);
+    return `0${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6, 8)} ${local.slice(8)}`;
+  }
+  return phone;
+}

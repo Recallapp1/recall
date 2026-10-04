@@ -32,3 +32,28 @@ export const APPOINTMENT_SOURCE_LABELS: Record<AppointmentSource, string> = {
   voice: "Asistan",
   panel: "Panel",
 };
+
+/**
+ * Status changes staff can make from the panel. Cancelled is final (the slot
+ * may already be taken again); completed and no-show can be corrected.
+ */
+export const STATUS_TRANSITIONS: Record<AppointmentStatus, readonly AppointmentStatus[]> = {
+  scheduled: ["confirmed", "completed", "no_show", "cancelled"],
+  confirmed: ["scheduled", "completed", "no_show", "cancelled"],
+  completed: ["no_show", "confirmed"],
+  no_show: ["completed", "confirmed"],
+  cancelled: [],
+};
+
+export function canTransition(from: AppointmentStatus, to: AppointmentStatus): boolean {
+  return STATUS_TRANSITIONS[from].includes(to);
+}
+
+/** Button labels for status changes. */
+export const STATUS_ACTION_LABELS: Record<AppointmentStatus, string> = {
+  scheduled: "Planlandı olarak işaretle",
+  confirmed: "Onayla",
+  completed: "Tamamlandı",
+  no_show: "Gelmedi",
+  cancelled: "İptal et",
+};
