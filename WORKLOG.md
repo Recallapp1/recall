@@ -8,60 +8,37 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04 (F1 oturumu)_
+_Son güncelleme: 2026-10-04 (DESIGN.md v2 ve yeni tanıtım sayfası)_
 
-| Konu                    | Durum                                                                                                                                                                               |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | **F4**: F4.1 ve F4.3 tamamlandı; sırada F4.2 (panel bileşenleri). **F1.8**: ajan `claude-4.5-haiku` ile gecikme testi bekliyor                                                      |
-| Sıradaki faz            | F4.2 → F3 (hesaplar)                                                                                                                                                                |
-| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Vapi kodu tamamen silindi                                                |
-| Tasarım                 | **[DESIGN.md](DESIGN.md) tek kaynak**, kodda uygulandı: token'lar `globals.css`, bileşenler `src/components/design`, stil rehberi `/dev/tasarim`, kural kontrolü `pnpm lint:tokens` |
-| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                    |
-| Testler                 | **107 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                             |
-| Lokal DB                | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker)                                                                                                                |
-| GitHub                  | `origin` = https://github.com/recallapp0/recall (`main` push'lu)                                                                                                                    |
-| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                     |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine): kontrast kuralı, kayıt dinleme rolleri                                              |
-| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                             |
+| Konu                    | Durum                                                                                                                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aktif faz               | **F4**: yeni tanıtım sayfası tamam (13 bölüm, sticky header, demo formu). Sırada **F4.2** (panel bileşenleri), ardından **F3** (hesaplar)                                                                                          |
+| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo kliniğin Retell ajanı canlı (`agent_d0b8d67285431ede3db2c75201`), Türkçe ve sayı okuma ekipçe onaylandı. Ajan şu an `claude-4.5-haiku` ile; gecikme karşılaştırması ekibin test aramasını bekliyor |
+| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                          |
+| Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/design`, stil rehberi `/dev/tasarim`, `pnpm lint:tokens`      |
+| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                   |
+| Testler                 | **114 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                            |
+| Lokal DB                | `pnpm db:local` (PGlite) veya `pnpm db:up` (Docker). PGlite verisi 2026-10-04 tarihinde bozuldu; yedek `.pglite.corrupt-20261004`. Uzun süreli kullanımda Docker tercih edilmeli                                                   |
+| Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                   |
+| GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                    |
+| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                    |
+| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                     |
+| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                            |
 
 ### Dallar ve saklanan işler
 
-| Ad          | İçerik                                                                                                                                   | Durum                                                              |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `main`      | F0 + plan + F1                                                                                                                           | Kararlı, `origin/main` ile aynı                                    |
-| `stash@{0}` | "WIP F3 (orphaned session): add better-auth dependency": önceki bir oturumun commit'lenmemiş `package.json`/`pnpm-lock.yaml` değişikliği | F3'e başlarken incelenip uygulanacak veya silinecek (plan F3 notu) |
+| Ad          | İçerik                                                  | Durum                                               |
+| ----------- | ------------------------------------------------------- | --------------------------------------------------- |
+| `main`      | Tüm tamamlanan işler                                    | `origin/main` ile aynı                              |
+| `stash@{0}` | "WIP F3 (orphaned session): add better-auth dependency" | F3'e başlarken incelenip uygulanacak veya silinecek |
 
 ### Sıradaki işler
 
-1. Ürün ekibi: `.env.local` → `RETELL_API_KEY`, `RETELL_VOICE_ID` ([RETELL-SETUP.md](docs/02-voice-agent/RETELL-SETUP.md) adım 2 ve 4)
-2. F1.8: ilk `pnpm voice:sync --clinic gulus-dis`, web call testleri, model/ses/ASR karşılaştırması, ajan sürümleme davranışının canlı doğrulanması
-3. F4.1: DESIGN.md token'ları, Inter (`next/font/local`, ağdan bağımsız build)
-4. F3: Better Auth (stash'teki yarım işi değerlendir)
-
------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz | **F4**: F4.1 ve F4.3 tamamlandı; sırada F4.2 (panel bileşenleri). **F1.8**: ajan `claude-4.5-haiku` ile gecikme testi bekliyor |
-| Ses sağlayıcısı | **Retell AI** ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). Kodda hâlâ Vapi adaptörü var, F1.7'de kaldırılacak |
-| Tasarım | **[DESIGN.md](DESIGN.md) tek kaynak**, kodda uygulandı: token'lar `globals.css`, bileşenler `src/components/design`, stil rehberi `/dev/tasarim`, kural kontrolü `pnpm lint:tokens` |
-| Testler | **107 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz |
-| Lokal DB | `pnpm db:local` (PGlite, Docker gerekmez) veya `pnpm db:up` (Docker) |
-| Deploy | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. GitHub reposu ve Neon bekleniyor (F8) |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine) |
-| Alınan ürün kararları | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar): Recall ekibi klinik açar; e-posta + parola; özelleştirme = roller, modül görünürlüğü, kişisel tercihler (logo yok); Retell hesabı hazır |
-
-### Dallar
-
-| Dal                        | İçerik                                                                                                                          | Durum                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `main`                     | F0 temeli (`3ee627a`'ya kadar)                                                                                                  | Kararlı                                                        |
-| `feat/panel-auth`          | `468d94b` Docker'sız lokal Postgres (PGlite). **Commit'lenmemiş:** `better-auth` bağımlılığı (`package.json`, `pnpm-lock.yaml`) | F3 için yarım iş. Sahibi devam edecek; başka agent dokunmamalı |
-| `docs/implementation-plan` | Fazlı plan, WORKLOG, ADR-004/005, DESIGN.md                                                                                     | Bu oturum. `feat/panel-auth` üzerinden açıldı                  |
-
-### Sıradaki işler
-
-1. Ürün ekibinden: `RETELL_API_KEY` değerinin `.env.local` dosyasına girilmesi ve GitHub repo adresi
-2. F1.1–F1.4: Retell belgeleri, veri modeli, imza doğrulama, ajan spec'i
-3. F4.1: DESIGN.md token'ları ve Inter fontu
-4. F3: `feat/panel-auth` dalında Better Auth kurulumu
+1. Ürün ekibi: tanıtım sayfası geri bildirimi; `claude-4.5-haiku` ile bir test araması (gecikme karşılaştırması)
+2. F4.2: panel bileşenleri (form, tablo, dialog, takvim, rozetler)
+3. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
+4. Demo talepleri: ekibe e-posta bildirimi ve görüntüleme (F3/F6)
+5. Logo ve görsel varlıklar (ürün ekibiyle birlikte)
 
 ---
 
@@ -100,6 +77,39 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · DESIGN.md v2 (lacivert) ve yeni tanıtım sayfası · F4.3, ADR-007
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/landing-redesign` → `main` · **Commit'ler:** bu kaydı içeren commit'ler
+
+**Ne yapıldı**
+
+- Ürün ekibi tasarımı baştan istedi: kliniklere hitap eden, "cool" ama son derece profesyonel; **koyu mavi + beyaz** palet; en az 7–8 bölüm; **sticky header**; başlık "Kliniğinizin yeni nesil sekreteri" ve verilen açıklama metni.
+- **Palet:** Token adları korunarak değerler lacivert/beyaza çevrildi; `primary`, `primary-hover`, `primary-soft`, `surface-raised`, `success` eklendi. Tüm metin kontrastları hesaplanıp AA doğrulandı (gövde 7,6:1). Grain %15 → %8.
+- **DESIGN.md v2** yazıldı (yapısal kurallar korundu), [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md), [DESIGN-SYSTEM.md](docs/04-panel/DESIGN-SYSTEM.md) yeni palete göre güncellendi.
+- **Tanıtım sayfası** (`src/app/(marketing)/`): marketing `layout.tsx` (sticky header + footer), `_content.ts` (tüm metinler), `_components/` (hero, overview, product, trust, contact, demo-form, header, footer, logo, section-header). 13 bölüm + footer. Mobil menü JavaScript'siz (`<details>`).
+- `ActionButton` / `ActionLink` iki varyantlı (`onDark`, `primary`), yeni `SecondaryLink`.
+- **Demo talep formu gerçek:** [ortak sözleşme](src/lib/contracts/demo-request.ts) (Zod, client + server), `demo_requests` tablosu ([0003](drizzle/0003_demo_requests.sql)), [domain](src/server/domain/demo-requests.ts), [server action](<src/app/(marketing)/actions.ts>), KVKK onay kutusu, honeypot.
+- **KVKK log açığı kapatıldı:** Drizzle hata mesajları sorgu parametrelerini (ad, telefon) içeriyordu ve `tool.failed`, demo formu gibi noktalarda loglanıyordu. [`safeError()`](src/lib/safe-error.ts) eklendi ve tüm hata loglarında kullanılıyor (testli).
+- **İçerik doğruluğu:** Uydurma logo, yorum ve istatistik yok. "Verileriniz Avrupa'da" ifadesi "uygulama ve veritabanı Avrupa'da" olarak daraltıldı (ses işleme Retell'de).
+
+**Olaylar**
+
+- Lokal PGlite veritabanı **bozuldu** (uzun süre çalışan sunucu kapanmış; yeniden açılışta WASM `Aborted()`). Bozuk klasör silinmedi, `.pglite.corrupt-20261004` olarak saklandı (`.gitignore`: `/.pglite*`). Temiz DB → migrate → seed. **Retell ajan bağlantısı elle geri yazıldı** (`agent_d0b8…`, `llm_9a1e…`); `voice:sync` → `updated` (çift ajan oluşmadı). Kalıcılık gereken testlerde Docker (`pnpm db:up`) tercih edilmeli.
+- WORKLOG'un "Güncel durum" bölümü bozuk bulundu: önceki bir otomatik düzenleme bölüm sonunu ararken tablo ayırıcısındaki `---`'e takılmış, eski tablonun yarısı kalmıştı. Bölüm baştan yazıldı. **Ders:** Bu dosyada bölüm sınırını `---` ile değil başlıkla (`## Kayıt biçimi`) bul; geçici dosya yazarken boş `cat >` kullanma (girdi bekler ve takılır).
+
+**Doğrulama**
+
+- `pnpm test`: 114/114. `lint`, `lint:tokens`, `typecheck`, `format:check`, `build` temiz.
+- Tarayıcı: 1280 px, ~1000 px ve 375 px; yatay taşma yok (dekoratif ışıklar `overflow-hidden` ile kırpıldı); sticky header kaydırırken sabit; mobil menü açılıyor.
+- Form: boş gönderimde 5 alan hatası (Türkçe); geçerli gönderim DB'ye yazıldı (telefon E.164'e normalize), test kaydı silindi.
+
+**Açık kalanlar / dikkat**
+
+- Logo ve görseller ürün ekibiyle üretilecek.
+- Demo talepleri için ekibe bildirim (e-posta, ADR-006) ve görüntüleme ekranı (F6).
+- Panel türetmeleri ve durum rozetleri F5 öncesi onaya sunulacak.
+- Ajan hâlâ `claude-4.5-haiku` ile; gecikme karşılaştırması ekibin test aramasını bekliyor.
 
 ### 2026-10-04 · DESIGN.md tasarım sistemi ve yeni tanıtım sayfası · F4.1, F4.3
 

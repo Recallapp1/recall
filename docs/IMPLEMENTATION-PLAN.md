@@ -37,19 +37,19 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 
 ## Faz durum özeti
 
-| Faz | Başlık                                                      | Durum                                                                       | Bağımlılık                            |
-| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------- |
-| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                               | —                                     |
-| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                             | F0                                    |
-| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                          | F1                                    |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ⏳ Önceki oturumun yarım işi `git stash` içinde (bkz. WORKLOG)              | F0                                    |
-| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.3 ✅ (görseller bekleniyor) · F4.2 panel bileşenleri sırada | F0                                    |
-| F5  | Klinik paneli                                               | ⏳                                                                          | F3, F4 (F1 ile paralel ilerleyebilir) |
-| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                                          | F3, F1                                |
-| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                          | F5                                    |
-| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                          | F1, F3 (F2 gerçek numara için)        |
-| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                          | F1–F8                                 |
-| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                          | F9                                    |
+| Faz | Başlık                                                      | Durum                                                                                  | Bağımlılık                            |
+| --- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------- |
+| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                                          | —                                     |
+| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                                        | F0                                    |
+| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                                     | F1                                    |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ⏳ Önceki oturumun yarım işi `git stash` içinde (bkz. WORKLOG)                         | F0                                    |
+| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.3 ✅ (DESIGN.md v2, lacivert; logo/görseller bekleniyor) · F4.2 sırada | F0                                    |
+| F5  | Klinik paneli                                               | ⏳                                                                                     | F3, F4 (F1 ile paralel ilerleyebilir) |
+| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                                                     | F3, F1                                |
+| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                                     | F5                                    |
+| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                                     | F1, F3 (F2 gerçek numara için)        |
+| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                                     | F1–F8                                 |
+| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                                     | F9                                    |
 
 **Önerilen sıra (2026-10-04 güncel):** F1 → F4 (tasarım temeli) → F3 (hesaplar) → F5 ve F6 (panel, konsol) → F7 → F8 (production) → **F2 (Netgsm: ürün ekibiyle birlikte, en son)** → F9. F1.8 ürün ekibinin Retell anahtarını girmesiyle paralel yürür.
 
@@ -235,7 +235,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] `globals.css` `@theme`: DESIGN.md paleti, radius, blur, motion, sayfa genişliği. Eşleme tablosu: [DESIGN-SYSTEM.md §1](04-panel/DESIGN-SYSTEM.md#1-tokenlar)
 - [x] Yardımcılar: `glass`, `glass-nav`, `grain`, `bg-dark-gradient`, `surface-dark` (gradyan + grain + beyaz metin), `text-display`, `text-label`, `animate-fade-in-up`, `animate-status-bounce`, `prefers-reduced-motion`
 - [x] Tipografi ölçeği (`DisplayHeading`, `BodyText`, `Eyebrow`)
-- [ ] **Erişilebilirlik kuralları** yazıldı ([DESIGN-SYSTEM.md §4](04-panel/DESIGN-SYSTEM.md#4-erişilebilirlik)); **ürün ekibi onayı bekleniyor** (Açık soru 1)
+- [x] **Erişilebilirlik:** DESIGN.md v2 paleti ölçülerek seçildi; tüm metin kombinasyonları AA ([DESIGN-SYSTEM.md §4](04-panel/DESIGN-SYSTEM.md#4-erişilebilirlik)). Açık soru kapandı
 - [x] DESIGN-SYSTEM.md yeniden yazıldı: token eşlemesi, bileşenler, panel türetmeleri (kabuk, tablo, form, takvim, rozetler, boş durum, iskelet, toast). Panel türetmeleri F5 öncesi onaya sunulacak
 - [x] `pnpm lint:tokens` (CI'da): hex, `rgb()` ve hazır Tailwind paleti yasak
 - [x] Prettier Tailwind eklentisi `globals.css`'e bağlandı (özel token'lar doğru sıralanır)
@@ -248,6 +248,8 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [ ] Yaşayan stil rehberi: `/dev/design` (yalnızca development'ta açık), tüm bileşenler ve durumları
 
 ### F4.3 Tanıtım sitesi (DESIGN.md bölümleri)
+
+> **2026-10-04:** Ürün ekibi isteğiyle sıfırdan yeniden tasarlandı (DESIGN.md v2, [ADR-007](decisions/ADR-007-navy-palette-and-landing.md)): 13 bölüm ve footer, sticky header, gerçek demo talep formu (`demo_requests`, KVKK onayı, honeypot). Aşağıdaki maddeler v1 içindi.
 
 - [x] Yüzen cam navigasyon
 - [x] Hero: 92vh, 2.5rem, gradyan katmanı, 22vw dekoratif metin, sağda cam kartlar. **Soyut görsel yerine geçici CSS zemini**; görsel gelince değişecek
@@ -387,21 +389,21 @@ Faturalandırma (iyzico veya Stripe), self-servis kayıt, haftalık rapor e-post
 
 Bu sorular cevaplandıkça ilgili göreve işlenir ve buradan kaldırılır.
 
-1. **Erişilebilirlik:** DESIGN.md'deki Zinc-500 gövde metni Zinc-100 zeminde AA kontrast eşiğinin biraz altında (≈ 4,4:1). Önerilen kullanım kurallarını (F4.1) onaylıyor musunuz?
-2. **Kayıt dinleme:** Paneldeki ses kayıtlarını hangi roller dinleyebilir? (F3.2 önerisi: `owner`, `admin`)
+1. **Kayıt dinleme:** Paneldeki ses kayıtlarını hangi roller dinleyebilir? (F3.2 önerisi: `owner`, `admin`)
 
 ## Alınan kararlar
 
-| Tarih      | Karar                                                                                                      | Etkilenen görevler                                            |
-| ---------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| 2026-10-04 | Ses altyapısı Retell AI; Vapi kullanılmayacak; Netgsm ve alternatifler test edilecek                       | F1, F2, [ADR-004](decisions/ADR-004-retell-voice-platform.md) |
-| 2026-10-04 | DESIGN.md tek tasarım kaynağı                                                                              | F4, F5, [ADR-005](decisions/ADR-005-design-system.md)         |
-| 2026-10-04 | Klinikleri Recall ekibi açar (konsol); self-servis kayıt V1'e kaldı                                        | F3.1, F6, F10                                                 |
-| 2026-10-04 | Giriş: e-posta + parola; herkese açık kayıt kapalı, yalnızca davet                                         | F3.1                                                          |
-| 2026-10-04 | Panel özelleştirme: rol ve yetkiler, modül görünürlüğü, kişisel tercihler. Logo ve renk özelleştirmesi yok | F3.2, F3.5, F5                                                |
-| 2026-10-04 | Retell hesabı hazır; API anahtarını ürün ekibi `.env.local` dosyasına kendisi girer (sohbete yazılmaz)     | F1.3                                                          |
-| 2026-10-04 | GitHub reposu: `recallapp0/recall`                                                                         | F8                                                            |
-| 2026-10-04 | Panel yalnızca Türkçe; i18n altyapısı kurulmayacak (metinler doğrudan Türkçe)                              | F4, F5                                                        |
-| 2026-10-04 | Netgsm hesabı en son aşamada birlikte açılacak                                                             | F2 (F5–F7'den sonra)                                          |
-| 2026-10-04 | Recall logosu ve hero görseli henüz yok; F4.3'te birlikte üretilecek                                       | F4.3                                                          |
-| 2026-10-04 | E-posta: Resend, adaptör arkasında; e-postalar hasta verisi içermez                                        | F3, [ADR-006](decisions/ADR-006-email-provider.md)            |
+| Tarih      | Karar                                                                                                                          | Etkilenen görevler                                            |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| 2026-10-04 | Ses altyapısı Retell AI; Vapi kullanılmayacak; Netgsm ve alternatifler test edilecek                                           | F1, F2, [ADR-004](decisions/ADR-004-retell-voice-platform.md) |
+| 2026-10-04 | DESIGN.md tek tasarım kaynağı                                                                                                  | F4, F5, [ADR-005](decisions/ADR-005-design-system.md)         |
+| 2026-10-04 | Klinikleri Recall ekibi açar (konsol); self-servis kayıt V1'e kaldı                                                            | F3.1, F6, F10                                                 |
+| 2026-10-04 | Giriş: e-posta + parola; herkese açık kayıt kapalı, yalnızca davet                                                             | F3.1                                                          |
+| 2026-10-04 | Panel özelleştirme: rol ve yetkiler, modül görünürlüğü, kişisel tercihler. Logo ve renk özelleştirmesi yok                     | F3.2, F3.5, F5                                                |
+| 2026-10-04 | Retell hesabı hazır; API anahtarını ürün ekibi `.env.local` dosyasına kendisi girer (sohbete yazılmaz)                         | F1.3                                                          |
+| 2026-10-04 | GitHub reposu: `recallapp0/recall`                                                                                             | F8                                                            |
+| 2026-10-04 | Panel yalnızca Türkçe; i18n altyapısı kurulmayacak (metinler doğrudan Türkçe)                                                  | F4, F5                                                        |
+| 2026-10-04 | Netgsm hesabı en son aşamada birlikte açılacak                                                                                 | F2 (F5–F7'den sonra)                                          |
+| 2026-10-04 | Recall logosu ve hero görseli henüz yok; F4.3'te birlikte üretilecek                                                           | F4.3                                                          |
+| 2026-10-04 | E-posta: Resend, adaptör arkasında; e-postalar hasta verisi içermez                                                            | F3, [ADR-006](decisions/ADR-006-email-provider.md)            |
+| 2026-10-04 | DESIGN.md v2: koyu lacivert + beyaz palet; tanıtım sayfası 13 bölüm, sticky header; başlık "Kliniğinizin yeni nesil sekreteri" | F4, [ADR-007](decisions/ADR-007-navy-palette-and-landing.md)  |
