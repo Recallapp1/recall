@@ -1,5 +1,5 @@
 import { nav } from "../_content";
-import { Logo } from "./logo";
+import { Logo } from "@/components/design/logo";
 
 export function SiteFooter() {
   return (

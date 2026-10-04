@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { nav } from "../_content";
 import { HeaderSurface } from "./header-surface";
-import { Logo } from "./logo";
+import { Logo } from "@/components/design/logo";
 
 /**
  * Sticky floating navigation: stays visible while scrolling. The translucent

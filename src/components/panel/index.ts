@@ -6,3 +6,4 @@ export {
   type ScheduleColumn,
 } from "./schedule/schedule-grid";
 export { AppointmentSourceBadge, AppointmentStatusBadge } from "./status-badges";
+export { PageHeader } from "./page-header";
