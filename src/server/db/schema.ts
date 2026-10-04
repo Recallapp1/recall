@@ -17,6 +17,12 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import {
+  ACTIVE_APPOINTMENT_STATUSES,
+  APPOINTMENT_SOURCES,
+  APPOINTMENT_STATUSES,
+} from "../../lib/contracts/appointment";
+
 import type { ClinicSettingsInput } from "../domain/clinic-settings";
 
 // Column names are snake_cased by the Drizzle `casing` option.
@@ -37,15 +43,9 @@ const clinicRef = () =>
 
 export const clinicStatus = pgEnum("clinic_status", ["active", "paused"]);
 
-export const appointmentStatus = pgEnum("appointment_status", [
-  "scheduled",
-  "confirmed",
-  "cancelled",
-  "completed",
-  "no_show",
-]);
+export const appointmentStatus = pgEnum("appointment_status", APPOINTMENT_STATUSES);
 
-export const appointmentSource = pgEnum("appointment_source", ["voice", "panel"]);
+export const appointmentSource = pgEnum("appointment_source", APPOINTMENT_SOURCES);
 
 export const callOutcome = pgEnum("call_outcome", [
   "booked",
@@ -62,8 +62,7 @@ export const callbackStatus = pgEnum("callback_status", ["open", "done"]);
 
 export const voiceAgentStatus = pgEnum("voice_agent_status", ["pending", "synced", "error"]);
 
-/** Statuses that occupy a practitioner's time. Mirrored in the overlap exclusion constraint. */
-export const ACTIVE_APPOINTMENT_STATUSES = ["scheduled", "confirmed"] as const;
+export { ACTIVE_APPOINTMENT_STATUSES };
 
 // ─── Tenant ──────────────────────────────────────────────────────────────────
 
