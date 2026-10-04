@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { numberToWords, spokenPhone, spokenTime } from "./speech";
+import { numberToWords, spokenPhone, spokenTitles, spokenTime } from "./speech";
 
 describe("numberToWords", () => {
   it.each([
@@ -51,5 +51,26 @@ describe("spokenPhone", () => {
 
   it("falls back to digit by digit for other countries", () => {
     expect(spokenPhone("+1415")).toBe("bir dört bir beş");
+  });
+});
+
+describe("spokenTitles", () => {
+  it("expands the dentist abbreviation in any spelling", () => {
+    expect(spokenTitles("Dt. Elif Kaya")).toBe("Diş Hekimi Elif Kaya");
+    expect(spokenTitles("DT Elif Kaya")).toBe("Diş Hekimi Elif Kaya");
+    expect(spokenTitles("dt.Elif")).toBe("Diş Hekimi Elif");
+  });
+
+  it("expands stacked academic and specialist titles", () => {
+    expect(spokenTitles("Uzm. Dt. Can Demir")).toBe("Uzman Diş Hekimi Can Demir");
+    expect(spokenTitles("Prof. Dr. Ayşe Yılmaz")).toBe("Profesör Doktor Ayşe Yılmaz");
+    expect(spokenTitles("Dr. Öğr. Üyesi Mert Ak")).toBe("Doktor Öğretim Üyesi Mert Ak");
+    expect(spokenTitles("Fzt. Selin Aydın")).toBe("Fizyoterapist Selin Aydın");
+  });
+
+  it("leaves ordinary words alone", () => {
+    expect(spokenTitles("Diş taşı temizliği")).toBe("Diş taşı temizliği");
+    expect(spokenTitles("Operasyon sonrası kontrol")).toBe("Operasyon sonrası kontrol");
+    expect(spokenTitles("Ahmet Drama")).toBe("Ahmet Drama");
   });
 });

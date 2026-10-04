@@ -77,6 +77,15 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-04 · "Dt." kısaltmasının telaffuzu · F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `fix/F1.8-unvan-telaffuz` · **Commit'ler:** bu kaydı içeren commit
+
+- Ürün ekibi isteği: asistan "Dt."/"DT" kısaltmasını harf harf okumasın, "diş hekimi" desin. Prompt kuralı vardı ama model hekim adlarını "Dt. Elif Kaya" olarak aldığı için aynen tekrarlıyordu.
+- Çözüm: [`spokenTitles()`](src/server/domain/speech.ts) unvan kısaltmalarını açar (Dt./DT → Diş Hekimi, Dr. → Doktor, Uzm., Prof., Doç., Op., Öğr., Fzt., Psk., Dyt., Vet.). Prompt'taki hekim listesi, tool sonuçları (müsaitlik, randevu bulma/oluşturma/erteleme) ve ASR anahtar kelimeleri artık açık hâli kullanıyor; model kısaltmayı hiç görmüyor. Panel gösterimi (`practitionerDisplayName`) değişmedi.
+- Prompt kuralı güçlendirildi ("asla harf harf okuma"; hasta "de te" derse diş hekimini kastediyor).
+- `pnpm voice:sync --clinic gulus-dis` → `updated`. 123 test geçiyor.
+
 ### 2026-10-04 · Panel bileşen kütüphanesi · F4.2, ADR-008
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F4.2-panel-bilesenleri` · **Commit'ler:** bu kaydı içeren commit'ler

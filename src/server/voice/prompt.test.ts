@@ -56,7 +56,8 @@ describe("buildSystemPrompt", () => {
   it("includes the clinic identity and directory with ids", () => {
     const prompt = buildSystemPrompt(promptInput());
     expect(prompt).toContain("Sen Gülüş Diş Kliniği için çalışan telefon asistanısın. Adın Elif.");
-    expect(prompt).toContain("- Dt. Can Demir (id: p-1)");
+    expect(prompt).toContain("- Diş Hekimi Can Demir (id: p-1)");
+    expect(prompt).not.toContain("Dt. Can");
     expect(prompt).toContain("Diş Taşı Temizliği [temizlik, detertraj]: 30 dk (id: s-1)");
     expect(prompt).toContain("- Pazartesi: 09:00-18:00");
     expect(prompt).toContain("- Pazar: kapalı");

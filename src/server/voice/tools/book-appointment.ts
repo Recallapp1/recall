@@ -5,6 +5,7 @@ import { z } from "zod";
 import { bookAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
 import { DomainError } from "../../domain/errors";
+import { spokenTitles } from "../../domain/speech";
 import { spokenDate, spokenTime } from "../../domain/speech";
 import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
 import { defineTool } from "./define";
@@ -61,7 +62,7 @@ export const bookAppointmentTool = defineTool({
       time: appointment.time,
       spokenTime: spokenTime(appointment.time),
       service: appointment.serviceName,
-      practitioner: appointment.practitionerName,
+      practitioner: spokenTitles(appointment.practitionerName),
       alreadyExisted: !created,
       smsSent,
     };

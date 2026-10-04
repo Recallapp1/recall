@@ -71,3 +71,41 @@ function groupWords(group: string): string {
   }
   return numberToWords(Number(group));
 }
+
+/**
+ * Professional title abbreviations, spoken in full. TTS reads "Dt." letter by
+ * letter ("de te"), so names reach the model already expanded. Short ones that
+ * are also ordinary words need the dot; "DT" and "DR" are matched without it.
+ */
+const TITLE_WORDS: Array<{ pattern: RegExp; spoken: string }> = [
+  { pattern: /dt\.?/, spoken: "Diş Hekimi" },
+  { pattern: /dr\.?/, spoken: "Doktor" },
+  { pattern: /prof\./, spoken: "Profesör" },
+  { pattern: /doç\./, spoken: "Doçent" },
+  { pattern: /op\./, spoken: "Operatör" },
+  { pattern: /uzm\./, spoken: "Uzman" },
+  { pattern: /öğr\./, spoken: "Öğretim" },
+  { pattern: /fzt\./, spoken: "Fizyoterapist" },
+  { pattern: /psk\./, spoken: "Psikolog" },
+  { pattern: /dyt\./, spoken: "Diyetisyen" },
+  { pattern: /vet\./, spoken: "Veteriner" },
+];
+
+const TITLE_PATTERN = new RegExp(
+  String.raw`(?<!\p{L})(?:${TITLE_WORDS.map((t) => t.pattern.source).join("|")})(?:(?<=\.)|(?!\p{L}))`,
+  "giu",
+);
+
+/** "Dt. Elif Kaya" → "Diş Hekimi Elif Kaya"; "Uzm. Dr. Can" → "Uzman Doktor Can". */
+export function spokenTitles(text: string): string {
+  return text
+    .replace(TITLE_PATTERN, (match: string, offset: number, whole: string) => {
+      const word = match.toLocaleLowerCase("tr");
+      const title = TITLE_WORDS.find((t) => new RegExp(`^${t.pattern.source}$`, "u").test(word));
+      if (!title) return match;
+      // "Dt.Elif" has no space after the dot.
+      return /\p{L}/u.test(whole.charAt(offset + match.length)) ? `${title.spoken} ` : title.spoken;
+    })
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}

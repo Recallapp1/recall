@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { pickSpreadSlots } from "../../domain/availability";
 import { findAvailability } from "../../domain/scheduling";
-import { spokenDate, spokenTime } from "../../domain/speech";
+import { spokenDate, spokenTime, spokenTitles } from "../../domain/speech";
 import { defineTool } from "./define";
 import { entityId, localDate } from "./schemas";
 
@@ -37,7 +37,7 @@ export const checkAvailability = defineTool({
         time: slot.time,
         spokenTime: spokenTime(slot.time),
         practitionerId: slot.practitionerId,
-        practitionerName: slot.practitionerName,
+        practitionerName: spokenTitles(slot.practitionerName),
       })),
       nextAvailableDates: result.nextAvailableDates.map((date) => ({
         date,

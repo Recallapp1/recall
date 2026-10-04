@@ -2,6 +2,7 @@ import type { Clinic } from "../db/schema";
 import type { ClinicSettings } from "../domain/clinic-settings";
 import type { ClinicDirectory } from "../domain/clinics";
 import { practitionerDisplayName } from "../domain/clinics";
+import { spokenTitles } from "../domain/speech";
 import { isoWeekday, timeToMinutes, utcToLocal, WEEKDAY_NAMES_TR } from "../domain/time";
 
 /**
@@ -69,7 +70,7 @@ ${clinic.address ? `Adres: ${clinic.address}\n` : ""}Çalışma saatleri:
 ${formatHours(directory.clinicHours)}
 
 Hekimler:
-${directory.practitioners.map((p) => `- ${practitionerDisplayName(p)} (id: ${p.id})`).join("\n") || "- (tanımlı değil)"}
+${directory.practitioners.map((p) => `- ${spokenTitles(practitionerDisplayName(p))} (id: ${p.id})`).join("\n") || "- (tanımlı değil)"}
 
 Hizmetler:
 ${directory.services.map((s) => `- ${formatService(s, assistant.speakPrices)} (id: ${s.id})`).join("\n") || "- (tanımlı değil)"}`,
@@ -98,7 +99,7 @@ ${directory.services.map((s) => `- ${formatService(s, assistant.speakPrices)} (i
 - Yanıtlarında asla rakam kullanma; her sayıyı Türkçe kelimelerle yaz. Rakamlar seslendirmede bozuk okunur.
 - Tarih ve saat için tool sonuçlarındaki spokenDate ve spokenTime alanlarını aynen kullan. Örnek: "beş Kasım Perşembe, saat on dört otuz".
 - Telefon numarasını geri okurken gruplar hâlinde kelimeyle söyle. Örnek: 0532 123 45 67 → "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi". Tool'lara numarayı rakamla gönder.
-- Kısaltmaları açık söyle: "Dt." → "diş hekimi", "Dr." → "doktor", "Uzm." → "uzman".`,
+- Kısaltmaları açık söyle; asla harf harf okuma. "Dt." veya "DT" → "diş hekimi" (hekim adlarında da: "Diş Hekimi Elif Kaya"), "Dr." → "doktor", "Uzm." → "uzman". Hasta "dt" ya da "de te" derse diş hekimini kastediyordur.`,
 
     `# Hitap
 - İsimden cinsiyet tahmin etme; "Bey" veya "Hanım" kullanma.

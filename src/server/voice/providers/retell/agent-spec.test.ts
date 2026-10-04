@@ -57,7 +57,7 @@ describe("buildRetellAgentSpec", () => {
       webhook_events: ["call_started", "call_ended", "call_analyzed"],
     });
     expect(agent.boosted_keywords).toEqual([
-      "Dt. Can Demir",
+      "Diş Hekimi Can Demir",
       "Can Demir",
       "Diş Taşı Temizliği",
       "temizlik",

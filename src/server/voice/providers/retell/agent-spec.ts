@@ -8,6 +8,7 @@ import type { Clinic } from "../../../db/schema";
 import type { ClinicSettings } from "../../../domain/clinic-settings";
 import type { ClinicDirectory } from "../../../domain/clinics";
 import { practitionerDisplayName } from "../../../domain/clinics";
+import { spokenTitles } from "../../../domain/speech";
 import { buildFirstMessage, buildSystemPrompt, type CallVariables } from "../../prompt";
 import { toolParameters, tools } from "../../tools";
 
@@ -156,7 +157,7 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
 /** Clinic-specific words the speech recogniser should favour: names and services. */
 function boostedKeywords(directory: ClinicDirectory): string[] {
   const words = [
-    ...directory.practitioners.map((p) => practitionerDisplayName(p)),
+    ...directory.practitioners.map((p) => spokenTitles(practitionerDisplayName(p))),
     ...directory.practitioners.map((p) => p.name),
     ...directory.services.flatMap((s) => [s.name, ...s.aliases]),
   ];
