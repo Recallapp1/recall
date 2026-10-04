@@ -4,24 +4,34 @@
 
 Recall, kliniklere (diş, sağlık, güzellik) gelen telefon aramalarını karşılayan, kliniğe özel yapılandırılmış bir **Türkçe sesli asistan** ve randevuların düştüğü bir **klinik paneli** sunan çok kiracılı (multi-tenant) bir SaaS ürünüdür.
 
-Ürün bağlamı için önce şunları oku: [docs/00-product/PRD.md](docs/00-product/PRD.md), [docs/01-architecture/ARCHITECTURE.md](docs/01-architecture/ARCHITECTURE.md).
+## Her oturumun başında oku
+
+1. [WORKLOG.md](WORKLOG.md): güncel durum, açık dallar, son yapılanlar
+2. [docs/IMPLEMENTATION-PLAN.md](docs/IMPLEMENTATION-PLAN.md): fazlar, görev kimlikleri, kabul kriterleri
+3. [DESIGN.md](DESIGN.md): **tek tasarım kaynağı.** Arayüzle ilgili her işte zorunlu
+4. Ürün bağlamı: [PRD.md](docs/00-product/PRD.md), [ARCHITECTURE.md](docs/01-architecture/ARCHITECTURE.md)
+
+## Her oturumun sonunda
+
+- [WORKLOG.md](WORKLOG.md) dosyasına kayıt ekle (şablon dosyada) ve "Güncel durum" bölümünü güncelle.
+- Planda tamamlanan görev kutularını işaretle.
 
 ## Stack
 
-| Katman           | Seçim                                                             |
-| ---------------- | ----------------------------------------------------------------- |
-| Framework        | Next.js 16 (App Router, Turbopack), React 19.2, TypeScript strict |
-| Stil             | Tailwind CSS 4, shadcn/ui                                         |
-| Veritabanı       | PostgreSQL (lokal: Docker, prod: Neon / Vercel Marketplace)       |
-| ORM              | Drizzle ORM + drizzle-kit (`pg` sürücüsü)                         |
-| Kimlik doğrulama | Better Auth (organization plugin = klinik)                        |
-| Doğrulama        | Zod (env, API girdileri, tool argümanları)                        |
-| Sesli asistan    | Vapi (Türk operatöründen BYO SIP trunk)                           |
-| LLM              | Claude (bkz. [ADR-003](docs/decisions/ADR-003-llm-model.md))      |
-| SMS              | Netgsm                                                            |
-| Test             | Vitest                                                            |
-| Deploy           | Vercel (bölge `fra1`)                                             |
-| Paket yöneticisi | pnpm (Node 24)                                                    |
+| Katman           | Seçim                                                                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework        | Next.js 16 (App Router, Turbopack), React 19.2, TypeScript strict                                                                               |
+| Stil             | Tailwind CSS 4, shadcn/ui, [DESIGN.md](DESIGN.md) (Inter, Zinc + Emerald-400, glassmorphism)                                                    |
+| Veritabanı       | PostgreSQL (lokal: PGlite `db:local` veya Docker, prod: Neon / Vercel Marketplace)                                                              |
+| ORM              | Drizzle ORM + drizzle-kit (`pg` sürücüsü)                                                                                                       |
+| Kimlik doğrulama | Better Auth (organization plugin = klinik)                                                                                                      |
+| Doğrulama        | Zod (env, API girdileri, tool argümanları)                                                                                                      |
+| Sesli asistan    | **Retell AI** Voice Agent API, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md)). **Vapi kullanılmaz** |
+| LLM              | Claude (bkz. [ADR-003](docs/decisions/ADR-003-llm-model.md))                                                                                    |
+| Telefon ve SMS   | Netgsm (SIP trunk ve SMS); alternatifler test edilecek (F2)                                                                                     |
+| Test             | Vitest                                                                                                                                          |
+| Deploy           | Vercel (bölge `fra1`)                                                                                                                           |
+| Paket yöneticisi | pnpm (Node 24)                                                                                                                                  |
 
 ## Komutlar
 
@@ -32,6 +42,7 @@ pnpm lint           # ESLint
 pnpm typecheck      # tsc --noEmit
 pnpm test           # Vitest
 pnpm format         # Prettier
+pnpm db:local       # lokal Postgres (PGlite, Docker gerekmez)
 pnpm db:up          # lokal Postgres (Docker)
 pnpm db:generate    # şemadan migration üret
 pnpm db:migrate     # migration'ları uygula
@@ -51,17 +62,22 @@ src/
 │   └── api/              # Route handler'lar (webhook'lar, health)
 ├── components/           # Paylaşılan UI bileşenleri (ui/ = shadcn)
 ├── lib/                  # Framework'ten bağımsız yardımcılar (env, utils)
+│   └── contracts/        # Client ve server ortak Zod şemaları
 └── server/               # Sadece sunucuda çalışan kod
     ├── db/               # Drizzle client, şema, seed
     ├── domain/           # İş kuralları (müsaitlik, randevu) — saf fonksiyonlar
-    ├── voice/            # Sesli asistan: provider adaptörleri, tool'lar, prompt
+    ├── voice/            # Sesli asistan: tool'lar, prompt, providers/retell
     └── notifications/    # SMS
 docs/                     # Tüm ürün ve teknik belgeler
 ```
 
 ## Kurallar
 
-- **Kiracı izolasyonu:** Klinik verisine dokunan her sorgu `clinicId` ile filtrelenir. İstisnasız. Bkz. [MULTI-TENANCY.md](docs/01-architecture/MULTI-TENANCY.md).
+- **Çok kiracılı tasarım:** Tek kod tabanı, sınırsız klinik. Klinikler arası farklar veriyle (ayarlar, roller, ilişkisel tablolar) ifade edilir; kodda kliniğe özel dal (`if (clinic.slug === …)`) yasaktır.
+- **Kiracı izolasyonu:** Klinik verisine dokunan her sorgu `clinicId` ile filtrelenir. İstisnasız. Kiracı sunucuda belirlenir (oturum, aranan numara, Retell `agent_id`), asla istemciden veya LLM argümanından gelmez. Bkz. [MULTI-TENANCY.md](docs/01-architecture/MULTI-TENANCY.md).
+- **Tasarım:** Sadece [DESIGN.md](DESIGN.md) ve ondan türetilen `globals.css` token'ları. Bileşenlerde sabit hex/px renk yok. DESIGN.md'nin karşılamadığı bir durumda önce ürün ekibine sor ([ADR-005](docs/decisions/ADR-005-design-system.md)).
+- **Ortak sözleşmeler:** Form ve Server Action girdileri `src/lib/contracts/` altındaki aynı Zod şemasını kullanır; UI tipleri `z.infer` ile türetilir. Bkz. [IMPLEMENTATION-PLAN.md → Ortak sözleşmeler](docs/IMPLEMENTATION-PLAN.md#ortak-sözleşmeler-backend--frontend-uyumu).
+- **Ses sağlayıcısı sınırı:** Retell'e özgü kod yalnızca `src/server/voice/providers/retell/` altında. Tool'lar, prompt ve domain sağlayıcıdan bağımsız.
 - **Saat dilimi:** DB'de her zaman `timestamptz` (UTC). Gösterim ve slot hesabı kliniğin saat diliminde (varsayılan `Europe/Istanbul`).
 - **Sunucu sınırı:** `src/server/**` dosyaları `import "server-only"` ile başlar. Client component'ler buradan import edemez.
 - **Doğrulama:** Dışarıdan gelen her veri (webhook, form, tool argümanı) Zod ile parse edilir.
@@ -74,7 +90,8 @@ docs/                     # Tüm ürün ve teknik belgeler
 
 ## Git
 
-- Ana dal `main`. Her iş için dal aç: `feat/…`, `fix/…`, `docs/…`, `chore/…`.
-- [Conventional Commits](https://www.conventionalcommits.org/): `feat(voice): add cancel_appointment tool`.
+- Ana dal `main`. Her iş için dal aç: `feat/F1.4-kisa-ad`, `fix/…`, `docs/…`, `chore/…` (görev kimliği plandan).
+- Başka bir oturumun commit'lenmemiş yarım işine dokunma; WORKLOG'a not düş.
+- [Conventional Commits](https://www.conventionalcommits.org/), görev kimliğiyle: `feat(voice): add retell inbound webhook (F1.5)`.
 - Küçük, tek amaçlı commit'ler. Commit öncesi lint, typecheck ve test temiz olmalı.
 - Önemli teknik kararlar için `docs/decisions/` altında yeni bir ADR yaz.

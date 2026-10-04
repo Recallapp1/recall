@@ -1,61 +1,16 @@
-# Tasarım Sistemi
+# Tasarım Sistemi: Panel Türetmeleri
 
-## İlkeler
+> **Tek tasarım kaynağı kök dizindeki [DESIGN.md](../../DESIGN.md) dosyasıdır** ([ADR-005](../decisions/ADR-005-design-system.md)).
+> Bu belge yalnızca DESIGN.md'nin tarif etmediği panel öğelerini (tablo, form, takvim, rozet vb.) **DESIGN.md kurallarını bozmadan** tanımlar. Çelişki olursa DESIGN.md geçerlidir.
 
-1. **Sakin ve güven veren:** Sağlık sektörü. Agresif renkler ve animasyonlar yok.
-2. **Yoğun ama okunur:** Sekreter bir bakışta günü görmeli.
-3. **Erişilebilir:** WCAG AA kontrast; klavye ile tam kullanım.
-4. **Türkçe öncelikli:** Uzun Türkçe kelimelere yer bırakan düzen; `tr-TR` tarih ve sayı biçimleri.
+Durum: Taslak. İçerik [IMPLEMENTATION-PLAN.md → F4.1](../IMPLEMENTATION-PLAN.md#f41-tokenlar-ve-temel) görevinde doldurulacak.
 
-## Temel
+## Doldurulacak bölümler (F4.1)
 
-- **Bileşen kütüphanesi:** [shadcn/ui](https://ui.shadcn.com) (Radix + Tailwind). Bileşenler `src/components/ui/` altına kopyalanır ve bizim kodumuzdur.
-- **İkonlar:** lucide-react.
-- **Font:** Geist Sans (UI), Geist Mono (saat ve numaralar), `next/font` ile.
-- **Tema:** Açık (varsayılan) ve koyu. Renkler CSS değişkenleri ile tanımlanır (`src/app/globals.css`).
-
-## Renkler (semantik token'lar)
-
-| Token           | Kullanım           | Açık tema          |
-| --------------- | ------------------ | ------------------ |
-| `--primary`     | Ana aksiyon, marka | Teal 600 `#0d9488` |
-| `--background`  | Sayfa              | `#ffffff`          |
-| `--muted`       | İkincil yüzey      | Slate 50           |
-| `--foreground`  | Metin              | Slate 900          |
-| `--destructive` | İptal, sil         | Red 600            |
-
-### Durum renkleri (randevu)
-
-| Durum     | Renk                  |
-| --------- | --------------------- |
-| scheduled | Mavi                  |
-| confirmed | Teal                  |
-| completed | Gri                   |
-| cancelled | Kırmızı (üstü çizili) |
-| no_show   | Turuncu               |
-
-### Kaynak rozeti
-
-- `voice` → 🎙 "Asistan" rozeti (primary, açık ton)
-- `panel` → "Panel" rozeti (nötr)
-
-## Tipografi ölçeği
-
-| Rol           | Sınıf                                   |
-| ------------- | --------------------------------------- |
-| Sayfa başlığı | `text-2xl font-semibold tracking-tight` |
-| Bölüm başlığı | `text-lg font-medium`                   |
-| Gövde         | `text-sm`                               |
-| Yardımcı      | `text-xs text-muted-foreground`         |
-
-## Boşluk ve düzen
-
-- 4px tabanlı Tailwind ölçeği.
-- Panel: sol sidebar (masaüstü), alt sekme çubuğu (mobil).
-- İçerik genişliği: `max-w-7xl`.
-
-## Yazım tonu (UI metinleri)
-
-- Kısa, eylem odaklı: "Randevu oluştur", "İptal et".
-- Hata mesajları ne olduğunu ve ne yapılacağını söyler: "Bu saat dolu. Başka bir saat seçin."
-- "Siz" dili.
+1. **Token eşlemesi:** DESIGN.md değerleri → `src/app/globals.css` `@theme` değişkenleri
+2. **Panel kabuğu:** Koyu cam kenar çubuğu (alttan ağırlıklı gradyan + %15 grain), açık içerik alanı (Zinc-100), yüzen cam üst bar
+3. **Yoğun veri öğeleri:** Tablo, form alanları, takvim ızgarası, durum rozetleri, boş durum, iskelet yükleme, toast, dialog/sheet
+4. **Radius eşlemesi:** Sayfa bölümleri `2.5rem`, kartlar `1rem–1.5rem`, buton ve rozetler `rounded-full`
+5. **Erişilebilirlik kuralları:** Kontrast (Zinc-500 / Zinc-100 ≈ 4,4:1), Emerald-400 yalnızca koyu zeminde metin; odak halkaları; `prefers-reduced-motion`
+6. **Durum renkleri:** Randevu durumları ve kaynak rozetleri monokrom palet + tek Emerald aksanla nasıl ayrışır (ürün ekibi onayı gerekir)
+7. **UI yazım tonu:** Kısa, eylem odaklı, "siz" dili; hata mesajı ne olduğunu ve ne yapılacağını söyler

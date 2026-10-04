@@ -1,9 +1,9 @@
 # ADR-002: Ses Platformu
 
-|       |                                                            |
-| ----- | ---------------------------------------------------------- |
-| Durum | Kabul edildi (Faz 1 POC sonrası yeniden değerlendirilecek) |
-| Tarih | 2026-10-04                                                 |
+|       |                                                                                             |
+| ----- | ------------------------------------------------------------------------------------------- |
+| Durum | Yerini aldı: [ADR-004](ADR-004-retell-voice-platform.md) (2026-10-04, Vapi kullanılmayacak) |
+| Tarih | 2026-10-04                                                                                  |
 
 ## Bağlam
 

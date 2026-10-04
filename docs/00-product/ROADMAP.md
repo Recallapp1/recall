@@ -1,50 +1,26 @@
 # Yol Haritası
 
-Her faz bir öncekinin çıkış kriterleri karşılanmadan başlamaz.
+Ürün seviyesinde özet. **Görev düzeyindeki ayrıntılar, kabul kriterleri ve sıralama [IMPLEMENTATION-PLAN.md](../IMPLEMENTATION-PLAN.md) belgesindedir.** İlerleme kaydı: [WORKLOG.md](../../WORKLOG.md).
 
-## Faz 0: Temel ✅ (bu repo)
+| Faz | Ürün çıktısı                                                                         | Durum |
+| --- | ------------------------------------------------------------------------------------ | ----- |
+| F0  | Belgeler, iskelet, veri modeli, randevu motoru, testler                              | ✅    |
+| F1  | Retell üzerinde kliniğe özel Türkçe sesli asistan, web call ile uçtan uca randevu    | ⏳    |
+| F2  | Gerçek Türk numarası (Netgsm SIP ve alternatifler), SMS onay ve hatırlatma           | ⏳    |
+| F3  | Klinik hesapları, ekip üyeleri, roller ve izinler, panel kişiselleştirme altyapısı   | 🟡    |
+| F4  | DESIGN.md tasarım sistemi, bileşen kütüphanesi, yeni tanıtım sitesi                  | ⏳    |
+| F5  | Klinik paneli: Bugün, Takvim, Randevular, Aramalar, Hastalar, Geri aramalar, Ayarlar | ⏳    |
+| F6  | Recall yönetim konsolu: klinik oluşturma, numara bağlama, izleme                     | ⏳    |
+| F7  | KVKK: anonimleştirme, dışa aktarma, saklama, güvenlik sertleştirme                   | ⏳    |
+| F8  | Production: Vercel, Neon, alan adı, izleme                                           | ⏳    |
+| F9  | Pilot: 3 klinik, 2 hafta, metrikler                                                  | ⏳    |
+| F10 | V1+: faturalandırma, self-servis, Google Calendar, WhatsApp, giden arama, çoklu dil  | ⏳    |
 
-- [x] Belgeler (PRD, mimari, sesli asistan, uyum)
-- [x] Next.js 16 iskeleti, araç zinciri, lokal Postgres
-- [x] Veri modeli ve migration'lar
-- [x] Müsaitlik motoru ve birim testleri
-- [x] Vapi webhook iskeleti (assistant-request, tool-calls, end-of-call-report)
+## Başarı ölçütleri (pilot sonu)
 
-## Faz 1: Çalışan sesli asistan POC (2–3 hafta)
+- İnsana devredilmeden tamamlanan arama oranı ≥ %70
+- Randevu niyetli aramalarda randevu oluşturma ≥ %80
+- Hatalı randevu < %1
+- Tur gecikmesi p95 < 1,8 sn
 
-- [ ] Vapi hesabı, Vapi test numarası ile uçtan uca randevu (İngilizce numara, Türkçe konuşma)
-- [ ] Türkçe STT/TTS karşılaştırması (bkz. [VOICE-AND-LANGUAGE.md](../02-voice-agent/VOICE-AND-LANGUAGE.md))
-- [ ] Model gecikme ölçümü (bkz. [ADR-003](../decisions/ADR-003-llm-model.md))
-- [ ] Türk operatöründen SIP trunk ile gerçek bir 0850/0212 numarasının bağlanması
-- [ ] Senaryo eval seti (bkz. [TESTING.md](../06-operations/TESTING.md))
-
-**Çıkış kriteri:** 20 senaryonun 18'i başarılı, p95 gecikme < 1,8 sn.
-
-## Faz 2: MVP (4–6 hafta)
-
-- [ ] Better Auth ile panel girişi, klinik = organizasyon, roller
-- [ ] Panel: Bugün, Takvim, Randevular, Aramalar, Hastalar, Geri aranacaklar
-- [ ] Panel: Klinik ayarları (çalışma saatleri, hizmetler, hekimler, asistan ayarları)
-- [ ] Netgsm SMS: onay, iptal, 24 saat önce hatırlatma (Vercel Cron)
-- [ ] KVKK: aydınlatma metni, veri saklama job'u, kayıt silme
-- [ ] Vercel production deploy, Neon (Frankfurt), alan adı
-- [ ] İzleme: Sentry, arama metrikleri
-
-**Çıkış kriteri:** 3 pilot klinikte 2 hafta boyunca kesintisiz çalışma.
-
-## Faz 3: V1 (pilot sonrası)
-
-- [ ] Self-servis onboarding sihirbazı
-- [ ] Faturalandırma (iyzico veya Stripe)
-- [ ] Haftalık rapor e-postası
-- [ ] Hekim rolü kısıtlamaları
-- [ ] Google Calendar iki yönlü senkronizasyon
-- [ ] Çoklu şube (bir organizasyon, birden çok lokasyon)
-
-## Faz 4: V2
-
-- [ ] Giden arama: hatırlatma ve no-show sonrası yeniden randevu
-- [ ] WhatsApp kanalı
-- [ ] Çoklu dil (EN, AR, DE): sağlık turizmi
-- [ ] Klinik yazılımı entegrasyonları
-- [ ] Kapora ve ön ödeme
+Ayrıntılar: [PRD.md](PRD.md)
