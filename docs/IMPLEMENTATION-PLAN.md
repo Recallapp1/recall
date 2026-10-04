@@ -42,9 +42,9 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 | F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                              | —                                     |
 | F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                            | F0                                    |
 | F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                         | F1                                    |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ⏳ Önceki oturumun yarım işi `git stash` içinde (bkz. WORKLOG)             | F0                                    |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | 🟡 F3.1 ✅ · F3.2 ✅ · F3.3–F3.5 sırada                                    | F0                                    |
 | F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor) | F0                                    |
-| F5  | Klinik paneli                                               | ⏳                                                                         | F3, F4 (F1 ile paralel ilerleyebilir) |
+| F5  | Klinik paneli                                               | 🟡 F5.1 kabuk ✅ · ekranlar sırada                                         | F3, F4 (F1 ile paralel ilerleyebilir) |
 | F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                                         | F3, F1                                |
 | F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                         | F5                                    |
 | F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                         | F1, F3 (F2 gerçek numara için)        |
@@ -180,21 +180,24 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F3.1 Better Auth kurulumu
 
-- [ ] Better Auth + Drizzle adaptörü; tablolar: `user`, `session`, `account`, `verification`, `organization`, `member`, `invitation`
-- [ ] Giriş yöntemi: **e-posta + parola** (karar 2026-10-04). Parola sıfırlama e-postası ve e-posta doğrulama. Sihirli bağlantı ve 2FA kapsam dışı (V1'de değerlendirilir)
-- [ ] Herkese açık kayıt (sign-up) **kapalı**: hesaplar yalnızca davetle oluşur (klinikleri Recall ekibi açar, F6)
-- [ ] `organization` ↔ `clinics` 1:1: `clinics.organization_id` (unique). Klinik oluşturma işlemi ikisini tek transaction'da yaratır
-- [ ] Env: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`; e-posta ([ADR-006](decisions/ADR-006-email-provider.md)): `EMAIL_PROVIDER` (`console` | `resend`), `RESEND_API_KEY`, `EMAIL_FROM`. Davet ve parola sıfırlama şablonları React Email ile, Türkçe
-- [ ] Route handler: `src/app/api/auth/[...all]/route.ts`
+> Kararlar: [ADR-009](decisions/ADR-009-accounts-and-roles.md). `stash@{0}` yerine temiz kurulum yapıldı (better-auth 1.7.7); stash'i ürün ekibi silecek.
+
+- [x] Better Auth + Drizzle adaptörü; tablolar (çoğul, UUID): `users`, `sessions`, `accounts`, `verifications`, `organizations`, `members`, `invitations`, `organization_roles` (migration `0004_accounts`)
+- [x] Giriş yöntemi: **e-posta + parola**, en az 10 karakter. Parola sıfırlama / ilk parola belirleme e-postası (aynı akış, 24 saat). E-posta bağlantısıyla açılan hesap doğrulanmış sayılır. Sihirli bağlantı ve 2FA kapsam dışı
+- [x] Herkese açık kayıt **kapalı** (sunucu çağrısı dahil). Hesaplar: `pnpm clinic:member` (Recall ekibi) veya davet
+- [x] `organization` ↔ `clinics` 1:1: `clinics.organization_id` (unique). `ensureClinicOrganization()` ilk kullanımda oluşturur; F6'da klinik oluşturma ikisini tek transaction'da yaratacak
+- [x] Env: `BETTER_AUTH_SECRET` (prod'da zorunlu), `BETTER_AUTH_URL`, `EMAIL_PROVIDER`, `RESEND_API_KEY`, `EMAIL_FROM`. Şablonlar Türkçe; React Email yerine satır içi stilli HTML (`src/server/notifications/email-templates.ts`), bağımlılık eklememek için
+- [x] Route handler: `src/app/api/auth/[...all]/route.ts`
+- [x] Ekranlar: `/giris`, `/sifremi-unuttum`, `/sifre-belirle`, `/davet/[id]` (yeni hesap veya mevcut hesapla kabul)
 
 ### F3.2 Roller ve izinler (klinik içi)
 
-- [ ] Varsayılan roller: `owner`, `admin`, `staff` (sekreter), `practitioner` (hekim)
-- [ ] İzin modeli (Better Auth access control): kaynak × eylem matrisi. Örnek: `appointments: [read, create, update, cancel]`, `calls: [read, listen_recording]`, `patients: [read, update, anonymize]`, `settings.clinic`, `settings.assistant`, `settings.team`, `billing`
-- [ ] **Klinik başına özel roller:** Owner, varsayılan rolleri kopyalayıp düzenleyebilir veya yeni rol tanımlayabilir (ör. "Ön büro (sadece okuma)")
-- [ ] `practitioner` rolü bir `practitioners` kaydına bağlanabilir (`member.practitioner_id`): kendi takvimini görür
-- [ ] Sunucu yardımcıları: `requireSession()`, `requireClinic()` (aktif organizasyon → `ClinicContext`), `requirePermission(resource, action)`. Her Server Action ve sayfa bunlardan biriyle başlar
-- [ ] `proxy.ts` (Next 16): `/panel/**` ve `/admin/**` için oturum yoksa `/giris`'e yönlendirme. Yetki kontrolü proxy'de değil sunucu yardımcılarındadır (derinlemesine savunma)
+- [x] Varsayılan roller: `owner` (Klinik sahibi), `admin` (Yönetici), `staff` (Sekreter), `practitioner` (Hekim)
+- [x] İzin matrisi `src/lib/permissions.ts`: `appointments [read, create, update, cancel]`, `patients [read, update, anonymize]`, `calls [read, listen_recording]`, `callbacks [read, update]`, `clinicSettings`, `assistantSettings [read, update]`, `billing [read, manage]`, `audit [read]` + Better Auth'un `organization/member/invitation/ac` kaynakları. Testli (rol × eylem)
+- [x] **Klinik başına özel roller:** altyapı hazır (dinamik erişim kontrolü, `organization_roles`, en fazla 20 rol). Arayüz F5.3 "Ekip ve roller"de
+- [x] `members.practitioner_id`: hekim rolünü bir `practitioners` kaydına bağlar (takvim kapsamı F5'te uygulanır)
+- [x] Sunucu yardımcıları: `requireSession()`, `requireClinic()`, `can()`, `requirePermission()` (yetkisizse `forbidden()` → 403 sayfası)
+- [x] `src/proxy.ts`: `/panel/**` için çerez yoksa `/giris?sonra=…` (`safeNextPath` ile açık yönlendirme engelli). `/admin/**` F6'da eklenecek
 
 ### F3.3 Davet ve ekip yönetimi
 
@@ -274,9 +277,9 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F5.1 Panel kabuğu
 
-- [ ] Düzen: koyu cam kenar çubuğu (gradyan + grain), açık içerik alanı (Zinc-100), üst bar (klinik adı, klinik değiştirici, kullanıcı menüsü)
-- [ ] Mobil: alt sekme çubuğu
-- [ ] Modül görünürlüğü `settings.panel` ve izinlerden hesaplanır (yetkisi olmayan menüyü görmez)
+- [x] Düzen: koyu cam kenar çubuğu (gradyan + grain), açık içerik alanı (`canvas`), klinik değiştirici, kullanıcı menüsü (çıkış)
+- [x] Mobil: üst bar + alt sekme çubuğu ("Daha fazla" sayfası)
+- [x] Menü izinlerden hesaplanır (yetkisi olmayan menüyü görmez). `settings.panel` modül görünürlüğü F3.5 ile eklenecek
 
 ### F5.2 Ekranlar
 

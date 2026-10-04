@@ -53,6 +53,7 @@ pnpm db:studio      # Drizzle Studio
 pnpm voice:voices   # Retell seslerini listele
 pnpm voice:sync --clinic <slug>   # kliniğin Retell ajanını oluştur/güncelle (--all, --force)
 pnpm voice:send <inbound|function-call|call-ended>   # imzalı örnek webhook isteği
+pnpm clinic:member --clinic <slug> --email <e-posta> --name "<ad>" [--role owner]   # kliniğe kişi ekle (parola e-postası gider)
 ```
 
 Bir değişikliği bitmiş saymadan önce `pnpm lint && pnpm lint:tokens && pnpm typecheck && pnpm test` çalıştır. UI değişikliğinde stil rehberine bak: http://localhost:3000/dev/tasarim
@@ -79,6 +80,7 @@ docs/                     # Tüm ürün ve teknik belgeler
 ## Kurallar
 
 - **Çok kiracılı tasarım:** Tek kod tabanı, sınırsız klinik. Klinikler arası farklar veriyle (ayarlar, roller, ilişkisel tablolar) ifade edilir; kodda kliniğe özel dal (`if (clinic.slug === …)`) yasaktır.
+- **Hesaplar ve yetki:** Herkese açık kayıt kapalı; hesaplar Recall ekibi (`clinic:member`) veya davetle açılır ([ADR-009](docs/decisions/ADR-009-accounts-and-roles.md)). Her panel sayfası ve Server Action `requireClinic()` veya `requirePermission()` ile başlar (`src/server/auth/session.ts`). Roller ve izinler tek yerde: `src/lib/permissions.ts`.
 - **Kiracı izolasyonu:** Klinik verisine dokunan her sorgu `clinicId` ile filtrelenir. İstisnasız. Kiracı sunucuda belirlenir (oturum, aranan numara, Retell `agent_id`), asla istemciden veya LLM argümanından gelmez. Bkz. [MULTI-TENANCY.md](docs/01-architecture/MULTI-TENANCY.md).
 - **Tasarım:** Sadece [DESIGN.md](DESIGN.md) ve ondan türetilen `globals.css` token'ları. Bileşenlerde sabit hex/px renk yok. DESIGN.md'nin karşılamadığı bir durumda önce ürün ekibine sor ([ADR-005](docs/decisions/ADR-005-design-system.md)).
 - **Ortak sözleşmeler:** Form ve Server Action girdileri `src/lib/contracts/` altındaki aynı Zod şemasını kullanır; UI tipleri `z.infer` ile türetilir. Bkz. [IMPLEMENTATION-PLAN.md → Ortak sözleşmeler](docs/IMPLEMENTATION-PLAN.md#ortak-sözleşmeler-backend--frontend-uyumu).

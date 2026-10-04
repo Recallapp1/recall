@@ -22,20 +22,22 @@
 
 Kaynak gerçek: [`.env.example`](../../.env.example) ve [`src/lib/env.ts`](../../src/lib/env.ts).
 
-| Değişken                                                                 | Zorunlu          | Açıklama                                                                                      |
-| ------------------------------------------------------------------------ | ---------------- | --------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                                           | ✓                | Postgres bağlantısı (Neon: pooled URL)                                                        |
-| `APP_URL`                                                                | ✓                | Uygulamanın public URL'i (Retell webhook ve tool URL'leri bundan üretilir)                    |
-| `RETELL_API_KEY`                                                         | ✓ (ses için)     | Retell API anahtarı (webhook rozetli); imza doğrulama da bununla yapılır                      |
-| `RETELL_VOICE_ID`                                                        | ✓ (senkron için) | Varsayılan ses; klinik kendi sesini seçebilir                                                 |
-| `RETELL_LLM_MODEL`                                                       |                  | Varsayılan `claude-5-sonnet` ([ADR-003](../decisions/ADR-003-llm-model.md))                   |
-| `RETELL_VOICE_MODEL`                                                     |                  | Seslendirme modeli, sesin sağlayıcısına ait olmalı (ElevenLabs için `eleven_multilingual_v2`) |
-| `VOICE_LLM_MODEL`                                                        |                  | Varsayılan: ADR-003'teki model                                                                |
-| `VOICE_TRANSCRIBER_PROVIDER`, `VOICE_TTS_PROVIDER`, `VOICE_TTS_VOICE_ID` |                  | Ses sağlayıcı seçimleri                                                                       |
-| `SMS_PROVIDER`                                                           |                  | `console` (varsayılan) veya `netgsm`                                                          |
-| `NETGSM_USERCODE`, `NETGSM_PASSWORD`, `NETGSM_HEADER`                    | `netgsm` ise     |                                                                                               |
-| `CRON_SECRET`                                                            | Prod             | Vercel Cron yetkilendirmesi                                                                   |
-| `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`                                  | Faz 2            |                                                                                               |
+| Değişken                                              | Zorunlu          | Açıklama                                                                                      |
+| ----------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                        | ✓                | Postgres bağlantısı (Neon: pooled URL)                                                        |
+| `APP_URL`                                             | ✓                | Uygulamanın public URL'i (Retell webhook ve tool URL'leri bundan üretilir)                    |
+| `RETELL_API_KEY`                                      | ✓ (ses için)     | Retell API anahtarı (webhook rozetli); imza doğrulama da bununla yapılır                      |
+| `RETELL_VOICE_ID`                                     | ✓ (senkron için) | Varsayılan ses; klinik kendi sesini seçebilir                                                 |
+| `RETELL_LLM_MODEL`                                    |                  | Varsayılan `claude-5-sonnet` ([ADR-003](../decisions/ADR-003-llm-model.md))                   |
+| `RETELL_VOICE_MODEL`                                  |                  | Seslendirme modeli, sesin sağlayıcısına ait olmalı (ElevenLabs için `eleven_multilingual_v2`) |
+| `SMS_PROVIDER`                                        |                  | `console` (varsayılan) veya `netgsm`                                                          |
+| `NETGSM_USERCODE`, `NETGSM_PASSWORD`, `NETGSM_HEADER` | `netgsm` ise     |                                                                                               |
+| `CRON_SECRET`                                         | Prod             | Vercel Cron yetkilendirmesi                                                                   |
+| `BETTER_AUTH_SECRET`                                  | Prod             | Oturum çerezlerini imzalar, en az 32 karakter (`openssl rand -base64 32`)                     |
+| `BETTER_AUTH_URL`                                     |                  | Panelin adresi (giriş, e-posta bağlantıları); boşsa `APP_URL`                                 |
+| `EMAIL_PROVIDER`                                      |                  | `console` (varsayılan, bağlantıları loga yazar) veya `resend`                                 |
+| `RESEND_API_KEY`                                      | `resend` ise     | Resend API anahtarı ([ADR-006](../decisions/ADR-006-email-provider.md))                       |
+| `EMAIL_FROM`                                          | Prod             | Gönderici, ör. `Recall <bildirim@alan-adi>`; alan adı Resend'de doğrulanmış olmalı            |
 
 ## Build ve migration
 

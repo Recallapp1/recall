@@ -8,16 +8,16 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04 (F4.2 panel bileşenleri)_
+_Son güncelleme: 2026-10-04 (F3.1–F3.2 hesaplar, F5.1 panel kabuğu)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | **F4**: tanıtım sayfası ve **F4.2 panel bileşenleri** tamam (shadcn/ui + DESIGN.md, takvim ızgarası). Panel türetmeleri ürün ekibinin onayını bekliyor. Sırada **F3** (hesaplar)                                                                                                               |
+| Aktif faz               | **F3/F5**: giriş, parola, davet ve rol altyapısı tamam (Better Auth, [ADR-009](docs/decisions/ADR-009-accounts-and-roles.md)); panel kabuğu hazır. Sırada F3.3 ekip yönetimi, F3.4 denetim kaydı, F5.2 ekranlar                                                                                |
 | F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo kliniğin Retell ajanı canlı (`agent_d0b8d67285431ede3db2c75201`), Türkçe ve sayı okuma ekipçe onaylandı. Ajan şu an `claude-4.5-haiku` ile; gecikme karşılaştırması ekibin test aramasını bekliyor                                                             |
 | Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
 | Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
 | E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
-| Testler                 | **120 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
+| Testler                 | **197 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
 | Lokal DB                | `pnpm db:local` (PGlite) veya `pnpm db:up` (Docker). PGlite verisi 2026-10-04 tarihinde bozuldu; yedek `.pglite.corrupt-20261004`. Uzun süreli kullanımda Docker tercih edilmeli                                                                                                               |
 | Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                               |
 | GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
@@ -27,17 +27,18 @@ _Son güncelleme: 2026-10-04 (F4.2 panel bileşenleri)_
 
 ### Dallar ve saklanan işler
 
-| Ad          | İçerik                                                  | Durum                                               |
-| ----------- | ------------------------------------------------------- | --------------------------------------------------- |
-| `main`      | Tüm tamamlanan işler                                    | `origin/main` ile aynı                              |
-| `stash@{0}` | "WIP F3 (orphaned session): add better-auth dependency" | F3'e başlarken incelenip uygulanacak veya silinecek |
+| Ad          | İçerik                                                  | Durum                                                                  |
+| ----------- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `main`      | Tüm tamamlanan işler                                    | `origin/main` ile aynı                                                 |
+| `stash@{0}` | "WIP F3 (orphaned session): add better-auth dependency" | Gereksiz (temiz kurulum yapıldı). Ürün ekibi silecek: `git stash drop` |
 
 ### Sıradaki işler
 
-1. Ürün ekibi: `/dev/tasarim` → "Panel bileşenleri" onayı (rozetler, takvim, `danger` token'ı); `claude-4.5-haiku` ile bir test araması (gecikme karşılaştırması)
-2. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
-3. Demo talepleri: ekibe e-posta bildirimi ve görüntüleme (F3/F6)
-4. Logo ve görsel varlıklar (ürün ekibiyle birlikte)
+1. Ürün ekibi: `claude-4.5-haiku` ile bir test araması (gecikme karşılaştırması); `git stash drop`
+2. F3.3 ekip yönetimi arayüzü, F3.4 denetim kaydı, F3.5 panel tercihleri; ardından F5.2 ekranlar (Bugün, Takvim, Randevular, Aramalar, Geri aranacaklar, Hastalar, Ayarlar)
+3. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
+4. Demo talepleri: ekibe e-posta bildirimi ve görüntüleme (F3/F6)
+5. Logo ve görsel varlıklar (ürün ekibiyle birlikte)
 
 ---
 
@@ -76,6 +77,19 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · Hesaplar, giriş, davet, roller ve panel kabuğu · F3.1, F3.2, F5.1, ADR-009
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F3.1-better-auth` · **Commit'ler:** bu kaydı içeren commit'ler
+
+- Ürün ekibi panel tasarımını onayladı; F5'e geçiş için önce F3 yapıldı. `stash@{0}` silinemedi (otomatik güvenlik kontrolü engelledi); ürün ekibi silecek, içerik yalnızca bağımlılıktı, temiz kurulum yapıldı.
+- **Better Auth 1.7.7** + Drizzle: 8 tablo, migration `0004_accounts`; `clinics.organization_id` (1:1). Kayıt kapalı (sunucu çağrısı da). Hesap açma: `pnpm clinic:member` (Recall ekibi; "parolanızı belirleyin" e-postası, Better Auth sıfırlama akışı) veya davet (`acceptInvitationAsNewUser`, tek transaction). Ayrıntı: [ADR-009](docs/decisions/ADR-009-accounts-and-roles.md).
+- **Roller:** owner/admin/staff/practitioner, izin matrisi `src/lib/permissions.ts` (63 testli hücre). Özel roller için dinamik erişim kontrolü açık. `requireClinic()`, `can()`, `requirePermission()` (`forbidden()` → 403; `experimental.authInterrupts`).
+- **E-posta:** `EMAIL_PROVIDER=console|resend` adaptörü; Türkçe davet ve parola şablonları (hasta verisi yok). Lokalde bağlantılar terminale yazılır.
+- **Ekranlar:** `/giris` (açık yönlendirme korumalı `?sonra=`), `/sifremi-unuttum` (hesap var/yok aynı yanıt), `/sifre-belirle`, `/davet/[id]`; ortak sözleşmeler `src/lib/contracts/auth.ts`. `src/proxy.ts` `/panel/**` için çerez kontrolü.
+- **Panel kabuğu (F5.1):** lacivert kenar çubuğu, klinik değiştirici, kullanıcı menüsü, mobil alt sekme çubuğu; menü izinlere göre. `/panel` şimdilik karşılama ekranı. Logo `src/components/design/logo.tsx`'e taşındı.
+- `.env.local`: rastgele `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL=http://localhost:3000`, `EMAIL_PROVIDER=console` eklendi. Lokal test hesabı `sahip@gulus.test` (Gülüş Diş, owner); parolası `.env.local` içinde yorum satırında.
+- Doğrulama: tarayıcıda parola belirleme → giriş → panel (1280 ve 766 px); entegrasyon testi (PGlite + gerçek Better Auth): hesap açma, parola, kayıt kapalı, davet, tekrar kullanılan davet, staff davet edemez, üye olmadığı kliniğe geçemez. 197 test, lint, tokens, typecheck, build temiz.
 
 ### 2026-10-04 · "Dt." kısaltmasının telaffuzu · F1.8
 
