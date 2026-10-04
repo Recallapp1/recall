@@ -57,3 +57,12 @@ export const STATUS_ACTION_LABELS: Record<AppointmentStatus, string> = {
   no_show: "Gelmedi",
   cancelled: "İptal et",
 };
+
+/** Confirmation after a status change. */
+export const STATUS_DONE_MESSAGES: Record<AppointmentStatus, string> = {
+  scheduled: "Randevu planlandı olarak işaretlendi.",
+  confirmed: "Randevu onaylandı.",
+  completed: "Randevu tamamlandı olarak işaretlendi.",
+  no_show: "Hasta gelmedi olarak işaretlendi.",
+  cancelled: "Randevu iptal edildi.",
+};
