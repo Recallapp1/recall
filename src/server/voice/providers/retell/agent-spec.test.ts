@@ -7,6 +7,7 @@ import { buildRetellAgentSpec, specHash, type AgentSpecInput } from "./agent-spe
 const clinic: Clinic = {
   id: "11111111-1111-4111-8111-111111111111",
   slug: "gulus-dis",
+  organizationId: null,
   name: "Gülüş Diş Kliniği",
   timezone: "Europe/Istanbul",
   transferPhoneNumber: null,

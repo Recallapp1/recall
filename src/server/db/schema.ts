@@ -64,12 +64,147 @@ export const voiceAgentStatus = pgEnum("voice_agent_status", ["pending", "synced
 
 export { ACTIVE_APPOINTMENT_STATUSES };
 
+// ─── Accounts (Better Auth) ──────────────────────────────────────────────────
+// Shapes follow Better Auth's core and organization plugin models; property
+// names are the field names it expects (src/server/auth, ADR-009). One
+// organization per clinic: `clinics.organization_id`.
+
+const userRef = () =>
+  uuid()
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" });
+
+export const users = pgTable("users", {
+  id: id(),
+  name: text().notNull(),
+  email: text().notNull().unique(),
+  emailVerified: boolean().notNull().default(false),
+  image: text(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: id(),
+    userId: userRef(),
+    token: text().notNull().unique(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    ipAddress: text(),
+    userAgent: text(),
+    /** The clinic the user is working in; set at sign-in, changed by the clinic switcher. */
+    activeOrganizationId: uuid(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.userId)],
+);
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: id(),
+    userId: userRef(),
+    accountId: text().notNull(),
+    providerId: text().notNull(),
+    /** scrypt hash for the "credential" provider. */
+    password: text(),
+    accessToken: text(),
+    refreshToken: text(),
+    idToken: text(),
+    accessTokenExpiresAt: timestamp({ withTimezone: true }),
+    refreshTokenExpiresAt: timestamp({ withTimezone: true }),
+    scope: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.userId)],
+);
+
+/** Password reset and email verification tokens. */
+export const verifications = pgTable(
+  "verifications",
+  {
+    id: id(),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.identifier)],
+);
+
+export const organizations = pgTable("organizations", {
+  id: id(),
+  name: text().notNull(),
+  slug: text().notNull().unique(),
+  logo: text(),
+  metadata: text(),
+  createdAt: createdAt(),
+});
+
+const organizationRef = () =>
+  uuid()
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" });
+
+export const members = pgTable(
+  "members",
+  {
+    id: id(),
+    organizationId: organizationRef(),
+    userId: userRef(),
+    /** Role name(s), comma separated by Better Auth: owner, admin, staff, practitioner or a custom role. */
+    role: text().notNull().default("staff"),
+    /** For the practitioner role: whose calendar this member sees. */
+    practitionerId: uuid().references(() => practitioners.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex().on(t.organizationId, t.userId), index().on(t.userId)],
+);
+
+export const invitations = pgTable(
+  "invitations",
+  {
+    id: id(),
+    organizationId: organizationRef(),
+    email: text().notNull(),
+    role: text(),
+    status: text().notNull().default("pending"),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    inviterId: userRef(),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.organizationId), index().on(t.email)],
+);
+
+/** Clinic-defined roles (Better Auth dynamic access control). */
+export const organizationRoles = pgTable(
+  "organization_roles",
+  {
+    id: id(),
+    organizationId: organizationRef(),
+    role: text().notNull(),
+    /** JSON permission map, e.g. {"appointments":["read"]}. */
+    permission: text().notNull(),
+    createdAt: createdAt(),
+    updatedAt: timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  },
+  (t) => [uniqueIndex().on(t.organizationId, t.role)],
+);
+
 // ─── Tenant ──────────────────────────────────────────────────────────────────
 
 export const clinics = pgTable("clinics", {
   id: id(),
   slug: text().notNull().unique(),
   name: text().notNull(),
+  /** Better Auth organization holding the clinic's team (1:1). */
+  organizationId: uuid()
+    .unique()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   timezone: text().notNull().default("Europe/Istanbul"),
   transferPhoneNumber: text(),
   address: text(),
