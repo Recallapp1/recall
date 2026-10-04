@@ -132,7 +132,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F1.8 Uçtan uca POC
 
-- [ ] Tünel (cloudflared) ile lokal → Retell'de demo klinik ajanı senkronize edilir
+- [x] Tünel (cloudflared) ile lokal → Retell'de demo klinik ajanı senkronize edildi (2026-10-04; ilk denemede başarılı, idempotent, imzalı tool çağrısı canlı doğrulandı)
 - [ ] Retell **web call** ile 20 senaryodan ([CONVERSATION-SCENARIOS.md](02-voice-agent/CONVERSATION-SCENARIOS.md)) en az 10'u elle denenir
 - [ ] Model karşılaştırması: Retell'in desteklediği 2–3 Claude modeli. Ölçülenler: başarı, tur gecikmesi, maliyet. Sonuç [ADR-003](decisions/ADR-003-llm-model.md)'e işlenir
 - [ ] ASR ve TTS karşılaştırması (Türkçe): Deepgram, Azure, Soniox × ElevenLabs, Cartesia. Sonuç [VOICE-AND-LANGUAGE.md](02-voice-agent/VOICE-AND-LANGUAGE.md)'ye işlenir
