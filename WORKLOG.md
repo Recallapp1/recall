@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04 (DESIGN.md v2 ve yeni tanıtım sayfası)_
+_Son güncelleme: 2026-10-04 (yazı tipi Montserrat, navbar 768 px)_
 
 | Konu                    | Durum                                                                                                                                                                                                                              |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -77,6 +77,15 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · Yazı tipi Montserrat, navbar %25 daha dar · F4.3
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F4.3-montserrat` · **Commit'ler:** bu kaydı içeren commit
+
+- Ürün ekibi isteği: tüm üründe yazı tipi **Montserrat**. `@fontsource-variable/inter` kaldırıldı, `@fontsource-variable/montserrat` eklendi (yerel, `latin-ext`); `--font-sans` güncellendi. Tanıtım sayfası, panel, stil rehberi ve form alanları aynı token'ı kullandığı için hepsi değişti. DESIGN.md §1, DESIGN-SYSTEM.md, CLAUDE.md, ADR-006 ve ADR-007 (ek) güncellendi.
+- Navbar her iki yandan eşit olarak %25 kısaltıldı: `max-w-5xl` (1024 px) → `max-w-3xl` (768 px), ortalı.
+- Montserrat daha geniş olduğu için: header linkleri `whitespace-nowrap` ve `px-3` ("Nasıl çalışır" iki satıra kırılıyordu); mobilde menü düğmesi header dışına 22 px taşıyordu, mobil iç boşluklar azaltıldı (`gap-2`, `pl-3`, CTA `px-4`; `sm` ve üstü değişmedi).
+- Tarayıcı: 375, 1024 ve 1280 px'te header içi taşma yok, linkler tek satır, sayfada yatay taşma yok.
 
 ### 2026-10-04 · Navbar genişliği · F4.3
 

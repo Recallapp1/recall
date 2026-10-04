@@ -22,7 +22,7 @@ export function SiteHeader() {
             <li key={item.href}>
               <a
                 href={item.href}
-                className="rounded-full px-4 py-2 text-sm text-on-dark-soft transition-colors duration-300 group-data-[tone=light]/nav:text-body hover:bg-glass-strong hover:text-on-dark group-data-[tone=light]/nav:hover:bg-canvas group-data-[tone=light]/nav:hover:text-heading"
+                className="rounded-full px-3 py-2 text-sm whitespace-nowrap text-on-dark-soft transition-colors duration-300 group-data-[tone=light]/nav:text-body hover:bg-glass-strong hover:text-on-dark group-data-[tone=light]/nav:hover:bg-canvas group-data-[tone=light]/nav:hover:text-heading"
               >
                 {item.label}
               </a>
@@ -30,10 +30,10 @@ export function SiteHeader() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <a
             href="#iletisim"
-            className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium whitespace-nowrap text-on-dark transition-colors duration-300 hover:bg-primary-hover"
+            className="rounded-full bg-primary px-4 py-2.5 text-sm font-medium whitespace-nowrap text-on-dark transition-colors duration-300 hover:bg-primary-hover sm:px-5"
           >
             Demo talep edin
           </a>

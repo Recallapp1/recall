@@ -64,7 +64,7 @@ export function HeaderSurface({ children }: { children: ReactNode }) {
       aria-label="Ana menü"
       data-tone={tone}
       className={cn(
-        "group/nav mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 rounded-full border pr-2 pl-4 backdrop-blur-[20px] transition-[background-color,border-color,box-shadow] duration-300",
+        "group/nav mx-auto flex h-14 max-w-3xl items-center justify-between gap-2 rounded-full border pr-2 pl-3 backdrop-blur-[20px] transition-[background-color,border-color,box-shadow] duration-300 sm:gap-4 sm:pl-4",
         tone === "dark"
           ? "border-glass-border bg-glass shadow-lg shadow-ink/20"
           : "border-hairline bg-paper/55 shadow-lg shadow-ink/5",
