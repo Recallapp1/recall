@@ -8,22 +8,22 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04 (F3.4 denetim kaydı, F5.2 Bugün ekranı)_
+_Son güncelleme: 2026-10-04 (klinik paneli: tüm ekranlar ve ayarlar)_
 
-| Konu                    | Durum                                                                                                                                                                                                                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | **F3/F5**: giriş, parola, davet ve rol altyapısı tamam (Better Auth, [ADR-009](docs/decisions/ADR-009-accounts-and-roles.md)); panel kabuğu hazır. Sırada F3.3 ekip yönetimi, F3.4 denetim kaydı, F5.2 ekranlar                                                                                |
-| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo kliniğin Retell ajanı canlı (`agent_d0b8d67285431ede3db2c75201`), Türkçe ve sayı okuma ekipçe onaylandı. Ajan şu an `claude-4.5-haiku` ile; gecikme karşılaştırması ekibin test aramasını bekliyor                                                             |
-| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
-| Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
-| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
-| Testler                 | **205 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
-| Lokal DB                | `pnpm db:local` (PGlite, `DATABASE_POOL_MAX=1`, 5 dk'da bir `.pglite-snapshot.tar.gz`, açılmazsa otomatik geri yükler) veya `pnpm db:up` (Docker). Kurtarma adımları: 2026-10-04 "Bugün ekranı" kaydı                                                                                          |
-| Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                               |
-| GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
-| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                                                                                 |
-| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                        |
+| Konu                    | Durum                                                                                                                                                                                                                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aktif faz               | **F5 klinik paneli kullanılabilir**: Bugün, Takvim, Randevular, Aramalar, Geri aranacaklar, Hastalar, Ayarlar (klinik, saatler, hekimler, hizmetler, asistan, randevu kuralları, ekip, denetim). Açık: web test araması, tatiller, kişisel tercihler, özel rol arayüzü, E2E testleri. Sonra F6 (Recall yönetim konsolu) |
+| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo kliniğin Retell ajanı canlı (`agent_d0b8d67285431ede3db2c75201`), Türkçe ve sayı okuma ekipçe onaylandı. Ajan şu an `claude-4.5-haiku` ile; gecikme karşılaştırması ekibin test aramasını bekliyor                                                                                      |
+| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                                               |
+| Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens`                          |
+| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                                                        |
+| Testler                 | **216 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                                                 |
+| Lokal DB                | `pnpm db:local` (PGlite, `DATABASE_POOL_MAX=1`, 5 dk'da bir `.pglite-snapshot.tar.gz`, açılmazsa otomatik geri yükler) veya `pnpm db:up` (Docker). Kurtarma adımları: 2026-10-04 "Bugün ekranı" kaydı                                                                                                                   |
+| Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                                                        |
+| GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                                         |
+| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                                         |
+| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                                                                                                          |
+| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                                                 |
 
 ### Dallar ve saklanan işler
 
@@ -34,11 +34,12 @@ _Son güncelleme: 2026-10-04 (F3.4 denetim kaydı, F5.2 Bugün ekranı)_
 
 ### Sıradaki işler
 
-1. Ürün ekibi: `claude-4.5-haiku` ile bir test araması (gecikme karşılaştırması); `git stash drop`
-2. F3.3 ekip yönetimi arayüzü, F3.4 denetim kaydı, F3.5 panel tercihleri; ardından F5.2 ekranlar (Bugün, Takvim, Randevular, Aramalar, Geri aranacaklar, Hastalar, Ayarlar)
-3. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
-4. Demo talepleri: ekibe e-posta bildirimi ve görüntüleme (F3/F6)
-5. Logo ve görsel varlıklar (ürün ekibiyle birlikte)
+1. Ürün ekibi: paneli gezip geri bildirim (`sahip@gulus.test`, parola `.env.local` yorumunda); `claude-4.5-haiku` test araması; `git stash drop`; lokal DB için Docker/Neon kararı
+2. F5 kalanlar: Retell web call ile tarayıcıdan test araması, ses seçimi, tatiller/izinler (`time_off`), kişisel tercihler, özel rol arayüzü, Playwright E2E
+3. F6: Recall yönetim konsolu (klinik açma, organizasyon + ilk owner + ajan tek akışta)
+4. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
+5. Demo talepleri: ekibe e-posta bildirimi ve görüntüleme (F3/F6)
+6. Logo ve görsel varlıklar (ürün ekibiyle birlikte)
 
 ---
 
@@ -77,6 +78,20 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-04 · Klinik paneli ekranları, ayarlar ve ekip yönetimi · F5.2, F5.3, F5.4, F3.3, F3.5
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F5.2-randevular` · **Commit'ler:** bu kaydı içeren commit'ler
+
+- **Randevular:** gün/hafta takvimi (hekim kolonları, hekim filtresi, ileri/geri, "şimdi" çizgisi), filtreli ve sayfalı liste (dönem, durum, hekim, kaynak, ad/telefon araması; filtreler URL'de, JS'siz çalışır), detay (durum geçişleri, iptal onayı, not), "Yeni randevu" (hizmet → hekim/fark etmez → tarih → yalnızca boş slotlar → hasta). Paneldeki randevu asistanla aynı `bookAppointment` kurallarından geçer (`source: panel`).
+- **Aramalar:** liste (maskeli numara, sonuç rozeti, süre, özet), detay (özet, döküm, oluşan randevular, geri ara). Kayıt yalnızca `calls.listen_recording` ile, istek üzerine yüklenir ve her dinleme denetim kaydına yazılır.
+- **Geri aranacaklar:** bekleyen/tamamlanan, tel: bağlantısı, "Arandı"/"Yeniden aç".
+- **Hastalar:** arama, randevu sayısı, son/sıradaki randevu, kart, not; **KVKK anonimleştirme** (ad, telefon, notlar, o numaradan gelen aramaların numarası/dökümü/özeti/kaydı ve geri arama talepleri silinir; geri alınamaz, "ANONİMLEŞTİR" yazılarak onaylanır). Hekim yalnızca kendi hastalarını görür.
+- **Ayarlar (F5.3):** klinik bilgileri, çalışma saatleri (gün başına birden çok aralık), hekimler (unvan, hizmetler, kendi saatleri), hizmetler (eş anlamlılar, süre, ₺ fiyat aralığı), asistan (ad, karşılama, fiyat/kayıt, SSS, ek talimat, talimat önizlemesi, senkron durumu, "Şimdi güncelle"), randevu kuralları ve SMS tercihleri, panel modülleri ve varsayılan takvim görünümü. Her kayıt: ortak Zod sözleşmesi → Server Action → domain → audit → yanıt sonrası asistan senkronu (`src/server/voice/sync.ts`; Retell'e özgü kod providers altında).
+- **Ekip (F3.3):** davet, bekleyen davet iptali, rol değiştirme, hekim bağlama, ekipten çıkarma; yalnızca owner owner atar, son owner korunur. Better Auth hata kodları Türkçeye çevrildi. **Denetim kaydı** sayfası.
+- **F5.4:** Bugün ve Takvim 30 saniyede bir yenileniyor (sekme görünürken).
+- Ortak sözleşmeler: `panel-appointment.ts`, `settings.ts`, `call.ts` (çağrı sonuçları DB enum'uyla aynı kaynak).
+- Testler: panel (liste/filtre/kapsam/kiracı izolasyonu/durum geçişi/hasta/anonimleştirme/aramalar), ayarlar (saat çakışması, hekim/hizmet kiracı kontrolü, asistan ayarları birleştirme). 216 test; lint, tokens, typecheck temiz. Tarayıcıda: randevu oluşturma, onaylama, ayar kaydetme ve senkron doğrulandı.
 
 ### 2026-10-04 · Denetim kaydı, Bugün ekranı ve lokal veritabanı olayı · F3.4, F5.2
 
