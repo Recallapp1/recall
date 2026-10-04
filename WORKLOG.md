@@ -78,6 +78,12 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-04 · Navbar genişliği · F4.3
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit
+
+- Ürün ekibi isteği: navbar yatayda biraz kısalsın. `max-w-6xl` (1152 px) → `max-w-5xl` (1024 px), ortalı. 1280 px'te linkler ve buton sığıyor, taşma yok. Mobil değişmedi. DESIGN.md §3 güncellendi.
+
 ### 2026-10-04 · Navbar ile hero arasındaki oran · F4.3
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` · **Commit'ler:** bu kaydı içeren commit

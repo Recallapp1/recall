@@ -84,7 +84,7 @@ Never use flat colors for dark backgrounds. Always apply the navy gradient plus 
   - over dark surfaces: clear glass (`white 5%`, `blur(20px)`), white text, so the section shows through and the bar never blends into a same-colored background
   - over light surfaces: frosted white (`white 55%`), dark text
   - if any part of the bar is over a light surface, the frosted white mode is used (readable on both)
-  - **spacing:** height 56px; at the top of the page it floats inside the hero, 16px (mobile) / 20px (≥640px) below the hero's top edge, with equal side gaps and edges aligned to the hero content; while scrolling it sticks 12px from the viewport top
+  - **spacing:** height 56px; at the top of the page it floats inside the hero, 16px (mobile) / 20px (≥640px) below the hero's top edge, max width 1024px (`max-w-5xl`), centered with equal side gaps; while scrolling it sticks 12px from the viewport top
   - dark sections and dark cards in light sections are tagged `data-header-tone="dark"`; light cards in dark sections `data-header-tone="light"`
 - Alternate dark navy and light sections for rhythm; light sections alternate `canvas` and `paper`
 - Section anchors leave room for the sticky header (`scroll-mt-28`)
