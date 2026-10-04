@@ -5,6 +5,7 @@ import { connection } from "next/server";
 
 import {
   AppointmentStatusBadge,
+  AutoRefresh,
   EmptyState,
   PageHeader,
   ScheduleGrid,
@@ -80,6 +81,7 @@ export default async function TodayPage() {
 
   return (
     <>
+      <AutoRefresh />
       <PageHeader
         title={`Merhaba, ${context.session.user.name.split(" ")[0]}`}
         description={formatLongDate(overview.date)}

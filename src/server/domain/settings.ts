@@ -5,6 +5,7 @@ import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import type {
   AssistantSettingsInput,
   BookingRulesInput,
+  PanelPreferencesInput,
   PractitionerInput,
   ServiceInput,
   WeeklyHours,
@@ -79,6 +80,20 @@ export async function updateBookingRules(
     notifications: {
       smsConfirmation: input.smsConfirmation,
       smsReminderHoursBefore: input.smsReminderHoursBefore,
+    },
+  }));
+}
+
+export async function updatePanelPreferences(
+  exec: Executor,
+  clinicId: string,
+  input: PanelPreferencesInput,
+): Promise<void> {
+  await mergeSettings(exec, clinicId, (current) => ({
+    ...current,
+    panel: {
+      hiddenModules: [...new Set(input.hiddenModules)],
+      defaultCalendarView: input.defaultCalendarView,
     },
   }));
 }

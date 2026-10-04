@@ -21,10 +21,17 @@ export const metadata: Metadata = {
  * tab bar. Menu items the member has no permission for are not rendered.
  */
 export default async function PanelLayout({ children }: LayoutProps<"/panel">) {
-  const { clinic, session, member } = await requireClinic();
+  const { clinic, session, member, settings } = await requireClinic();
+  const hidden = new Set<string>(settings.panel.hiddenModules);
   const [memberships, allowed] = await Promise.all([
     listMemberships(session.user.id),
-    Promise.all(NAV_ITEMS.map(async (item) => ((await can(item.permission)) ? item.href : null))),
+    Promise.all(
+      NAV_ITEMS.map(async (item) =>
+        (!item.module || !hidden.has(item.module)) && (await can(item.permission))
+          ? item.href
+          : null,
+      ),
+    ),
   ]);
   const visible = allowed.filter((href): href is string => href !== null);
   const current = { organizationId: clinic.organizationId!, clinicName: clinic.name };

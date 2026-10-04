@@ -112,6 +112,21 @@ export const bookingRulesSchema = z.object({
 });
 export type BookingRulesInput = z.infer<typeof bookingRulesSchema>;
 
+/** Panel modules a clinic can hide from its team's menu (F3.5). */
+export const PANEL_MODULES = ["calls", "callbacks", "patients"] as const;
+export type PanelModule = (typeof PANEL_MODULES)[number];
+export const PANEL_MODULE_LABELS: Record<PanelModule, string> = {
+  calls: "Aramalar",
+  callbacks: "Geri aranacaklar",
+  patients: "Hastalar",
+};
+
+export const panelPreferencesSchema = z.object({
+  hiddenModules: z.array(z.enum(PANEL_MODULES)).max(PANEL_MODULES.length),
+  defaultCalendarView: z.enum(["gun", "hafta"]),
+});
+export type PanelPreferencesInput = z.infer<typeof panelPreferencesSchema>;
+
 /** Settings actions return this; the client shows a toast or the first error. */
 export type SettingsResult = { ok: true; message: string } | { ok: false; message: string };
 

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { PANEL_MODULES } from "../../lib/contracts/settings";
+
 /**
  * Behavioural settings stored in `clinics.settings`.
  * Every field has a default so `{}` is a valid configuration and adding
@@ -33,6 +35,13 @@ export const clinicSettingsSchema = z.object({
     .object({
       smsConfirmation: z.boolean().default(true),
       smsReminderHoursBefore: z.number().int().min(1).max(168).nullable().default(24),
+    })
+    .prefault({}),
+  /** Clinic-wide panel preferences (F3.5); permissions still apply on top. */
+  panel: z
+    .object({
+      hiddenModules: z.array(z.enum(PANEL_MODULES)).default([]),
+      defaultCalendarView: z.enum(["gun", "hafta"]).default("gun"),
     })
     .prefault({}),
 });

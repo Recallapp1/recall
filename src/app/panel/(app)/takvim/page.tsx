@@ -4,6 +4,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 
 import {
+  AutoRefresh,
   EmptyState,
   PageHeader,
   ScheduleGrid,
@@ -33,7 +34,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/panel/t
   const now = new Date();
   const today = localToday(now, context.clinic.timezone);
   const date = query.tarih ?? today;
-  const week = query.gorunum === "hafta";
+  const view = query.gorunum ?? context.settings.panel.defaultCalendarView;
+  const week = view === "hafta";
   const from = week ? addLocalDays(date, 1 - isoWeekday(date)) : date;
   const to = addLocalDays(from, week ? 7 : 1);
   const practitionerFilter = scope.practitionerId ? undefined : query.hekim;
@@ -91,10 +93,10 @@ export default async function CalendarPage({ searchParams }: PageProps<"/panel/t
   const href = (changes: { tarih?: string; gorunum?: string; hekim?: string | null }) => {
     const params = new URLSearchParams();
     const tarih = changes.tarih ?? date;
-    const gorunum = changes.gorunum ?? query.gorunum;
+    const gorunum = changes.gorunum ?? view;
     const hekim = changes.hekim === null ? undefined : (changes.hekim ?? query.hekim);
     if (tarih !== today) params.set("tarih", tarih);
-    if (gorunum !== "gun") params.set("gorunum", gorunum);
+    if (gorunum !== context.settings.panel.defaultCalendarView) params.set("gorunum", gorunum);
     if (hekim) params.set("hekim", hekim);
     const search = params.toString();
     return search ? `/panel/takvim?${search}` : "/panel/takvim";
@@ -106,6 +108,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/panel/t
 
   return (
     <>
+      <AutoRefresh />
       <PageHeader
         title="Takvim"
         description={title}
@@ -164,10 +167,10 @@ export default async function CalendarPage({ searchParams }: PageProps<"/panel/t
               <Link
                 key={value}
                 href={href({ gorunum: value })}
-                aria-current={query.gorunum === value ? "page" : undefined}
+                aria-current={view === value ? "page" : undefined}
                 className={cn(
                   "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                  query.gorunum === value
+                  view === value
                     ? "bg-paper text-heading shadow-sm shadow-ink/5"
                     : "text-body hover:text-heading",
                 )}

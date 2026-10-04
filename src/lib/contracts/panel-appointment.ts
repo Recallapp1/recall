@@ -60,6 +60,6 @@ export const PERIOD_LABELS: Record<AppointmentListQuery["donem"], string> = {
 /** Query string of the calendar (/panel/takvim). */
 export const calendarQuerySchema = z.object({
   tarih: localDate.optional().catch(undefined),
-  gorunum: z.enum(["gun", "hafta"]).catch("gun"),
+  gorunum: z.enum(["gun", "hafta"]).optional().catch(undefined),
   hekim: z.uuid().optional().catch(undefined),
 });

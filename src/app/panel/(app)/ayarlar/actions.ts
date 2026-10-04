@@ -8,6 +8,7 @@ import {
   bookingRulesSchema,
   clinicProfileSchema,
   firstIssue,
+  panelPreferencesSchema,
   practitionerSchema,
   serviceSchema,
   weeklyHoursSchema,
@@ -26,6 +27,7 @@ import {
   updateAssistantSettings,
   updateBookingRules,
   updateClinicProfile,
+  updatePanelPreferences,
 } from "@/server/domain/settings";
 import { scheduleAssistantSync, syncAssistantNow } from "@/server/voice/sync";
 
@@ -135,6 +137,18 @@ export async function saveBookingRules(input: unknown) {
     section: "booking",
     write: ({ clinic }, data) => updateBookingRules(db(), clinic.id, data),
     success: "Randevu kuralları kaydedildi.",
+  });
+}
+
+export async function savePanelPreferences(input: unknown) {
+  return saveSetting({
+    permission: { clinicSettings: ["update"] },
+    schema: panelPreferencesSchema,
+    input,
+    section: "panel",
+    write: ({ clinic }, data) => updatePanelPreferences(db(), clinic.id, data),
+    success: "Panel tercihleri kaydedildi.",
+    syncAssistant: false,
   });
 }
 

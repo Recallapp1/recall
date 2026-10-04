@@ -8,3 +8,4 @@ export {
 export { AppointmentSourceBadge, AppointmentStatusBadge } from "./status-badges";
 export { PageHeader } from "./page-header";
 export { OutcomeBadge } from "./outcome-badge";
+export { AutoRefresh } from "./auto-refresh";

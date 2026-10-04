@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { PanelModule } from "@/lib/contracts/settings";
 import type { Permissions } from "@/lib/permissions";
 
 export interface NavItem {
@@ -17,6 +18,8 @@ export interface NavItem {
   icon: LucideIcon;
   /** The menu item is shown only when the member has this permission. */
   permission: Permissions;
+  /** Clinics can hide optional modules (settings.panel.hiddenModules). */
+  module?: PanelModule;
   /** Shown in the mobile tab bar; the rest go under "Daha fazla". */
   primary?: boolean;
 }
@@ -49,6 +52,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Aramalar",
     icon: PhoneCall,
     permission: { calls: ["read"] },
+    module: "calls",
     primary: true,
   },
   {
@@ -56,6 +60,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Geri aranacaklar",
     icon: PhoneForwarded,
     permission: { callbacks: ["read"] },
+    module: "callbacks",
   },
   { href: "/panel/hastalar", label: "Hastalar", icon: Users, permission: { patients: ["read"] } },
   {
