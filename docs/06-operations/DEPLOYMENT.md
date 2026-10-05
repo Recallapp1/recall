@@ -7,6 +7,37 @@
 | Preview    | Her PR / dal push'u | `recall-git-<dal>.vercel.app` | Neon dalı (otomatik) |
 | Production | `main` dalına merge | Özel alan adı                 | Neon `main`          |
 
+## Production (canlı) durumu
+
+_Kurulum: 2026-10-05/06_
+
+| Konu       | Değer                                                                                                                                                                                          |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel     | Takım `RECALL` (`recall25`), proje `recall`, plan **Hobby** (ilk ücretli klinikten önce **Pro**'ya geçilecek: Hobby ticari kullanıma izin vermez)                                              |
+| Git        | `recallapp0/recall` bağlı; `main`'e her push production deploy'u başlatır                                                                                                                      |
+| Alan adı   | `recalltr.company` (Vercel'den alındı, DNS Vercel'de). `www` → ana alan 308 yönlendirme (`next.config.ts`). **Otomatik yenileme açık olmalı**                                                  |
+| Veritabanı | Neon `falling-mud-37269187`, **`production` dalı** (Frankfurt, ücretsiz plan; canlıya geçmeden ücretli plana ve auto-suspend kapatmaya)                                                        |
+| E-posta    | Resend, alan `recalltr.company`, bölge **eu-west-1** (İrlanda). DNS: `resend._domainkey` TXT (DKIM), `send` MX ve SPF TXT, `_dmarc` TXT (`p=none`)                                             |
+| SMS        | `console` (Netgsm F2'de). Bu modda asistan "SMS gönderdim" demez, log'a mesaj gövdesi yazılmaz                                                                                                 |
+| Preview    | Ortam değişkeni yok: dal push'u yapılmıyor (dallar lokalde `main`'e ff-merge). Preview gerekirse `DATABASE_URL` **dev** dalına verilmeli, asla production'a değil (build migration çalıştırır) |
+
+Gizli değerler (`DATABASE_URL`, `RETELL_API_KEY`, `RESEND_API_KEY`, `BETTER_AUTH_SECRET`) Vercel'de **sensitive** olarak durur ve kimse tarafından okunamaz. Oturum anahtarı Vercel'e doğrudan üretilerek yazıldı.
+
+### Production'da ilk konsol yöneticisi
+
+`platform:admin` yerelde production veritabanına karşı çalıştırılır; parola bağlantısı Resend ile e-postaya gider (Resend kapalıysa terminale yazılır):
+
+```powershell
+$env:DATABASE_URL="<neon production pooled URL>"
+$env:APP_URL="https://recalltr.company"
+$env:BETTER_AUTH_URL="https://recalltr.company"
+pnpm platform:admin --email <e-posta> --name "<ad>"
+```
+
+### Yeni klinik
+
+Konsol (`/admin`) → Yeni klinik → klinik sayfasında **Asistanı oluştur** → klinik panelinden en az bir hekim. Sektör şablonu hekim eklemez; hekimsiz klinikte asistan uygun saat bulamaz.
+
 ## İlk kurulum (bir kez)
 
 1. **GitHub:** Repo'yu GitHub'a gönder.

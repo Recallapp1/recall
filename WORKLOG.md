@@ -8,20 +8,20 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-05 (test araması uçtan uca düzeltildi)_
+_Son güncelleme: 2026-10-06 (production canlı: recalltr.company)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | **F5 tamamına yakın, F6 konsol hazır.** Panel: test araması, tatil/izin, kişisel tercihler. Konsol `/admin`: klinik oluşturma, asistan, numara, duraklatma, metrikler, demo talepleri. Sırada: F2 (Netgsm), F8 (Vercel deploy), F7 (KVKK)                                                      |
+| Aktif faz               | **F8 canlı.** Sırada: yasal sayfalar (şirket bilgisi bekleniyor), e-posta teslim iyileştirme, kalan yazılım (ses seçimi, özel rol arayüzü, E2E, F7 KVKK işleri), en son F2 Netgsm                                                                                                              |
 | F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo ajan canlı (`agent_d0b8d67285431ede3db2c75201`). Model `claude-4.5-haiku` + `eleven_flash_v2_5` + öncelikli LLM havuzu (ADR-003). Yeni gecikme ölçümü bekleniyor                                                                                               |
 | Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
 | Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
 | E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
-| Testler                 | **229 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
+| Testler                 | **230 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
 | Lokal DB                | **Neon** projesi `falling-mud-37269187` (Frankfurt), **`dev` dalı** (`.env.local` `DATABASE_URL`). Ana dal prod için ayrılmış (F8). PGlite `db:local` yedek seçenek olarak duruyor                                                                                                             |
 | Lokal ses testi         | `pnpm dev` + `pnpm dev:tunnel` (tüneli açar, `APP_URL`'i yazar, ajanları yönlendirir). Tarayıcı test araması uçtan uca doğrulandı (randevu DB'ye düşüyor)                                                                                                                                      |
 | GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
-| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                |
+| Deploy                  | **Canlı: https://recalltr.company** (Vercel `recall25/recall`, Hobby; `main` push = production). Neon `production` dalı. Resend doğrulandı (eu-west-1). Ayrıntı: [DEPLOYMENT.md](docs/06-operations/DEPLOYMENT.md#production-canlı-durumu)                                                     |
 | Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                                                                                 |
 | Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                        |
 
@@ -34,10 +34,11 @@ _Son güncelleme: 2026-10-05 (test araması uçtan uca düzeltildi)_
 
 ### Sıradaki işler
 
-1. Ürün ekibi: `pnpm dev:tunnel` ile tarayıcıdan test araması (randevu akışı artık uçtan uca çalışıyor); `git stash drop`
-2. F2: Netgsm hesabı (birlikte), numaranın Retell'e SIP ile bağlanması, SMS onay ve hatırlatma
-3. F8: Vercel projesi, Neon ana dal, Resend alan adı doğrulaması (hesap ve ücret adımları ürün ekibi onayıyla)
-4. F7: KVKK saklama süreleri ve silme işleri; F5 kalanlar: ses seçimi, özel rol arayüzü, Playwright E2E
+1. Ürün ekibi: şirket bilgileri (yasal sayfalar için), Resend'de açılma/tıklama takibini kapatma, alan adı otomatik yenileme, `git stash drop`
+2. Web: KVKK aydınlatma ve gizlilik sayfaları, demo formuna bağlantı
+3. Kalan yazılım: ses seçimi, özel rol arayüzü, Playwright E2E, F7 (saklama süreleri, silme, dışa aktarma), izleme (Sentry/uptime)
+4. Canlıdan önce: Vercel Pro, Neon ücretli plan + auto-suspend kapalı
+5. En son F2: Netgsm (numara, SIP, SMS)
 
 ---
 
@@ -76,6 +77,47 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-06 · Production canlı: Vercel, Neon, alan adı, Resend, web temeli · F8, F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) + ürün ekibi · **Dal:** `fix/F1.8-sms-iddiasi`, `feat/F8-web-yayin`, `docs/F8-production` · **Commit'ler:** `1a8b916`, `81ca048`, bu kayıt
+
+**Ne yapıldı**
+
+- **Vercel:** proje `recall` (takım `recall25`), GitHub bağlı, `main` = production. Gizli olmayan env değişkenleri CLI ile girildi. `BETTER_AUTH_SECRET` doğrudan Vercel'e üretildi (değer kimse tarafından görülmedi). `DATABASE_URL` (Neon `production` dalı), `RETELL_API_KEY` ve `RESEND_API_KEY` ürün ekibince sensitive girildi. İlk build migration'ları uyguladı (8/8).
+- **Alan adı** `recalltr.company` (Vercel'den alınmış, DNS Vercel'de) projeye bağlandı.
+- **Resend** (eu-west-1): alan iki kez eklenmişti (Tokyo + İrlanda), çakışan DKIM/MX kayıtları yüzünden "invalid" idi. Eski Tokyo kayıtları silindi, DMARC eklendi, doğrulandı. Parola e-postası teslim edildi ama **spam'e düştü** (yeni alan, itibar yok).
+- **Production uçtan uca:** ürün ekibi konsoldan "Recall Demo Diş Kliniği"ni açtı, asistanı oluşturdu, hekim ekledi. Gerçek Retell web araması (sentezlenmiş hasta sesi): müsaitlik → randevu `ok: true` → production DB'de randevu `scheduled`/`voice`, arama `booked`. Doğrulama Neon üzerinden salt okuma sorgusuyla.
+- **Bulunan hata:** SMS `console` modundayken asistan "SMS ile bilgilendirme gönderdik" diyordu. SMS sağlayıcıları artık gerçekten teslim edip etmediklerini bildiriyor (`delivers`), handler tool'lara `smsDelivers` geçiriyor. Console sağlayıcı production'da mesaj gövdesini (hasta bilgisi) loglamıyor.
+- **Web temeli:**
+  - robots.txt (panel, konsol, API hariç) ve sitemap;
+  - canonical, OG ve Twitter kartı;
+  - DESIGN.md token'larıyla üretilmiş paylaşım görseli ve marka ikonları (Next varsayılan favicon kaldırıldı);
+  - Türkçe 404;
+  - güvenlik başlıkları (HSTS, frame deny, mikrofon yalnızca kendi alanımızda);
+  - `www` → ana alan 308;
+  - menü bağlantıları her sayfadan çalışıyor.
+- Belgeler: [DEPLOYMENT.md](docs/06-operations/DEPLOYMENT.md) "Production durumu" bölümü, plan F8 kutuları.
+
+**Neden**
+
+- Ürün ekibi kararı: Vercel Hobby ve Neon ücretsiz şimdilik, ilk ücretli klinikten önce Pro ve ücretli Neon.
+- Preview ortamına env verilmedi: preview build'leri migration çalıştırır; yanlışlıkla production DB'ye bağlanmasın.
+- Bu oturumdaki Vercel MCP bağlantısı salt okunur (403); işlemler ürün ekibinin zaten oturum açık olan Vercel CLI'ı ile yapıldı. `npx vercel` bozuk, CLI global kuruldu (`npm i -g vercel@62`).
+
+**Doğrulama**
+
+- `pnpm test`: 230/230, lint, tokens, typecheck temiz, lokal `pnpm build` başarılı.
+- Production: `/api/health` ok, robots, sitemap, `www` 308, güvenlik başlıkları ve OG etiketleri `curl` ile doğrulandı. Production gerçek arama testi geçti.
+
+**Açık kalanlar / dikkat**
+
+- **Yasal sayfalar** (KVKK aydınlatma metni, gizlilik/çerez politikası) için şirket bilgileri bekleniyor: ünvan, adres, KVKK başvuru e-postası.
+- E-posta spam'e düşüyor: Resend'de açılma/tıklama takibini kapatmak, "Spam değil" işaretlemek, zamanla itibar.
+- Alan adı otomatik yenileme kapalıydı; ürün ekibine açması söylendi.
+- Vercel `link` komutu `.gitignore`'a `.env*` ekledi (`.env.example`'ı gizlerdi); geri alındı.
+- Production'da test verisi: "Deneme Test" randevusu, 7 Ekim 09:00 (demo klinik).
+- Asistan adı demo klinikte "Asistan" (varsayılan). Ayarlar → Asistan'dan bir isim verilmeli.
 
 ### 2026-10-05 · Test aramasında "bağlantı sorunu": kök neden ve uçtan uca randevu · F5.3, F1.8
 

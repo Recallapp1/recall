@@ -47,7 +47,7 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 | F5  | Klinik paneli                                               | 🟡 F5.1–F5.4 ✅ (açık: ses seçimi, özel rol arayüzü, E2E testleri)         | F3, F4 (F1 ile paralel ilerleyebilir) |
 | F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                          | F3, F1                                |
 | F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                         | F5                                    |
-| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                         | F1, F3 (F2 gerçek numara için)        |
+| F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı                                                                   | F1, F3 (F2 gerçek numara için)        |
 | F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                         | F1–F8                                 |
 | F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                         | F9                                    |
 
@@ -355,12 +355,13 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ## F8: Production (Vercel, Neon, izleme)
 
-- [ ] GitHub reposu ve push (ürün ekibi repoyu açar)
-- [ ] Vercel projesi (**RECALL** takımı, `recall25`), bölge `fra1`, Git bağlantısı
-- [ ] Neon (Vercel Marketplace, Frankfurt): koşulları ürün ekibi onaylar; preview dalları için Neon branch'leri
-- [ ] Env değişkenleri (production ve preview ayrı Retell anahtarı veya ajan öneki ile)
-- [ ] Retell webhook ve inbound URL'lerinin production alan adına yönlendirilmesi; preview ortamları için ayrı test ajanları
-- [ ] Alan adı, Sentry, uptime izleme (`/api/health`), Vercel Cron
+- [x] GitHub reposu ve push (`recallapp0/recall`)
+- [x] Vercel projesi (**RECALL** takımı, `recall25`, proje `recall`), bölge `fra1`, Git bağlantısı; `main` push = production deploy (2026-10-06)
+- [x] Neon Frankfurt, `production` dalı (Marketplace yerine mevcut proje; ücretsiz plan, canlıdan önce ücretli). Preview için Neon dalları: ⏳
+- [x] Production env değişkenleri (gizliler sensitive). Preview: ⏳ (bilerek boş, bkz. DEPLOYMENT.md)
+- [x] Production ajanları `recalltr.company`'ye bağlı (konsoldan oluşturulan demo klinik; gerçek arama → randevu → DB doğrulandı). Inbound URL numara gelince (F2). Preview test ajanları: ⏳
+- [x] Alan adı `recalltr.company` (+ `www` yönlendirme), Resend alanı doğrulandı (eu-west-1), güvenlik başlıkları, robots/sitemap/OG
+- [ ] Sentry, uptime izleme (`/api/health`), Vercel Cron
 - [ ] CI: entegrasyon testleri (PGlite) ve build; `main` koruması
 
 ---
