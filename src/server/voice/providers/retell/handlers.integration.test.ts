@@ -102,7 +102,11 @@ describe("inbound webhook", () => {
         override_agent_id: clinic.agentId,
         override_agent_version: 0,
         // Sunday: clinic closed, so no live transfer.
-        dynamic_variables: { transfer_available: "hayır", clinic_status: "active" },
+        dynamic_variables: {
+          caller_number: CALLER,
+          transfer_available: "hayır",
+          clinic_status: "active",
+        },
         metadata: { clinic_id: clinic.ctx.clinic.id },
       },
     });

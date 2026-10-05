@@ -99,6 +99,18 @@ describe("bookAppointment", () => {
     await expectDomainError(book(clinic, { patientPhone: null }), "PHONE_REQUIRED");
   });
 
+  it("asks again for a number with a missing digit", async () => {
+    const clinic = await createTestClinic(db);
+    // Seen live: the model read "0500 111 22 44" back correctly but sent ten digits.
+    await expectDomainError(book(clinic, { patientPhone: "0500111224" }), "INVALID_PHONE");
+  });
+
+  it("accepts the number in spoken groups", async () => {
+    const clinic = await createTestClinic(db);
+    const { created } = await book(clinic, { patientPhone: "0532 123 45 67" });
+    expect(created).toBe(true);
+  });
+
   it("rejects services from another clinic", async () => {
     const clinicA = await createTestClinic(db);
     const clinicB = await createTestClinic(db);

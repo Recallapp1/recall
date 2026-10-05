@@ -141,21 +141,29 @@ describe("buildCallVariables", () => {
 
   it("allows transfer only with a number and during clinic hours", () => {
     const withNumber = { ...base, transferPhoneNumber: "+905550000000" };
-    expect(buildCallVariables(withNumber, clinicHours, MONDAY_NOON).transfer_available).toBe(
+    expect(buildCallVariables(withNumber, clinicHours, MONDAY_NOON, null).transfer_available).toBe(
       "evet",
     );
-    expect(buildCallVariables(withNumber, clinicHours, SUNDAY_NOON).transfer_available).toBe(
+    expect(buildCallVariables(withNumber, clinicHours, SUNDAY_NOON, null).transfer_available).toBe(
       "hayır",
     );
     expect(
-      buildCallVariables({ ...base, transferPhoneNumber: null }, clinicHours, MONDAY_NOON)
+      buildCallVariables({ ...base, transferPhoneNumber: null }, clinicHours, MONDAY_NOON, null)
         .transfer_available,
     ).toBe("hayır");
   });
 
   it("passes the clinic status through", () => {
     const paused = { ...base, status: "paused" as const, transferPhoneNumber: null };
-    expect(buildCallVariables(paused, clinicHours, MONDAY_NOON).clinic_status).toBe("paused");
+    expect(buildCallVariables(paused, clinicHours, MONDAY_NOON, null).clinic_status).toBe("paused");
+  });
+
+  it("passes the caller number, or empty when unknown", () => {
+    const clinic = { ...base, transferPhoneNumber: null };
+    expect(
+      buildCallVariables(clinic, clinicHours, MONDAY_NOON, "+905321234567").caller_number,
+    ).toBe("+905321234567");
+    expect(buildCallVariables(clinic, clinicHours, MONDAY_NOON, null).caller_number).toBe("");
   });
 });
 

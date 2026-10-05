@@ -86,19 +86,15 @@ Kurulum (bir kez):
 winget install --id Cloudflare.cloudflared
 ```
 
-Ayrı bir terminalde tüneli açın ve açık bırakın:
+Önce `pnpm dev`'i çalıştırın (6. adım), sonra ayrı bir terminalde:
 
 ```bash
-cloudflared tunnel --url http://localhost:3000
+pnpm dev:tunnel
 ```
 
-Çıktıdaki `https://….trycloudflare.com` adresini kopyalayıp `.env.local` dosyasına yazın:
+Komut tüneli açar, adres internetten erişilebilir olunca `.env.local` içindeki `APP_URL`'i yazar ve **ajanı olan tüm kliniklerin** Retell ajanını yeni adrese yönlendirir. Terminali açık bırakın; Ctrl+C tüneli kapatır.
 
-```
-APP_URL=https://kelime-kelime-kelime.trycloudflare.com
-```
-
-> Hızlı tünel adresi **her açılışta değişir.** Adres değişince `APP_URL`'i güncelleyin, `pnpm dev`'i yeniden başlatın ve 7. adımı tekrarlayın (ajanın çağırdığı adresler güncellenir).
+> Hızlı tünel adresi **her açılışta değişir** ve kapanan tünelin adresi bir süre sonra hiç çözülmez. Ajan eski adreste kalırsa asistan her tool çağrısında hata alır ve hastaya "bağlantı sorunu" der (2026-10-05'te yaşandı). Bu yüzden tüneli elle açmayın; her seferinde `pnpm dev:tunnel` kullanın. Panelden başlatılan test araması da önce ajanı senkronize eder ve sunucuya ulaşılamıyorsa aramayı başlatmaz.
 
 ## 6. Uygulamayı çalıştırın
 
@@ -189,7 +185,7 @@ Bilgi için; bunları elle girmeniz gerekmez. Kaynak: [`agent-spec.ts`](../../sr
 | `No voice configured`                                          | 4. adım: `RETELL_VOICE_ID` boş                                                                                                                                                                       |
 | `APP_URL must be a public https URL`                           | 5. adım: `APP_URL` hâlâ `http://localhost:3000`                                                                                                                                                      |
 | `voice:sync` Retell hatası (`400 …`)                           | Mesaj Retell'in kendi açıklamasıdır (ör. geçersiz ses kimliği veya model). Düzeltip tekrar çalıştırın; yarım kalan ilerleme korunur, çift ajan oluşmaz                                               |
-| Asistan konuşuyor ama "sistemde sorun var" diyor               | Tool çağrısı sunucuya ulaşmadı: tünel kapandı, adres değişti (7. adımı tekrarla) veya `pnpm dev` kapalı                                                                                              |
+| Asistan konuşuyor ama "sistemde sorun var" diyor               | Tool çağrısı sunucuya ulaşmadı: tünel kapandı veya adres değişti (`pnpm dev:tunnel` ile yeniden açın) ya da `pnpm dev` kapalı. Retell panelinde aramanın tool sonucunda `ENOTFOUND` görünür          |
 | `pnpm dev` loglarında `401` / `Invalid signature`              | Kullanılan anahtar webhook rozetli değil veya bilgisayar saati yanlış (5 dk tolerans)                                                                                                                |
 | Tool çağrısı `404 CLINIC_NOT_FOUND`                            | Test edilen ajan Retell panelinde elle oluşturulmuş. Sadece `voice:sync` ile oluşturulan ajanı kullanın                                                                                              |
 | Türkçe anlamada zorluk                                         | F1.8'de ASR sağlayıcıları karşılaştırılacak; isim ve hizmet adları zaten `boosted_keywords` içinde                                                                                                   |

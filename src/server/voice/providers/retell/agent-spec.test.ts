@@ -99,13 +99,15 @@ describe("buildRetellAgentSpec", () => {
     });
   });
 
-  it("uses Retell's clock and caller variables plus defaults for ours", () => {
+  it("uses Retell's clock variables plus defaults for ours", () => {
     const { llm } = buildRetellAgentSpec(input());
     expect(llm.general_prompt).toContain("{{current_time_Europe/Istanbul}}");
     expect(llm.general_prompt).toContain("{{current_calendar_Europe/Istanbul}}");
-    expect(llm.general_prompt).toContain("{{user_number}}");
+    expect(llm.general_prompt).toContain("{{caller_number}}");
+    expect(llm.general_prompt).not.toContain("{{user_number}}");
     expect(llm.general_prompt).toContain("{{clinic_status}}");
     expect(llm.default_dynamic_variables).toEqual({
+      caller_number: "",
       transfer_available: "hayır",
       clinic_status: "active",
     });

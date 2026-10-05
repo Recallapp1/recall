@@ -78,7 +78,12 @@ export async function handleInbound(request: Request, deps: RetellHandlerDeps) {
     call_inbound: {
       override_agent_id: agent.externalAgentId,
       ...(agent.agentVersion != null && { override_agent_version: agent.agentVersion }),
-      dynamic_variables: buildCallVariables(ctx.clinic, directory.clinicHours, now),
+      dynamic_variables: buildCallVariables(
+        ctx.clinic,
+        directory.clinicHours,
+        now,
+        normalizePhone(inbound.from_number),
+      ),
       metadata: { clinic_id: ctx.clinic.id },
     },
   });
@@ -188,6 +193,11 @@ async function readVerified<S extends z.ZodType>(
   }
   const result = schema.safeParse(json);
   if (!result.success) {
+    // Shape only (key names and failing paths), never values: payloads carry patient data.
+    log("warn", "retell.payload_rejected", {
+      keys: json && typeof json === "object" ? Object.keys(json) : typeof json,
+      paths: result.error.issues.map((issue) => issue.path.join(".")),
+    });
     return { ok: false, response: errorResponse(400, "BAD_REQUEST", "Unexpected payload") };
   }
   return { ok: true, data: result.data };

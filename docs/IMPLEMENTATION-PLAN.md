@@ -105,7 +105,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 ### F1.4 Ajan tanımı üretimi ✅
 
 - [x] [agent-spec.ts](../src/server/voice/providers/retell/agent-spec.ts): LLM (`general_prompt`, `begin_message`, `model`, sıcaklık 0, 6 custom tool + `end_call` + koşullu `transfer_call`, `default_dynamic_variables`) ve Agent (`tr-TR`, ses, saat dilimi, `boosted_keywords`, olay webhook'u, sessizlik ve süre sınırı)
-- [x] Not: Tarih, saat, takvim ve arayan numara için kendi değişkenlerimiz yerine Retell'in **yerleşik** değişkenleri kullanıldı (`{{current_time_<tz>}}`, `{{current_calendar_<tz>}}`, `{{user_number}}`). Böylece Retell panelindeki testler de doğru tarihi bilir. Bizim değişkenlerimiz: `transfer_available`, `clinic_status`
+- [x] Not: Tarih, saat, takvim ve arayan numara için kendi değişkenlerimiz yerine Retell'in **yerleşik** değişkenleri kullanıldı (`{{current_time_<tz>}}`, `{{current_calendar_<tz>}}`, `{{user_number}}`). Böylece Retell panelindeki testler de doğru tarihi bilir. Bizim değişkenlerimiz: `transfer_available`, `clinic_status`, `caller_number` (2026-10-05: `{{user_number}}` web aramalarında dolmadığı için yerine geçti)
 - [x] [prompt.ts](../src/server/voice/prompt.ts) sağlayıcıdan bağımsız şablon + `buildCallVariables`
 - [x] Duraklatılmış klinikte `book_appointment` ve `reschedule_appointment` sunucuda `CLINIC_PAUSED` döner (prompt kuralına ek savunma)
 - [x] Kayıt tercihi: `recordCalls=false` ise kayıt URL'i saklanmıyor. Retell tarafı saklama ayarı F7'ye bırakıldı

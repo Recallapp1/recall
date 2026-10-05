@@ -52,7 +52,7 @@ Karar: [ADR-004](../decisions/ADR-004-retell-voice-platform.md).
 
 1. **Senkron (`pnpm voice:sync`, F5'te panelden otomatik):** Klinik verisi (hizmetler, hekimler, saatler, SSS, ses, kurallar) → [`buildRetellAgentSpec`](../../src/server/voice/providers/retell/agent-spec.ts) → Retell LLM + Agent oluştur/güncelle → `voice_agents` tablosuna `external_agent_id`, `agent_version`, `spec_hash` yazılır. Spec değişmediyse Retell çağrılmaz.
 2. **Arama anı:** Prompt sabittir. Değişen değerler değişkenlerle gelir:
-   - Retell'in yerleşik değişkenleri: `{{current_time_Europe/Istanbul}}`, `{{current_calendar_Europe/Istanbul}}`, `{{user_number}}`
+   - Retell'in yerleşik değişkenleri: `{{current_time_Europe/Istanbul}}`, `{{current_calendar_Europe/Istanbul}}`; arayan numara bizim `{{caller_number}}` değişkenimiz (inbound webhook doldurur, web aramalarında boş)
    - Bizim değişkenlerimiz (inbound webhook ile): `{{transfer_available}}`, `{{clinic_status}}`
 
 Retell panelinde ajan elle düzenlenmez; bir sonraki senkron değişiklikleri ezer.

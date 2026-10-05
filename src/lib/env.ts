@@ -83,6 +83,8 @@ export function env(): Env {
     throw new Error("BETTER_AUTH_SECRET is required in production");
   }
 
-  cached = result.data;
-  return cached;
+  // `next dev` reloads .env.local in place (e.g. a new tunnel's APP_URL from
+  // `pnpm dev:tunnel`); re-parsing there keeps the server from syncing a stale URL.
+  if (result.data.NODE_ENV === "production") cached = result.data;
+  return result.data;
 }

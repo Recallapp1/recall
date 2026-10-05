@@ -39,6 +39,7 @@ import {
   scheduleAssistantSync,
   syncAssistantNow,
   type TestWebCall,
+  type TestWebCallResult,
 } from "@/server/voice/sync";
 
 /**
@@ -182,14 +183,27 @@ export async function syncAssistant(): Promise<SettingsResult> {
   }
 }
 
+const TEST_CALL_MESSAGES: Record<Exclude<TestWebCallResult, { ok: true }>["reason"], string> = {
+  not_configured: "Sesli asistan bu ortamda yapılandırılmamış.",
+  no_agent: "Bu klinik için henüz bir sesli asistan kurulmadı.",
+  sync_failed:
+    "Asistan güncellenemedi; bu yüzden arama başlatılmadı. Birkaç dakika sonra tekrar deneyin.",
+  unreachable:
+    "Asistan Recall sunucusuna ulaşamıyor; randevu oluşturamayacağı için arama başlatılmadı. Recall ekibine haber verin.",
+};
+
 /** Browser test call with the clinic's assistant; billed by the voice platform like a call. */
 export async function startTestCall(): Promise<
   ({ ok: true } & TestWebCall) | { ok: false; message: string }
 > {
   const { clinic, session } = await requirePermission({ assistantSettings: ["update"] });
   try {
-    const call = await createTestWebCall(clinic.id);
-    if (!call) return { ok: false, message: "Bu klinik için henüz bir sesli asistan kurulmadı." };
+    const result = await createTestWebCall(clinic.id);
+    if (!result.ok) {
+      console.error(JSON.stringify({ msg: "voice.test_call.refused", reason: result.reason }));
+      return { ok: false, message: TEST_CALL_MESSAGES[result.reason] };
+    }
+    const { call } = result;
     await recordAudit(db(), {
       clinicId: clinic.id,
       actorUserId: session.user.id,

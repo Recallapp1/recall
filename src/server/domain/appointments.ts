@@ -43,16 +43,28 @@ export interface BookAppointmentInput {
   now: Date;
 }
 
+/**
+ * E.164 phone for a booking or lookup. A number that was given but cannot be
+ * valid gets its own error: the assistant most often drops or repeats a digit,
+ * and telling it so makes it ask again instead of giving up.
+ */
+export function requirePhone(input: string | null | undefined, missingMessage: string): string {
+  const phone = normalizePhone(input);
+  if (phone) return phone;
+  if (!input?.trim()) throw new DomainError("PHONE_REQUIRED", missingMessage);
+  throw new DomainError(
+    "INVALID_PHONE",
+    "Telefon numarasını eksik ya da hatalı aldım; numara sıfırla başlayan on bir haneden oluşmalı. Numaranızı tekrar söyler misiniz?",
+  );
+}
+
 export async function bookAppointment(
   db: Database,
   ctx: ClinicContext,
   input: BookAppointmentInput,
 ): Promise<{ appointment: AppointmentSummary; created: boolean }> {
   const { clinic } = ctx;
-  const phone = normalizePhone(input.patientPhone);
-  if (!phone) {
-    throw new DomainError("PHONE_REQUIRED", "Randevu için geçerli bir telefon numarası gerekiyor.");
-  }
+  const phone = requirePhone(input.patientPhone, "Randevu için telefon numaranız gerekiyor.");
   if (!isLocalTime(input.time)) {
     throw new DomainError("INVALID_DATE", "Saati anlayamadım.");
   }
@@ -115,13 +127,10 @@ export async function findUpcomingAppointments(
   phoneInput: string | null,
   now: Date,
 ): Promise<AppointmentSummary[]> {
-  const phone = normalizePhone(phoneInput);
-  if (!phone) {
-    throw new DomainError(
-      "PHONE_REQUIRED",
-      "Randevularınızı bulmak için telefon numaranız gerekiyor.",
-    );
-  }
+  const phone = requirePhone(
+    phoneInput,
+    "Randevularınızı bulmak için telefon numaranız gerekiyor.",
+  );
 
   const rows = await summaryQuery(db)
     .where(
@@ -238,10 +247,7 @@ async function getOwnedActiveAppointment(
   appointmentId: string,
   phoneInput: string | null,
 ): Promise<AppointmentSummary> {
-  const phone = normalizePhone(phoneInput);
-  if (!phone) {
-    throw new DomainError("PHONE_REQUIRED", "Bu işlem için telefon numaranız gerekiyor.");
-  }
+  const phone = requirePhone(phoneInput, "Bu işlem için telefon numaranız gerekiyor.");
 
   const [row] = await summaryQuery(db).where(
     and(

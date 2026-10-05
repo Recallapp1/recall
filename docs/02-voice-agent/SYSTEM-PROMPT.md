@@ -2,13 +2,13 @@
 
 Kaynak: [`src/server/voice/prompt.ts`](../../src/server/voice/prompt.ts). Prompt klinik verisinden üretilir ve **senkron sırasında** Retell LLM'ine yazılır (`general_prompt`). Her aramada yeniden üretilmez; aramaya göre değişen değerler **değişkenlerle** gelir:
 
-| Yer tutucu                             | Kaynak                | Değer                                              |
-| -------------------------------------- | --------------------- | -------------------------------------------------- |
-| `{{current_time_Europe/Istanbul}}`     | Retell (yerleşik)     | Klinik saat diliminde şu an                        |
-| `{{current_calendar_Europe/Istanbul}}` | Retell (yerleşik)     | Önümüzdeki 14 gün, gün adlarıyla                   |
-| `{{user_number}}`                      | Retell (yerleşik)     | Arayan numara; web aramalarında boş                |
-| `{{transfer_available}}`               | Bizim inbound webhook | `evet` / `hayır` (devir numarası var ve mesai içi) |
-| `{{clinic_status}}`                    | Bizim inbound webhook | `active` / `paused`                                |
+| Yer tutucu                             | Kaynak                | Değer                                                                                                                                                |
+| -------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{{current_time_Europe/Istanbul}}`     | Retell (yerleşik)     | Klinik saat diliminde şu an                                                                                                                          |
+| `{{current_calendar_Europe/Istanbul}}` | Retell (yerleşik)     | Önümüzdeki 14 gün, gün adlarıyla                                                                                                                     |
+| `{{caller_number}}`                    | Recall (inbound)      | Arayan numara (E.164); gizli, web ve test aramalarında boş. Retell'in `{{user_number}}` değişkeni web aramalarında hiç dolmaz, bu yüzden kullanılmaz |
+| `{{transfer_available}}`               | Bizim inbound webhook | `evet` / `hayır` (devir numarası var ve mesai içi)                                                                                                   |
+| `{{clinic_status}}`                    | Bizim inbound webhook | `active` / `paused`                                                                                                                                  |
 
 Inbound webhook çalışmayan aramalarda (Retell panelindeki test, web call) bizim değişkenlerimiz `default_dynamic_variables` değerlerini alır: `transfer_available = hayır`, `clinic_status = active`. Saat dilimi kliniğinkidir; yukarıdaki örnek İstanbul içindir.
 
@@ -55,10 +55,14 @@ Hizmetler:
 
 # Nasıl çalışırsın
 - Randevu için: hizmeti öğren → (varsa) hekim tercihini sor → tarih/saat tercihini sor → check_availability ile uygun saatlere bak → en fazla 3 seçenek sun → hastanın adını al → bilgileri geri okuyup onay al → book_appointment çağır.
+- Hastanın zaten söylediği bilgiyi (hizmet, hekim, gün, saat, ad, telefon) tekrar sorma. Hasta belirli bir saat istediyse ve check_availability o saati döndürdüyse seçenek sunma; o saati söyleyip devam et. O saat yoksa en yakın seçenekleri sun.
+- Hasta bilgileri onayladığında ("evet", "doğru", "onaylıyorum") bekletmeden book_appointment çağır.
+- Hasta vedalaşırsa ısrar etme: işlem tamamlanmadıysa bunu tek cümleyle söyle, vedalaş ve görüşmeyi bitir.
 - İptal/erteleme için: find_appointments ile hastanın randevularını bul → hangisi olduğunu teyit et → cancel_appointment veya reschedule_appointment çağır.
-- Arayan numara: "{{user_number}}". Boşsa veya gizliyse telefon numarasını sor ve tool'lara phone olarak gönder.
+- Arayan numara: "{{caller_number}}". Boşsa veya gizliyse telefon numarasını sor ve tool'lara phone olarak gönder.
 - Klinik durumu: "{{clinic_status}}". "paused" ise randevu oluşturma/erteleme yapma, geri arama notu öner.
-- Bir işlemi, tool sonucu başarılı (ok: true) dönmeden asla "yapıldı" diye bildirme.
+- Bir işlemi, tool sonucu başarılı (ok: true) dönmeden asla "yapıldı" diye bildirme. İşlem yapan bir tool'u çağırdığın yanıtta sonucu söyleme; sonucu yalnızca tool döndükten sonra bildir (canlı testte model "oluşturuldu" cümlesini tool çağrısıyla aynı anda üretmişti).
+- Telefon numarasını tool'lara hastanın söylediği gruplarla gönder (ör. "0532 123 45 67") ve on bir hane olduğunu say (canlı testte model bitişik yazarken bir rakam düşürüyordu). Geçersiz numara `INVALID_PHONE` döner ve asistan numarayı tekrar ister.
 - Tool hata dönerse hastaya sade bir dille açıkla ve alternatif öner.
 
 # Konuşma kuralları

@@ -2,10 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
-import { normalizePhone } from "@/lib/phone";
-
+import { requirePhone } from "../../domain/appointments";
 import { createCallbackRequest, markCallOutcome } from "../../domain/calls";
-import { DomainError } from "../../domain/errors";
 import { defineTool } from "./define";
 import { phone } from "./schemas";
 
@@ -20,13 +18,10 @@ export const createCallbackRequestTool = defineTool({
     phone: phone.optional(),
   }),
   async handler(ctx, input) {
-    const phoneNumber = normalizePhone(input.phone ?? ctx.callerPhone);
-    if (!phoneNumber) {
-      throw new DomainError(
-        "PHONE_REQUIRED",
-        "Sizi geri arayabilmemiz için telefon numaranız gerekiyor.",
-      );
-    }
+    const phoneNumber = requirePhone(
+      input.phone ?? ctx.callerPhone,
+      "Sizi geri arayabilmemiz için telefon numaranız gerekiyor.",
+    );
 
     await createCallbackRequest(ctx.db, {
       clinicId: ctx.clinic.clinic.id,

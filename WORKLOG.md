@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-05 (F5 kalanlar, F6 Recall konsolu)_
+_Son güncelleme: 2026-10-05 (test araması uçtan uca düzeltildi)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,9 +17,9 @@ _Son güncelleme: 2026-10-05 (F5 kalanlar, F6 Recall konsolu)_
 | Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
 | Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
 | E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
-| Testler                 | **223 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
+| Testler                 | **229 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
 | Lokal DB                | **Neon** projesi `falling-mud-37269187` (Frankfurt), **`dev` dalı** (`.env.local` `DATABASE_URL`). Ana dal prod için ayrılmış (F8). PGlite `db:local` yedek seçenek olarak duruyor                                                                                                             |
-| Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                               |
+| Lokal ses testi         | `pnpm dev` + `pnpm dev:tunnel` (tüneli açar, `APP_URL`'i yazar, ajanları yönlendirir). Tarayıcı test araması uçtan uca doğrulandı (randevu DB'ye düşüyor)                                                                                                                                      |
 | GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
 | Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                |
 | Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                                                                                 |
@@ -34,7 +34,7 @@ _Son güncelleme: 2026-10-05 (F5 kalanlar, F6 Recall konsolu)_
 
 ### Sıradaki işler
 
-1. Ürün ekibi: tarayıcıdan test araması (kendi Chrome'unuzda, mikrofon izniyle); Flash ses değerlendirmesi; `git stash drop`
+1. Ürün ekibi: `pnpm dev:tunnel` ile tarayıcıdan test araması (randevu akışı artık uçtan uca çalışıyor); `git stash drop`
 2. F2: Netgsm hesabı (birlikte), numaranın Retell'e SIP ile bağlanması, SMS onay ve hatırlatma
 3. F8: Vercel projesi, Neon ana dal, Resend alan adı doğrulaması (hesap ve ücret adımları ürün ekibi onayıyla)
 4. F7: KVKK saklama süreleri ve silme işleri; F5 kalanlar: ses seçimi, özel rol arayüzü, Playwright E2E
@@ -76,6 +76,46 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-05 · Test aramasında "bağlantı sorunu": kök neden ve uçtan uca randevu · F5.3, F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `fix/F5.3-test-aramasi-baglanti` · **Commit'ler:** bu kaydı içeren commit
+
+**Ne yapıldı**
+
+- **Kök neden 1, ölü tünel:** Ajanın tool ve olay webhook adresleri, kapanmış bir cloudflared hızlı tüneline (`…trycloudflare.com`) bakıyordu. Retell'deki iki test aramasında her `check_availability` çağrısı `ENOTFOUND` aldı, asistan "bağlantı sorunu" dedi. Çözüm:
+  - [`pnpm dev:tunnel`](scripts/dev-tunnel.ts): tüneli açar, erişilebilir olunca `APP_URL`'i yazar ve ajanı olan tüm klinikleri yeni adrese senkronlar.
+  - [Test araması](src/server/voice/providers/retell/test-call.ts) artık önce ajanı senkronlar (adres değiştiyse gönderir), sonra `APP_URL/api/health` ile sunucuya ulaşılabildiğini kontrol eder; ulaşılamıyorsa arama açılmaz ve panel nedenini söyler.
+  - `env()` geliştirmede önbelleklenmiyor, ki `next dev` `.env.local` değişikliğini (yeni `APP_URL`) yeniden başlatmadan görsün.
+- **Kök neden 2, web aramasında arayan numara:** Prompt Retell'in `{{user_number}}` değişkenini kullanıyordu; bu web aramalarında hiç dolmaz ve LLM'e ham yer tutucu olarak gider. Yerine bizim `caller_number` değişkenimiz geldi: inbound webhook doldurur, test araması boş geçer, LLM varsayılanı boş.
+- **Canlı aramada bulunan iki hata:**
+  - Model, numarayı doğru geri okuduğu hâlde bitişik yazarken bir rakam düşürüyordu (`0500111224`). Artık numarayı söylendiği gruplarla gönderiyor (`"0500 111 22 44"`). Geçersiz numara yeni `INVALID_PHONE` hatasını döndürüyor ve asistan numarayı tekrar istiyor (`requirePhone`).
+  - Model "Randevunuz oluşturuldu" cümlesini tool çağrısıyla aynı anda söylüyordu; sonuç başarısızdı. Prompt kuralı eklendi: işlem yapan tool'un sonucu yalnızca tool döndükten sonra söylenir.
+  - Ayrıca: daha önce söylenen saat tekrar sorulmuyor, onaydan sonra hemen kayıt yapılıyor, vedalaşmada ısrar edilmiyor.
+- Reddedilen Retell isteği artık yalnızca anahtar adları ve hatalı yollarla loglanıyor (`retell.payload_rejected`, değer yok).
+
+**Neden**
+
+- Hızlı tünel adresi her açılışta değişiyor ve kapanan adres bir süre sonra hiç çözülmüyor. Ajanın adresi bizim verimizden türediği için düzeltme senkron akışında olmalıydı, elle adres güncellemede değil.
+- Retell simülasyon testleri (`tests` API) çağrıda `agent_id` göndermiyor; kiracı her zaman ajandan belirlendiği için bu yol bilerek desteklenmedi (kiracı kuralını değiştirmek mimari karar).
+
+**Doğrulama**
+
+- **Gerçek Retell web araması**, mikrofonsuz: Windows Türkçe TTS (Tolga) ile sentezlenen hasta konuşması, headless Chrome'a sahte mikrofon olarak verildi; düzenek repoda değil. Son aramada:
+  - `check_availability` → gerçek slotlar;
+  - telefon geri okuma → onay;
+  - `book_appointment` `ok: true`;
+  - DB'de randevu `scheduled`, kaynak `voice`, aramaya bağlı; arama kaydı `outcome = booked`.
+  - Önceki 3 deneme yukarıdaki hataları ortaya çıkardı.
+- İmzalı tool isteği tünelin public adresi üzerinden de tekrarlandı (müsaitlik → randevu → DB).
+- `pnpm test`: 229/229. lint, lint:tokens, typecheck temiz.
+
+**Açık kalanlar / dikkat**
+
+- Panel düğmesiyle aramayı ben tetikleyemedim: test hesabı parolasının okunması engellendi. Ön kontrol birim testli; ürün ekibi kendi tarayıcısında denemeli.
+- Dün kalan iki eski `cloudflared` süreci (4 Ekim) hâlâ çalışıyor; zararsız, kapatılabilir.
+- Dev verisinde "Deneme Test" adına iki test randevusu var (7 Ekim 09:00).
+- Prod'da tünel yok: `APP_URL` Vercel adresi olacak (F8).
 
 ### 2026-10-05 · Test araması, tatiller, kişisel tercihler ve Recall konsolu · F5.3, F3.5, F6, ADR-010
 

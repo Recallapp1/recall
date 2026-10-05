@@ -42,6 +42,7 @@ const TOOL_NAMES = { endCall: "end_call", transferCall: "transfer_call" } as con
 
 /** Fallbacks for our call variables, used when no inbound webhook ran (web and test calls). */
 const DEFAULT_CALL_VARIABLES: CallVariables = {
+  caller_number: "",
   transfer_available: "hayır",
   clinic_status: "active",
 };
@@ -81,7 +82,9 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
     placeholders: {
       now: `{{current_time_${tz}}}`,
       calendar: `{{current_calendar_${tz}}}`,
-      callerPhone: "{{user_number}}",
+      // Ours, not Retell's {{user_number}}: that one is unset on web calls and
+      // reaches the LLM as a raw placeholder instead of "unknown".
+      callerPhone: "{{caller_number}}",
       transferAvailable: "{{transfer_available}}",
       clinicStatus: "{{clinic_status}}",
     },

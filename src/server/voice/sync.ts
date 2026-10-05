@@ -11,4 +11,8 @@ export {
   syncAssistantNow,
   type AssistantSyncStatus,
 } from "./providers/retell/schedule-sync";
-export { createTestWebCall, type TestWebCall } from "./providers/retell/test-call";
+export {
+  createTestWebCall,
+  type TestWebCall,
+  type TestWebCallResult,
+} from "./providers/retell/test-call";

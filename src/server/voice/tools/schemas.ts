@@ -21,4 +21,6 @@ export const phone = z
   .string()
   .min(7)
   .max(20)
-  .describe("Hastanın telefon numarası. Sadece arayan numara gizliyse sor ve gönder.");
+  .describe(
+    'Hastanın telefon numarası, hastanın söylediği gruplarla rakamla yaz (ör. "0532 123 45 67"); sıfırla başlayan on bir hane olmalı. Sadece arayan numara bilinmiyorsa sor ve gönder.',
+  );

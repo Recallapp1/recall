@@ -24,6 +24,7 @@
     "voice:sync": "tsx --conditions=react-server scripts/voice-sync.ts",
     "voice:voices": "tsx --conditions=react-server scripts/voice-voices.ts",
     "voice:send": "tsx --conditions=react-server scripts/retell-send.ts",
+    "dev:tunnel": "tsx --conditions=react-server scripts/dev-tunnel.ts",
     "clinic:member": "tsx --conditions=react-server scripts/clinic-member.ts",
     "platform:admin": "tsx --conditions=react-server scripts/platform-admin.ts",
     "lint:tokens": "tsx scripts/check-design-tokens.ts"

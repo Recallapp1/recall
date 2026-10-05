@@ -50,6 +50,7 @@ pnpm db:generate    # şemadan migration üret
 pnpm db:migrate     # migration'ları uygula
 pnpm db:seed        # demo klinik verisi
 pnpm db:studio      # Drizzle Studio
+pnpm dev:tunnel     # lokal sesli test: tünel aç, APP_URL yaz, ajanları yeni adrese yönlendir
 pnpm voice:voices   # Retell seslerini listele
 pnpm voice:sync --clinic <slug>   # kliniğin Retell ajanını oluştur/güncelle (--all, --force)
 pnpm voice:send <inbound|function-call|call-ended>   # imzalı örnek webhook isteği

@@ -40,8 +40,10 @@ export interface PromptInput {
   toolNames: PromptToolNames;
 }
 
-/** Values for the call-time variables we own (the platform provides the clock and caller). */
+/** Values for the call-time variables we own (the platform provides the clock). */
 export interface CallVariables {
+  /** E.164 caller number, or "" when unknown (withheld, web and test calls). */
+  caller_number: string;
   transfer_available: "evet" | "hayır";
   clinic_status: Clinic["status"];
 }
@@ -81,10 +83,13 @@ ${directory.services.map((s) => `- ${formatService(s, assistant.speakPrices)} (i
 
     `# Nasıl çalışırsın
 - Randevu için: hizmeti öğren${settings.booking.allowPractitionerChoice ? " → hekim tercihi olup olmadığını sor" : ""} → gün ve saat tercihini sor → check_availability ile uygun saatlere bak → en fazla 3 seçenek sun → hastanın adını soyadını al → bilgileri geri okuyup onay al → book_appointment çağır.
+- Hastanın zaten söylediği bilgiyi (hizmet, hekim, gün, saat, ad, telefon) tekrar sorma. Hasta belirli bir saat istediyse ve check_availability o saati döndürdüyse seçenek sunma; o saati söyleyip devam et. O saat yoksa en yakın seçenekleri sun.
+- Hasta bilgileri onayladığında ("evet", "doğru", "onaylıyorum") bekletmeden book_appointment çağır.
+- Hasta vedalaşırsa ısrar etme: işlem tamamlanmadıysa bunu tek cümleyle söyle, vedalaş ve görüşmeyi bitir.
 - Hasta hizmeti belirtmezse veya şikâyet anlatırsa muayene/kontrol hizmetini öner.
 - İptal veya erteleme için: find_appointments ile randevuları bul → hangisi olduğunu teyit et → onay al → cancel_appointment veya reschedule_appointment çağır.
 - Arayan numara: "${v.callerPhone}". Boşsa veya gizliyse randevu işlemleri için telefon numarasını sor, geri okuyarak teyit et ve tool'lara phone olarak gönder.
-- Bir işlemi, tool sonucu ok: true dönmeden asla "yapıldı" diye bildirme.
+- Bir işlemi, tool sonucu ok: true dönmeden asla "yapıldı" diye bildirme. İşlem yapan bir tool'u (book_appointment, cancel_appointment, reschedule_appointment, create_callback_request) çağırdığın yanıtta sonucu söyleme; sonucu yalnızca tool döndükten sonra bildir.
 - Tool ok: false dönerse message alanını hastaya sade bir dille aktar ve alternatif öner.
 - Klinik durumu: "${v.clinicStatus}". Bu değer "paused" ise yeni randevu oluşturma veya erteleme yapma; kliniğin şu an randevu almadığını nazikçe söyle ve create_callback_request ile geri arama notu bırakmayı teklif et.`,
 
@@ -98,7 +103,7 @@ ${directory.services.map((s) => `- ${formatService(s, assistant.speakPrices)} (i
     `# Sayılar ve kısaltmalar (sesli okunacak)
 - Yanıtlarında asla rakam kullanma; her sayıyı Türkçe kelimelerle yaz. Rakamlar seslendirmede bozuk okunur.
 - Tarih ve saat için tool sonuçlarındaki spokenDate ve spokenTime alanlarını aynen kullan. Örnek: "beş Kasım Perşembe, saat on dört otuz".
-- Telefon numarasını geri okurken gruplar hâlinde kelimeyle söyle. Örnek: 0532 123 45 67 → "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi". Tool'lara numarayı rakamla gönder.
+- Telefon numarasını geri okurken gruplar hâlinde kelimeyle söyle. Örnek: 0532 123 45 67 → "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi". Tool'lara numarayı hastanın söylediği gruplarla rakamla gönder (ör. "0532 123 45 67") ve göndermeden önce on bir hane olduğunu say.
 - Kısaltmaları açık söyle; asla harf harf okuma. "Dt." veya "DT" → "diş hekimi" (hekim adlarında da: "Diş Hekimi Elif Kaya"), "Dr." → "doktor", "Uzm." → "uzman". Hasta "dt" ya da "de te" derse diş hekimini kastediyordur.`,
 
     `# Hitap
@@ -139,10 +144,15 @@ export function buildCallVariables(
   clinic: Pick<Clinic, "status" | "timezone" | "transferPhoneNumber">,
   clinicHours: ClinicDirectory["clinicHours"],
   now: Date,
+  callerPhone: string | null,
 ): CallVariables {
   const transfer =
     Boolean(clinic.transferPhoneNumber) && isWithinClinicHours(clinicHours, now, clinic.timezone);
-  return { transfer_available: transfer ? "evet" : "hayır", clinic_status: clinic.status };
+  return {
+    caller_number: callerPhone ?? "",
+    transfer_available: transfer ? "evet" : "hayır",
+    clinic_status: clinic.status,
+  };
 }
 
 /** Whether a human can plausibly pick up a transfer right now. */
