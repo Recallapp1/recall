@@ -11,6 +11,11 @@ const SECTIONS: { href: string; label: string; permission: Permissions }[] = [
     label: "Çalışma saatleri",
     permission: { clinicSettings: ["read"] },
   },
+  {
+    href: "/panel/ayarlar/tatiller",
+    label: "Tatil ve izinler",
+    permission: { clinicSettings: ["read"] },
+  },
   { href: "/panel/ayarlar/hekimler", label: "Hekimler", permission: { clinicSettings: ["read"] } },
   {
     href: "/panel/ayarlar/hizmetler",

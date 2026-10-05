@@ -46,7 +46,7 @@ export type AcceptInvitationField = keyof z.input<typeof acceptInvitationSchema>
  * Where to go after signing in. Only same-site paths are allowed, so a crafted
  * `?sonra=https://…` or `//evil.example` link cannot redirect off the site.
  */
-export function safeNextPath(value: unknown, fallback = "/panel"): string {
+export function safeNextPath(value: unknown, fallback = "/panel/baslangic"): string {
   if (typeof value !== "string") return fallback;
   if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return fallback;
   return value;

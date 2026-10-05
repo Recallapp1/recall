@@ -61,5 +61,9 @@ export const PERIOD_LABELS: Record<AppointmentListQuery["donem"], string> = {
 export const calendarQuerySchema = z.object({
   tarih: localDate.optional().catch(undefined),
   gorunum: z.enum(["gun", "hafta"]).optional().catch(undefined),
-  hekim: z.uuid().optional().catch(undefined),
+  /** A practitioner id, or "tum" to override a personal default filter. */
+  hekim: z
+    .union([z.uuid(), z.literal("tum")])
+    .optional()
+    .catch(undefined),
 });

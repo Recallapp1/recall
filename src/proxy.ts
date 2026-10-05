@@ -10,7 +10,9 @@ export function proxy(request: NextRequest) {
   if (getSessionCookie(request)) return NextResponse.next();
 
   const signIn = new URL("/giris", request.url);
-  signIn.searchParams.set("sonra", request.nextUrl.pathname);
+  if (request.nextUrl.pathname !== "/panel") {
+    signIn.searchParams.set("sonra", request.nextUrl.pathname);
+  }
   return NextResponse.redirect(signIn);
 }
 

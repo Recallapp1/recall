@@ -1,6 +1,8 @@
 import "server-only";
 
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, isNull, lt } from "drizzle-orm";
+
+import { ACTIVE_APPOINTMENT_STATUSES } from "@/lib/contracts/appointment";
 
 import type {
   AssistantSettingsInput,
@@ -8,13 +10,23 @@ import type {
   PanelPreferencesInput,
   PractitionerInput,
   ServiceInput,
+  TimeOffInput,
   WeeklyHours,
 } from "@/lib/contracts/settings";
 
 import type { Database, Executor } from "../db";
-import { clinics, practitioners, practitionerServices, services, workingHours } from "../db/schema";
+import {
+  appointments,
+  clinics,
+  practitioners,
+  practitionerServices,
+  services,
+  timeOff,
+  workingHours,
+} from "../db/schema";
 import { parseClinicSettings, type ClinicSettingsInput } from "./clinic-settings";
 import { DomainError } from "./errors";
+import { addLocalDays, localToUtc } from "./time";
 
 /*
  * Clinic configuration edited from the panel (F5.3). Every write is scoped by
@@ -296,4 +308,153 @@ export async function saveService(
     .values({ clinicId, ...values })
     .returning({ id: services.id });
   return created!.id;
+}
+
+// ─── Time off (holidays, closures, leave) ────────────────────────────────────
+
+export interface TimeOffEntry {
+  id: string;
+  practitionerId: string | null;
+  startsAt: Date;
+  endsAt: Date;
+  reason: string | null;
+}
+
+export async function listTimeOff(
+  exec: Executor,
+  clinicId: string,
+  from: Date,
+): Promise<TimeOffEntry[]> {
+  return exec
+    .select({
+      id: timeOff.id,
+      practitionerId: timeOff.practitionerId,
+      startsAt: timeOff.startsAt,
+      endsAt: timeOff.endsAt,
+      reason: timeOff.reason,
+    })
+    .from(timeOff)
+    .where(and(eq(timeOff.clinicId, clinicId), gt(timeOff.endsAt, from)))
+    .orderBy(asc(timeOff.startsAt));
+}
+
+/** UTC range of a time-off entry in the clinic's zone (whole days are end-exclusive). */
+export function timeOffRange(
+  input: TimeOffInput,
+  timeZone: string,
+): { startsAt: Date; endsAt: Date } {
+  const minutes = (value: string) => {
+    const [h, m] = value.split(":").map(Number);
+    return h! * 60 + m!;
+  };
+  if (input.startTime && input.endTime) {
+    return {
+      startsAt: localToUtc(input.startDate, minutes(input.startTime), timeZone),
+      endsAt: localToUtc(input.startDate, minutes(input.endTime), timeZone),
+    };
+  }
+  return {
+    startsAt: localToUtc(input.startDate, 0, timeZone),
+    endsAt: localToUtc(addLocalDays(input.endDate, 1), 0, timeZone),
+  };
+}
+
+/**
+ * Adds a closure or leave. Returns how many active appointments fall inside
+ * it: they are not cancelled automatically, the team decides and informs
+ * the patients.
+ */
+export async function addTimeOff(
+  exec: Executor,
+  clinic: { id: string; timezone: string },
+  input: TimeOffInput,
+): Promise<{ id: string; conflictingAppointments: number }> {
+  if (input.practitionerId) {
+    const [practitioner] = await exec
+      .select({ id: practitioners.id })
+      .from(practitioners)
+      .where(
+        and(eq(practitioners.clinicId, clinic.id), eq(practitioners.id, input.practitionerId)),
+      );
+    if (!practitioner) throw new DomainError("INVALID_PRACTITIONER", "Hekim bulunamadı.");
+  }
+  const { startsAt, endsAt } = timeOffRange(input, clinic.timezone);
+  const [created] = await exec
+    .insert(timeOff)
+    .values({
+      clinicId: clinic.id,
+      practitionerId: input.practitionerId,
+      startsAt,
+      endsAt,
+      reason: input.reason,
+    })
+    .returning({ id: timeOff.id });
+
+  const [conflicts] = await exec
+    .select({ value: count() })
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.clinicId, clinic.id),
+        inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
+        lt(appointments.startsAt, endsAt),
+        gt(appointments.endsAt, startsAt),
+        ...(input.practitionerId ? [eq(appointments.practitionerId, input.practitionerId)] : []),
+      ),
+    );
+  return { id: created!.id, conflictingAppointments: conflicts?.value ?? 0 };
+}
+
+export async function deleteTimeOff(exec: Executor, clinicId: string, id: string): Promise<void> {
+  const deleted = await exec
+    .delete(timeOff)
+    .where(and(eq(timeOff.clinicId, clinicId), eq(timeOff.id, id)))
+    .returning({ id: timeOff.id });
+  if (deleted.length === 0) throw new DomainError("NOT_FOUND", "Kayıt bulunamadı.");
+}
+
+/** Adds the year's public holidays as clinic closures, skipping ones already present. */
+export async function addPublicHolidays(
+  db: Database,
+  clinic: { id: string; timezone: string },
+  holidays: readonly { name: string; startDate: string; endDate: string; fromTime?: string }[],
+): Promise<number> {
+  return db.transaction(async (tx) => {
+    const existing = await tx
+      .select({ startsAt: timeOff.startsAt })
+      .from(timeOff)
+      .where(and(eq(timeOff.clinicId, clinic.id), isNull(timeOff.practitionerId)));
+    const taken = new Set(existing.map((row) => row.startsAt.getTime()));
+    const rows: (typeof timeOff.$inferInsert)[] = [];
+    for (const holiday of holidays) {
+      const range = holiday.fromTime
+        ? timeOffRange(
+            {
+              practitionerId: null,
+              startDate: holiday.startDate,
+              endDate: holiday.startDate,
+              startTime: holiday.fromTime,
+              endTime: "23:59",
+              reason: holiday.name,
+            },
+            clinic.timezone,
+          )
+        : timeOffRange(
+            {
+              practitionerId: null,
+              startDate: holiday.startDate,
+              endDate: holiday.endDate,
+              startTime: null,
+              endTime: null,
+              reason: holiday.name,
+            },
+            clinic.timezone,
+          );
+      if (taken.has(range.startsAt.getTime())) continue;
+      rows.push({ clinicId: clinic.id, practitionerId: null, ...range, reason: holiday.name });
+    }
+    // One round trip: holidays are added in bulk.
+    if (rows.length > 0) await tx.insert(timeOff).values(rows);
+    return rows.length;
+  });
 }

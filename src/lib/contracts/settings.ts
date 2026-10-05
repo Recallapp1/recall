@@ -133,3 +133,48 @@ export type SettingsResult = { ok: true; message: string } | { ok: false; messag
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Lütfen alanları kontrol edin.";
 }
+
+/** Closed day(s) for the whole clinic (practitionerId null) or a practitioner's leave. */
+export const timeOffSchema = z
+  .object({
+    practitionerId: z.uuid().nullable(),
+    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Başlangıç tarihini seçin."),
+    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Bitiş tarihini seçin."),
+    /** Both set: closed only between these times (single day). Both empty: whole days. */
+    startTime: time.nullable(),
+    endTime: time.nullable(),
+    reason: optionalText(120),
+  })
+  .refine((value) => value.startDate <= value.endDate, {
+    message: "Bitiş tarihi başlangıçtan önce olamaz.",
+    path: ["endDate"],
+  })
+  .refine((value) => (value.startTime === null) === (value.endTime === null), {
+    message: "Saat aralığı için başlangıç ve bitiş saatini birlikte girin.",
+    path: ["endTime"],
+  })
+  .refine(
+    (value) =>
+      value.startTime === null ||
+      (value.startDate === value.endDate && value.startTime < value.endTime!),
+    {
+      message: "Saatli kapanış tek gün için ve bitiş başlangıçtan sonra olmalı.",
+      path: ["endTime"],
+    },
+  );
+export type TimeOffInput = z.infer<typeof timeOffSchema>;
+
+export const START_PAGES = {
+  bugun: { label: "Bugün", href: "/panel" },
+  takvim: { label: "Takvim", href: "/panel/takvim" },
+  randevular: { label: "Randevular", href: "/panel/randevular" },
+} as const;
+export type StartPage = keyof typeof START_PAGES;
+
+/** Personal panel preferences (per member, F3.5). */
+export const memberPreferencesSchema = z.object({
+  startPage: z.enum(["bugun", "takvim", "randevular"]),
+  calendarView: z.enum(["gun", "hafta"]).nullable(),
+  calendarPractitionerId: z.uuid().nullable(),
+});
+export type MemberPreferencesInput = z.infer<typeof memberPreferencesSchema>;

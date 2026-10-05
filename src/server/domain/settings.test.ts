@@ -7,7 +7,14 @@ import * as schema from "@/server/db/schema";
 import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
 import { findClinicById } from "./clinics";
+import { turkishPublicHolidays } from "@/lib/holidays";
+
+import { findAvailability } from "./scheduling";
+import { localToUtc } from "./time";
 import {
+  addPublicHolidays,
+  addTimeOff,
+  listTimeOff,
   listPractitionerDetails,
   loadWeeklyHours,
   replaceClinicHours,
@@ -131,5 +138,58 @@ describe("clinic configuration", () => {
     });
     expect(ctx?.settings.assistant.greeting).toBeUndefined();
     expect(ctx?.settings.booking.slotIntervalMinutes).toBe(30);
+  });
+});
+
+describe("time off", () => {
+  it("counts the appointments a closure overlaps and blocks booking", async () => {
+    const clinic = b.ctx.clinic;
+    const [patient] = await db
+      .insert(schema.patients)
+      .values({ clinicId: clinic.id, fullName: "Tatil Hastası", phone: "+905321110000" })
+      .returning();
+    const startsAt = localToUtc("2026-12-08", 10 * 60, clinic.timezone);
+    await db.insert(schema.appointments).values({
+      clinicId: clinic.id,
+      patientId: patient!.id,
+      practitionerId: b.practitionerId,
+      serviceId: b.serviceId,
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + 30 * 60_000),
+      source: "panel",
+    });
+
+    const result = await addTimeOff(db, clinic, {
+      practitionerId: null,
+      startDate: "2026-12-08",
+      endDate: "2026-12-08",
+      startTime: null,
+      endTime: null,
+      reason: "Bakım",
+    });
+    expect(result.conflictingAppointments).toBe(1);
+
+    const availability = await findAvailability(db, b.ctx, {
+      serviceId: b.serviceId,
+      date: "2026-12-08",
+      now: new Date("2026-12-01T08:00:00Z"),
+    });
+    expect(availability.slots).toHaveLength(0);
+  });
+
+  it("adds public holidays once", async () => {
+    const clinic = a.ctx.clinic;
+    const holidays = turkishPublicHolidays(2027);
+    expect(holidays.some((h) => h.name === "Kurban Bayramı" && h.startDate === "2027-05-16")).toBe(
+      true,
+    );
+    const first = await addPublicHolidays(db, clinic, holidays);
+    const second = await addPublicHolidays(db, clinic, holidays);
+    expect(first).toBe(holidays.length);
+    expect(second).toBe(0);
+    const entries = await listTimeOff(db, clinic.id, new Date("2027-01-01T00:00:00Z"));
+    const arife = entries.find((e) => e.reason === "Cumhuriyet Bayramı arifesi");
+    // Half day: closed from 13:00 Istanbul (10:00 UTC).
+    expect(arife?.startsAt.toISOString()).toBe("2027-10-28T10:00:00.000Z");
   });
 });

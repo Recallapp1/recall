@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, CalendarOff, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -19,7 +19,9 @@ import { can, requirePanelScope } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { loadClinicDirectory, practitionerDisplayName } from "@/server/domain/clinics";
 import { listAppointments, scheduleRange } from "@/server/domain/panel";
-import { addLocalDays, isoWeekday, localToday } from "@/server/domain/time";
+import { getMemberPreferences } from "@/server/domain/preferences";
+import { listTimeOff } from "@/server/domain/settings";
+import { addLocalDays, isoWeekday, localToday, localToUtc } from "@/server/domain/time";
 
 import { loadBookingOptions } from "../randevular/booking-options";
 import { NewAppointmentDialog } from "../randevular/new-appointment-dialog";
@@ -34,17 +36,25 @@ export default async function CalendarPage({ searchParams }: PageProps<"/panel/t
   const now = new Date();
   const today = localToday(now, context.clinic.timezone);
   const date = query.tarih ?? today;
-  const view = query.gorunum ?? context.settings.panel.defaultCalendarView;
+  const preferences = await getMemberPreferences(db(), context.member.id);
+  const defaultView = preferences.calendarView ?? context.settings.panel.defaultCalendarView;
+  const view = query.gorunum ?? defaultView;
   const week = view === "hafta";
   const from = week ? addLocalDays(date, 1 - isoWeekday(date)) : date;
   const to = addLocalDays(from, week ? 7 : 1);
-  const practitionerFilter = scope.practitionerId ? undefined : query.hekim;
+  const selected = query.hekim ?? preferences.calendarPractitionerId ?? "tum";
+  const practitionerFilter = scope.practitionerId || selected === "tum" ? undefined : selected;
 
-  const [directory, { rows }, canCreate, booking] = await Promise.all([
+  const rangeStart = localToUtc(from, 0, context.clinic.timezone);
+  const rangeEnd = localToUtc(to, 0, context.clinic.timezone);
+  const [directory, { rows }, canCreate, booking, closures] = await Promise.all([
     loadClinicDirectory(db(), context.clinic.id),
     listAppointments(db(), scope, { from, to, practitionerId: practitionerFilter }),
     can({ appointments: ["create"] }),
     loadBookingOptions(context),
+    listTimeOff(db(), context.clinic.id, rangeStart).then((entries) =>
+      entries.filter((entry) => entry.startsAt < rangeEnd),
+    ),
   ]);
 
   const practitioners = directory.practitioners.filter(
@@ -89,14 +99,23 @@ export default async function CalendarPage({ searchParams }: PageProps<"/panel/t
     .split(":")
     .map(Number);
   const showNow = !week && date === today;
+  const closureFormat = new Intl.DateTimeFormat("tr-TR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: context.clinic.timezone,
+  });
 
   const href = (changes: { tarih?: string; gorunum?: string; hekim?: string | null }) => {
     const params = new URLSearchParams();
     const tarih = changes.tarih ?? date;
     const gorunum = changes.gorunum ?? view;
-    const hekim = changes.hekim === null ? undefined : (changes.hekim ?? query.hekim);
+    // "All practitioners" must be explicit when a personal default filter exists.
+    const all = preferences.calendarPractitionerId ? "tum" : undefined;
+    const hekim = changes.hekim === null ? all : (changes.hekim ?? query.hekim);
     if (tarih !== today) params.set("tarih", tarih);
-    if (gorunum !== context.settings.panel.defaultCalendarView) params.set("gorunum", gorunum);
+    if (gorunum !== defaultView) params.set("gorunum", gorunum);
     if (hekim) params.set("hekim", hekim);
     const search = params.toString();
     return search ? `/panel/takvim?${search}` : "/panel/takvim";
@@ -148,7 +167,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/panel/t
         <div className="flex flex-wrap items-center gap-2">
           {!scope.practitionerId && (
             <PractitionerFilter
-              value={query.hekim ?? ""}
+              value={practitionerFilter ?? ""}
               options={directory.practitioners.map((p) => ({
                 id: p.id,
                 name: practitionerDisplayName(p),
@@ -181,6 +200,30 @@ export default async function CalendarPage({ searchParams }: PageProps<"/panel/t
           </nav>
         </div>
       </div>
+
+      {closures.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {closures.map((closure) => (
+            <li
+              key={closure.id}
+              className="flex items-center gap-2 rounded-card-sm border border-hairline bg-paper px-4 py-2.5 text-sm text-heading"
+            >
+              <CalendarOff aria-hidden className="size-4 shrink-0 text-primary" />
+              <span>
+                {closure.practitionerId
+                  ? `${practitionerDisplayName(directory.practitioners.find((p) => p.id === closure.practitionerId) ?? { name: "Hekim", title: null })} izinli`
+                  : "Klinik kapalı"}
+                {closure.reason && ` · ${closure.reason}`}
+                <span className="text-body">
+                  {" "}
+                  ({closureFormat.format(closure.startsAt)} –{" "}
+                  {closureFormat.format(new Date(closure.endsAt.getTime() - 1))})
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {columns.length === 0 ? (
         <EmptyState

@@ -40,9 +40,9 @@ describe("safeNextPath", () => {
   });
 
   it("rejects external and protocol-relative targets", () => {
-    expect(safeNextPath("https://evil.example")).toBe("/panel");
-    expect(safeNextPath("//evil.example")).toBe("/panel");
-    expect(safeNextPath(String.raw`/\evil.example`)).toBe("/panel");
-    expect(safeNextPath(undefined)).toBe("/panel");
+    expect(safeNextPath("https://evil.example")).toBe("/panel/baslangic");
+    expect(safeNextPath("//evil.example")).toBe("/panel/baslangic");
+    expect(safeNextPath(String.raw`/\evil.example`)).toBe("/panel/baslangic");
+    expect(safeNextPath(undefined)).toBe("/panel/baslangic");
   });
 });

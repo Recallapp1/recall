@@ -435,6 +435,21 @@ export const callbackRequests = pgTable(
   (t) => [index().on(t.clinicId, t.status)],
 );
 
+// ─── Personal panel preferences (F3.5) ───────────────────────────────────────
+
+export const memberPreferences = pgTable("member_preferences", {
+  memberId: uuid()
+    .primaryKey()
+    .references(() => members.id, { onDelete: "cascade" }),
+  /** Page opened after sign-in: bugun | takvim | randevular. */
+  startPage: text().notNull().default("bugun"),
+  /** Calendar view; null follows the clinic's default. */
+  calendarView: text(),
+  /** Practitioner the calendar opens filtered to; null shows everyone. */
+  calendarPractitionerId: uuid().references(() => practitioners.id, { onDelete: "set null" }),
+  updatedAt: updatedAt(),
+});
+
 // ─── Audit ───────────────────────────────────────────────────────────────────
 
 /**

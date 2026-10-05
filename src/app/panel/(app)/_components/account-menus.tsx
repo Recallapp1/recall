@@ -1,6 +1,7 @@
 "use client";
 
-import { Building2, Check, ChevronsUpDown, LogOut } from "lucide-react";
+import { Building2, Check, ChevronsUpDown, LogOut, SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
 import { useTransition } from "react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -133,6 +134,12 @@ export function UserMenu({
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Hesap</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/panel/tercihler">
+            <SlidersHorizontal aria-hidden />
+            Tercihlerim
+          </Link>
+        </DropdownMenuItem>
         <form action={signOut}>
           <DropdownMenuItem asChild>
             <button type="submit" className="w-full">
