@@ -32,11 +32,11 @@ import {
  */
 
 export const nav = [
-  { href: "#nasil-calisir", label: "Nasıl çalışır" },
-  { href: "#ozellikler", label: "Özellikler" },
-  { href: "#guvenlik", label: "Güvenlik" },
-  { href: "#paketler", label: "Paketler" },
-  { href: "#sss", label: "SSS" },
+  { href: "/#nasil-calisir", label: "Nasıl çalışır" },
+  { href: "/#ozellikler", label: "Özellikler" },
+  { href: "/#guvenlik", label: "Güvenlik" },
+  { href: "/#paketler", label: "Paketler" },
+  { href: "/#sss", label: "SSS" },
 ];
 
 export const hero = {

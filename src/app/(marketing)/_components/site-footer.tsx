@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { nav } from "../_content";
 import { Logo } from "@/components/design/logo";
 
@@ -19,15 +21,15 @@ export function SiteFooter() {
           <ul className="grid grid-cols-2 gap-x-12 gap-y-3 text-sm">
             {nav.map((item) => (
               <li key={item.href}>
-                <a href={item.href} className="text-on-dark-muted hover:text-on-dark">
+                <Link href={item.href} className="text-on-dark-muted hover:text-on-dark">
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
             <li>
-              <a href="#iletisim" className="text-on-dark-muted hover:text-on-dark">
+              <Link href="/#iletisim" className="text-on-dark-muted hover:text-on-dark">
                 İletişim
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
