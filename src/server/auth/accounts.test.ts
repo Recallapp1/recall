@@ -191,4 +191,29 @@ describe("account provisioning", () => {
       }),
     ).rejects.toThrow();
   });
+
+  it("makes a platform admin who can list users but never impersonate", async () => {
+    const { ensurePlatformAdmin } = await import("../platform/admins");
+    await ensurePlatformAdmin({ email: "konsol@recall.test", name: "Recall Ekibi" });
+    const token = lastLink(/sifre-belirle\?token=([\w-]+)/);
+    await modules.auth().api.resetPassword({ body: { token, newPassword: "konsol-parola-123" } });
+    const headers = await signIn("konsol@recall.test", "konsol-parola-123");
+
+    const listed = await modules.auth().api.listUsers({ query: {}, headers });
+    expect(listed.users.length).toBeGreaterThan(0);
+
+    const [owner] = await testDb
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.email, OWNER.email));
+    await expect(
+      modules.auth().api.impersonateUser({ body: { userId: owner!.id }, headers }),
+    ).rejects.toThrow();
+
+    // Clinic owners are not platform admins.
+    const ownerHeaders = await signIn(OWNER.email, OWNER.password);
+    await expect(
+      modules.auth().api.listUsers({ query: {}, headers: ownerHeaders }),
+    ).rejects.toThrow();
+  });
 });

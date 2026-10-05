@@ -35,6 +35,12 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   "appointment.created": "Randevu oluşturdu",
   "appointment.updated": "Randevuyu güncelledi",
   "appointment.status_changed": "Randevu durumunu değiştirdi",
+  "platform.clinic_created": "Kliniği oluşturdu (Recall)",
+  "platform.clinic_status_changed": "Klinik durumunu değiştirdi (Recall)",
+  "platform.phone_number_added": "Numara bağladı (Recall)",
+  "platform.phone_number_removed": "Numara kaldırdı (Recall)",
+  "platform.assistant_synced": "Asistanı güncelledi (Recall)",
+  "platform.member_added": "Ekibe kişi ekledi (Recall)",
 };
 
 const TARGET_LABELS: Record<string, string> = {
@@ -50,6 +56,9 @@ const TARGET_LABELS: Record<string, string> = {
   member: "Ekip üyesi",
   invitation: "Davet",
   user: "Kullanıcı",
+  phone_number: "Telefon numarası",
+  time_off: "Tatil ve izinler",
+  panel: "Panel tercihleri",
 };
 
 export default async function AuditPage() {

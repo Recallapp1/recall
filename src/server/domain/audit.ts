@@ -25,7 +25,13 @@ export type AuditAction =
   | "call.recording_played"
   | "appointment.created"
   | "appointment.updated"
-  | "appointment.status_changed";
+  | "appointment.status_changed"
+  | "platform.clinic_created"
+  | "platform.clinic_status_changed"
+  | "platform.phone_number_added"
+  | "platform.phone_number_removed"
+  | "platform.assistant_synced"
+  | "platform.member_added";
 
 export interface AuditInput {
   clinicId: string | null;

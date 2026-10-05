@@ -1,10 +1,12 @@
 import { Building2 } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Logo } from "@/components/design";
 import { EmptyState } from "@/components/panel";
 import { Button } from "@/components/ui/button";
 import { listMemberships } from "@/server/auth/accounts";
+import { PLATFORM_ADMIN } from "@/server/auth/platform";
 import { requireSession } from "@/server/auth/session";
 
 import { signOut } from "../../(auth)/actions";
@@ -16,11 +18,17 @@ export const metadata: Metadata = { title: "Klinik seçin", robots: { index: fal
 export default async function ChooseClinicPage() {
   const session = await requireSession();
   const memberships = await listMemberships(session.user.id);
+  const isPlatformAdmin = (session.user as { role?: string | null }).role === PLATFORM_ADMIN;
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-canvas px-4 py-12">
       <Logo className="text-heading" />
       <div className="flex w-full max-w-md flex-col gap-4">
+        {isPlatformAdmin && (
+          <Button asChild size="lg">
+            <Link href="/admin">Recall konsoluna git</Link>
+          </Button>
+        )}
         {memberships.length === 0 ? (
           <EmptyState
             icon={Building2}

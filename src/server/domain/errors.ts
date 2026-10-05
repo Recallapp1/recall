@@ -16,7 +16,9 @@ export type DomainErrorCode =
   | "INVITATION_INVALID"
   | "ACCOUNT_EXISTS"
   | "INVALID_TRANSITION"
-  | "LAST_OWNER";
+  | "LAST_OWNER"
+  | "SLUG_TAKEN"
+  | "PHONE_TAKEN";
 
 export class DomainError extends Error {
   constructor(

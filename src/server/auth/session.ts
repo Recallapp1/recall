@@ -12,6 +12,7 @@ import { clinics, members } from "../db/schema";
 import { findClinicById, type ClinicContext } from "../domain/clinics";
 import { scopeFor, type PanelScope } from "../domain/panel";
 import { auth } from ".";
+import { PLATFORM_ADMIN } from "./platform";
 
 /** The signed-in user's session for this request, or null. Cached per request. */
 export const getSession = cache(async () => auth().api.getSession({ headers: await headers() }));
@@ -103,4 +104,11 @@ export async function requirePanelScope(permissions: Permissions): Promise<{
       practitionerOnly ? (context.member.practitionerId ?? NO_PRACTITIONER) : null,
     ),
   };
+}
+
+/** Recall console pages and actions start here (F6). */
+export async function requirePlatformAdmin(): Promise<Session> {
+  const session = await requireSession();
+  if ((session.user as { role?: string | null }).role !== PLATFORM_ADMIN) forbidden();
+  return session;
 }

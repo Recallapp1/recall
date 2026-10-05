@@ -3,7 +3,7 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { organization } from "better-auth/plugins";
+import { admin, organization } from "better-auth/plugins";
 import { and, asc, eq } from "drizzle-orm";
 
 import { env } from "@/lib/env";
@@ -23,6 +23,7 @@ import {
 } from "../db/schema";
 import { recordAudit } from "../domain/audit";
 import { invitationEmail, passwordEmail } from "../notifications/email-templates";
+import { PLATFORM_ADMIN, platformAc, platformRoles } from "./platform";
 import { sendEmail } from "../notifications/email";
 
 export const SESSION_DAYS = 7;
@@ -158,6 +159,13 @@ function createAuth() {
             }),
           );
         },
+      }),
+      admin({
+        ac: platformAc,
+        roles: platformRoles,
+        adminRoles: [PLATFORM_ADMIN],
+        defaultRole: "user",
+        bannedUserMessage: "Hesabınız askıya alındı. Recall ekibiyle iletişime geçin.",
       }),
       // Must stay last: lets server actions set the session cookie.
       nextCookies(),

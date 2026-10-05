@@ -69,3 +69,22 @@ export async function assistantSyncStatus(clinicId: string): Promise<AssistantSy
     .where(eq(voiceAgents.clinicId, clinicId));
   return agent ?? null;
 }
+
+/**
+ * Console (F6): creates the clinic's agent if it has none, otherwise syncs it.
+ * `force` pushes even an unchanged spec (after edits in the Retell dashboard).
+ */
+export async function ensureAssistant(clinicId: string, force = false): Promise<SyncResult> {
+  const config = retellConfig();
+  return syncClinicVoiceAgent(db(), clinicId, {
+    api: retellClient(),
+    config: {
+      appUrl: config.appUrl,
+      llmModel: config.llmModel,
+      defaultVoiceId: config.defaultVoiceId,
+      voiceModel: config.voiceModel,
+      llmHighPriority: config.llmHighPriority,
+    },
+    force,
+  });
+}

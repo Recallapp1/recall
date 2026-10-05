@@ -6,6 +6,7 @@ import "server-only";
  */
 export {
   assistantSyncStatus,
+  ensureAssistant,
   scheduleAssistantSync,
   syncAssistantNow,
   type AssistantSyncStatus,

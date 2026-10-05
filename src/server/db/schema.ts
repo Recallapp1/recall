@@ -72,6 +72,11 @@ export const users = pgTable("users", {
   email: text().notNull().unique(),
   emailVerified: boolean().notNull().default(false),
   image: text(),
+  /** Platform role (Better Auth admin plugin): "user" or "platform_admin" (Recall team, F6). */
+  role: text().notNull().default("user"),
+  banned: boolean().notNull().default(false),
+  banReason: text(),
+  banExpires: timestamp({ withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -87,6 +92,8 @@ export const sessions = pgTable(
     userAgent: text(),
     /** The clinic the user is working in; set at sign-in, changed by the clinic switcher. */
     activeOrganizationId: uuid(),
+    /** Admin plugin field; impersonation is not granted to any role (F6, F7). */
+    impersonatedBy: uuid(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -485,6 +492,9 @@ export const demoRequests = pgTable(
     email: text(),
     clinicType: text().notNull(),
     message: text(),
+    /** Sales follow-up in the console: new | contacted | won | lost. */
+    status: text().notNull().default("new"),
+    handledAt: timestamp({ withTimezone: true }),
     /** Moment the KVKK consent box was ticked. */
     consentAt: timestamp({ withTimezone: true }).notNull(),
     createdAt: createdAt(),
