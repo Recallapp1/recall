@@ -8,13 +8,19 @@ import { displayDate } from "../domain/time";
 import type { AppointmentSummary } from "../domain/appointments";
 
 export interface SmsProvider {
+  /** False when nothing reaches the patient, so the assistant must not say "SMS gönderdim". */
+  readonly delivers: boolean;
   send(to: string, body: string): Promise<void>;
 }
 
-/** Local development: never sends, logs a masked preview. */
+/** No SMS channel yet (local, or production before Netgsm): never sends. */
 class ConsoleSmsProvider implements SmsProvider {
+  readonly delivers = false;
+
   async send(to: string, body: string) {
-    console.info(`[sms:console] to=${maskPhone(to)} chars=${body.length}\n${body}`);
+    // The body carries patient and appointment details: show it only locally.
+    const preview = env().NODE_ENV === "production" ? "" : `\n${body}`;
+    console.info(`[sms:console] to=${maskPhone(to)} chars=${body.length}${preview}`);
   }
 }
 
@@ -23,6 +29,8 @@ class ConsoleSmsProvider implements SmsProvider {
  * documentation before enabling `SMS_PROVIDER=netgsm` in production.
  */
 class NetgsmSmsProvider implements SmsProvider {
+  readonly delivers = true;
+
   constructor(
     private readonly usercode: string,
     private readonly password: string,

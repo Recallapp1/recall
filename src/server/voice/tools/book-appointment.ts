@@ -40,7 +40,7 @@ export const bookAppointmentTool = defineTool({
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "booked");
 
-    const smsSent = created && settings.notifications.smsConfirmation;
+    const smsSent = created && settings.notifications.smsConfirmation && ctx.smsDelivers;
     if (smsSent) {
       ctx.defer(() =>
         sendSmsSafely(

@@ -25,6 +25,7 @@ export interface RetellHandlerDeps {
   apiKey: string;
   now: () => Date;
   defer: (task: () => Promise<void>) => void;
+  smsDelivers: boolean;
 }
 
 /**
@@ -115,6 +116,7 @@ export async function handleFunctionCall(request: Request, deps: RetellHandlerDe
     callerPhone,
     now: deps.now(),
     defer: deps.defer,
+    smsDelivers: deps.smsDelivers,
   });
   return Response.json(result);
 }

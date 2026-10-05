@@ -37,9 +37,16 @@ afterAll(async () => {
   await close();
 });
 
-function deps(): RetellHandlerDeps {
+function deps(overrides: Partial<RetellHandlerDeps> = {}): RetellHandlerDeps {
   deferred = [];
-  return { db, apiKey: API_KEY, now: () => NOW, defer: (task) => deferred.push(task) };
+  return {
+    db,
+    apiKey: API_KEY,
+    now: () => NOW,
+    defer: (task) => deferred.push(task),
+    smsDelivers: true,
+    ...overrides,
+  };
 }
 
 /** Builds a request signed exactly like Retell does (official SDK helper). */
@@ -62,10 +69,15 @@ const call = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-async function tool(name: string, args: Record<string, unknown>, callOverrides = {}) {
+async function tool(
+  name: string,
+  args: Record<string, unknown>,
+  callOverrides = {},
+  depOverrides: Partial<RetellHandlerDeps> = {},
+) {
   const response = await handleFunctionCall(
     await signedRequest({ name, args, call: call(callOverrides) }),
-    deps(),
+    deps(depOverrides),
   );
   return { status: response.status, body: await response.json() };
 }
@@ -153,6 +165,28 @@ describe("custom functions", () => {
       .from(appointments)
       .where(eq(appointments.id, booking.body.appointmentId));
     expect(appointment).toMatchObject({ source: "voice", clinicId: clinic.ctx.clinic.id });
+  });
+
+  it("does not claim an SMS when no SMS channel delivers", async () => {
+    const availability = await tool("check_availability", {
+      serviceId: clinic.serviceId,
+      date: "2026-10-05",
+    });
+    const slot = availability.body.slots.at(-1);
+    const booking = await tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: slot.practitionerId,
+        date: "2026-10-05",
+        time: slot.time,
+        patientName: "Can Öz",
+      },
+      { call_id: "nosms_1" },
+      { smsDelivers: false },
+    );
+    expect(booking.body).toMatchObject({ ok: true, smsSent: false });
+    expect(deferred).toHaveLength(0);
   });
 
   it("asks for a phone number on web calls without caller id", async () => {

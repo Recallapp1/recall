@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { env } from "@/lib/env";
 
 import { db } from "../../../db";
+import { smsProvider } from "../../../notifications/sms";
 import type { RetellHandlerDeps } from "./handlers";
 
 type Handler = (request: Request, deps: RetellHandlerDeps) => Promise<Response>;
@@ -28,6 +29,7 @@ export function withRetell(handler: Handler) {
       apiKey,
       now: () => new Date(),
       defer: (task) => after(task),
+      smsDelivers: smsProvider().delivers,
     });
   };
 }

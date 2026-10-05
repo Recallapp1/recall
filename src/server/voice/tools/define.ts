@@ -20,6 +20,8 @@ export interface ToolContext {
   now: Date;
   /** Runs work after the response is sent (SMS etc.) to keep tool latency low. */
   defer: (task: () => Promise<void>) => void;
+  /** Whether an SMS actually reaches the patient (false until a real provider is set). */
+  smsDelivers: boolean;
 }
 
 export type ToolErrorCode =
