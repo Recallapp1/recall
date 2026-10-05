@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { z } from "zod";
+import { z } from "zod";
 
 import {
   assistantSettingsSchema,
@@ -11,6 +11,7 @@ import {
   panelPreferencesSchema,
   practitionerSchema,
   serviceSchema,
+  timeOffSchema,
   weeklyHoursSchema,
   type SettingsResult,
 } from "@/lib/contracts/settings";
@@ -20,7 +21,11 @@ import { requirePermission, type PanelContext } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { recordAudit } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
+import { HOLIDAY_YEARS, turkishPublicHolidays } from "@/lib/holidays";
 import {
+  addPublicHolidays,
+  addTimeOff,
+  deleteTimeOff,
   replaceClinicHours,
   savePractitioner,
   saveService,
@@ -29,7 +34,12 @@ import {
   updateClinicProfile,
   updatePanelPreferences,
 } from "@/server/domain/settings";
-import { scheduleAssistantSync, syncAssistantNow } from "@/server/voice/sync";
+import {
+  createTestWebCall,
+  scheduleAssistantSync,
+  syncAssistantNow,
+  type TestWebCall,
+} from "@/server/voice/sync";
 
 /**
  * Shared shape of every settings save: permission → shared Zod contract →
@@ -170,4 +180,93 @@ export async function syncAssistant(): Promise<SettingsResult> {
     console.error(JSON.stringify({ msg: "voice.sync.failed", error: safeError(error) }));
     return { ok: false, message: "Asistan güncellenemedi. Recall ekibi bilgilendirildi." };
   }
+}
+
+/** Browser test call with the clinic's assistant; billed by the voice platform like a call. */
+export async function startTestCall(): Promise<
+  ({ ok: true } & TestWebCall) | { ok: false; message: string }
+> {
+  const { clinic, session } = await requirePermission({ assistantSettings: ["update"] });
+  try {
+    const call = await createTestWebCall(clinic.id);
+    if (!call) return { ok: false, message: "Bu klinik için henüz bir sesli asistan kurulmadı." };
+    await recordAudit(db(), {
+      clinicId: clinic.id,
+      actorUserId: session.user.id,
+      action: "assistant.test_call",
+      targetType: "call",
+      targetId: call.callId,
+    });
+    return { ok: true, ...call };
+  } catch (error) {
+    console.error(JSON.stringify({ msg: "voice.test_call.failed", error: safeError(error) }));
+    return { ok: false, message: "Test araması başlatılamadı. Lütfen tekrar deneyin." };
+  }
+}
+
+// Closures are read live by the availability engine; the assistant needs no sync.
+
+export async function addTimeOffEntry(input: unknown): Promise<SettingsResult> {
+  let conflicts = 0;
+  const result = await saveSetting({
+    permission: { clinicSettings: ["update"] },
+    schema: timeOffSchema,
+    input,
+    section: "time_off",
+    write: async ({ clinic }, data) => {
+      const created = await addTimeOff(db(), clinic, data);
+      conflicts = created.conflictingAppointments;
+      return created.id;
+    },
+    success: "Kapalı gün eklendi.",
+    syncAssistant: false,
+  });
+  if (result.ok && conflicts > 0) {
+    return {
+      ok: true,
+      message: `Kapalı gün eklendi. Bu aralıkta ${conflicts} randevu var; Randevular sayfasından hastalara haber verin.`,
+    };
+  }
+  return result;
+}
+
+export async function removeTimeOffEntry(id: string): Promise<SettingsResult> {
+  return saveSetting({
+    permission: { clinicSettings: ["update"] },
+    schema: z.uuid(),
+    input: id,
+    section: "time_off",
+    write: async ({ clinic }, value) => {
+      await deleteTimeOff(db(), clinic.id, value);
+      return value;
+    },
+    success: "Kayıt silindi.",
+    syncAssistant: false,
+  });
+}
+
+export async function addPublicHolidayEntries(year: number): Promise<SettingsResult> {
+  let added = 0;
+  const result = await saveSetting({
+    permission: { clinicSettings: ["update"] },
+    schema: z
+      .number()
+      .int()
+      .refine((value) => HOLIDAY_YEARS.includes(value), "Bu yıl için tatil listesi yok."),
+    input: year,
+    section: "time_off",
+    write: async ({ clinic }, value) => {
+      added = await addPublicHolidays(db(), clinic, turkishPublicHolidays(value));
+    },
+    success: "",
+    syncAssistant: false,
+  });
+  if (!result.ok) return result;
+  return {
+    ok: true,
+    message:
+      added > 0
+        ? `${year} resmî tatillerinden ${added} gün eklendi.`
+        : "Bu yılın resmî tatilleri zaten ekli.",
+  };
 }

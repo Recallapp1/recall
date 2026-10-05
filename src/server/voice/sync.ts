@@ -10,3 +10,4 @@ export {
   syncAssistantNow,
   type AssistantSyncStatus,
 } from "./providers/retell/schedule-sync";
+export { createTestWebCall, type TestWebCall } from "./providers/retell/test-call";

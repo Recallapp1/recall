@@ -7,6 +7,7 @@ import { buildSystemPrompt } from "@/server/voice/prompt";
 import { assistantSyncStatus } from "@/server/voice/sync";
 
 import { AssistantForm, SyncStatusCard } from "./assistant-form";
+import { TestCall } from "./test-call";
 
 export const metadata: Metadata = { title: "Asistan" };
 
@@ -36,6 +37,7 @@ export default async function AssistantSettingsPage() {
   return (
     <>
       <SyncStatusCard status={syncStatus} editable={editable} />
+      {editable && syncStatus && <TestCall />}
       <AssistantForm
         editable={editable}
         initial={{

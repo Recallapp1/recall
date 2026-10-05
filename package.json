@@ -43,6 +43,7 @@
     "react": "19.2.8",
     "react-day-picker": "^10.0.2",
     "react-dom": "19.2.8",
+    "retell-client-js-sdk": "^3.0.2",
     "retell-sdk": "^6.0.1",
     "server-only": "^0.0.1",
     "sonner": "^2.0.8",

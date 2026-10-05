@@ -28,6 +28,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   "team.role_saved": "Özel rol kaydetti",
   "team.role_deleted": "Özel rol sildi",
   "settings.updated": "Ayar değiştirdi",
+  "assistant.test_call": "Test araması yaptı",
   "patient.updated": "Hasta notunu güncelledi",
   "patient.anonymized": "Hastayı anonimleştirdi",
   "call.recording_played": "Arama kaydını dinledi",

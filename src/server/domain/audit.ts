@@ -19,6 +19,7 @@ export type AuditAction =
   | "team.role_saved"
   | "team.role_deleted"
   | "settings.updated"
+  | "assistant.test_call"
   | "patient.updated"
   | "patient.anonymized"
   | "call.recording_played"
