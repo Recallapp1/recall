@@ -37,19 +37,19 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 
 ## Faz durum özeti
 
-| Faz | Başlık                                                      | Durum                                                                               | Bağımlılık                            |
-| --- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------- |
-| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                                       | —                                     |
-| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                                     | F0                                    |
-| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                                  | F1                                    |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | 🟡 F3.1–F3.4 ✅ · F3.5 kısmen (kişisel tercihler ve özel rol arayüzü açık)          | F0                                    |
-| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor)          | F0                                    |
-| F5  | Klinik paneli                                               | 🟡 F5.1–F5.4 ✅ (açık: web test araması, tatiller, kişisel tercihler, E2E testleri) | F3, F4 (F1 ile paralel ilerleyebilir) |
-| F6  | Recall yönetim konsolu (platform admin)                     | ⏳                                                                                  | F3, F1                                |
-| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                                  | F5                                    |
-| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                                  | F1, F3 (F2 gerçek numara için)        |
-| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                                  | F1–F8                                 |
-| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                                  | F9                                    |
+| Faz | Başlık                                                      | Durum                                                                      | Bağımlılık                            |
+| --- | ----------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------- |
+| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                              | —                                     |
+| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                            | F0                                    |
+| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                         | F1                                    |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | 🟡 F3.1–F3.4 ✅ · F3.5 kısmen (kişisel tercihler ve özel rol arayüzü açık) | F0                                    |
+| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor) | F0                                    |
+| F5  | Klinik paneli                                               | 🟡 F5.1–F5.4 ✅ (açık: ses seçimi, özel rol arayüzü, E2E testleri)         | F3, F4 (F1 ile paralel ilerleyebilir) |
+| F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                          | F3, F1                                |
+| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                         | F5                                    |
+| F8  | Production: Vercel, Neon, izleme                            | ⏳                                                                         | F1, F3 (F2 gerçek numara için)        |
+| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                         | F1–F8                                 |
+| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                         | F9                                    |
 
 **Önerilen sıra (2026-10-04 güncel):** F1 → F4 (tasarım temeli) → F3 (hesaplar) → F5 ve F6 (panel, konsol) → F7 → F8 (production) → **F2 (Netgsm: ürün ekibiyle birlikte, en son)** → F9. F1.8 ürün ekibinin Retell anahtarını girmesiyle paralel yürür.
 
@@ -215,7 +215,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 ### F3.5 Panel kişiselleştirme altyapısı
 
 - [x] `clinics.settings.panel` (klinik geneli): görünür modüller (Aramalar, Geri aranacaklar, Hastalar kapatılabilir), varsayılan takvim görünümü (gün/hafta). Takvim saat aralığı çalışma saatlerinden otomatik hesaplanır
-- [ ] `member_preferences` (kişi bazında): varsayılan sayfa, takvimde gösterilen hekimler, yoğunluk, bildirim tercihleri
+- [x] `member_preferences` (kişi bazında): girişte açılan sayfa, takvim görünümü, takvimde varsayılan hekim (`/panel/tercihler`). [ ] Yoğunluk, bildirim tercihleri
 - [x] Şemalar `src/lib/contracts/settings.ts` içinde (client ve server ortak)
 - [ ] Kapsam (karar 2026-10-04): **rol ve yetkiler** (F3.2), **modül görünürlüğü** ve **kişisel tercihler**. Klinik logosu ve klinik bazında renk/font özelleştirmesi **kapsam dışı**; görünüm tamamen DESIGN.md'ye bağlıdır
 
@@ -297,14 +297,14 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 ### F5.3 Ayarlar (kliniğe özelleştirme)
 
 - [x] Klinik: ad, adres, devir numarası (saat dilimi salt okunur)
-- [x] Çalışma saatleri (gün başına birden çok aralık). [ ] Tatiller ve kapalı günler (`time_off`, resmî tatil şablonu)
-- [x] Hekimler: liste, hizmet eşleme, haftalık program, aktif/pasif. [ ] İzin günleri
+- [x] Çalışma saatleri (gün başına birden çok aralık). Tatiller ve kapalı günler (`time_off`, 2026–2027 resmî tatil şablonu, yarım günler, çakışan randevu uyarısı, takvimde not)
+- [x] Hekimler: liste, hizmet eşleme, haftalık program, aktif/pasif, izin günleri
 - [x] Hizmetler: ad, eş anlamlılar, açıklama, süre, fiyat aralığı (₺ → kuruş), aktif/pasif
-- [x] Asistan: ad, karşılama, fiyat söylensin mi, kayıt, SSS (20), ek talimatlar, **prompt önizleme**, son senkron durumu, "Şimdi güncelle". [ ] Ses seçimi ve örnek dinleme, **tarayıcıdan test araması** (Retell web call)
+- [x] Asistan: ad, karşılama, fiyat söylensin mi, kayıt, SSS (20), ek talimatlar, **prompt önizleme**, son senkron durumu, "Şimdi güncelle", **tarayıcıdan test araması** (Retell web call, tek kullanımlık token). [ ] Ses seçimi ve örnek dinleme
 - [x] Randevu kuralları: slot aralığı, minimum ön süre, ileri gün sınırı, iptal kuralı, hekim tercihi sorulsun mu
 - [x] Bildirimler: SMS onayı ve hatırlatma saati (gönderim Netgsm ile, F2)
 - [x] Ekip ve roller (F3.3 arayüzü); denetim kaydı sayfası
-- [x] Panel tercihleri: klinik geneli (`settings.panel`). [ ] Kişisel (`member_preferences`)
+- [x] Panel tercihleri: klinik geneli (`settings.panel`) ve kişisel (`member_preferences`)
 - [x] Her kayıt: Zod (ortak sözleşme) → Server Action → domain → audit → **asistan senkronu tetiklenir** (`after()`, `src/server/voice/sync.ts`)
 
 ### F5.4 Veri tazeliği
@@ -326,12 +326,15 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 **Hedef:** Recall ekibinin klinikleri oluşturması, numara bağlaması ve sorunları izlemesi.
 
-- [ ] Platform rolü: `user.role = 'platform_admin'` (Better Auth admin plugin). Klinik rollerinden tamamen ayrı
-- [ ] `/admin` rotası (F3 korumasıyla): klinik listesi, durum (aktif/duraklatılmış), son arama, ajan senkron durumu
-- [ ] Klinik oluşturma sihirbazı: klinik bilgileri → sektör şablonu (diş, estetik, fizyoterapi; [ONBOARDING.md](04-panel/ONBOARDING.md)) → owner daveti → numara bağlama → ajan senkronu → test araması
-- [ ] Klinik duraklatma ve yeniden açma; ajanı zorla yeniden senkronize etme
-- [ ] Destek görünümü: kişisel veri **gösterilmeden** arama metrikleri ve hatalar. Hasta verisine erişim yalnızca klinik izniyle ve audit kaydıyla (F7)
-- [ ] Maliyet görünümü: klinik bazında aylık dakika ve tahmini maliyet ([COST-MODEL.md](06-operations/COST-MODEL.md))
+> Kararlar: [ADR-010](decisions/ADR-010-platform-console.md).
+
+- [x] Platform rolü: `users.role = 'platform_admin'` (Better Auth admin plugin); impersonation hiçbir role verilmez. İlk admin: `pnpm platform:admin`
+- [x] `/admin`: klinik listesi, durum, ekip/numara sayısı, ajan senkron durumu, son 30 gün arama/dakika/maliyet, son arama
+- [x] Klinik oluşturma: bilgiler → sektör şablonu (diş, estetik, fizyoterapi, boş) → owner (parola e-postası) → isteğe bağlı numara; tek transaction. Detayda "Asistanı oluştur" ve canlıya geçiş kontrol listesi. [ ] Numaranın Retell'e otomatik içe aktarılması (F2)
+- [x] Klinik duraklatma ve yeniden açma; ajanı zorla yeniden gönderme
+- [x] Destek görünümü: kişisel veri **gösterilmeden** arama metrikleri, sonuç dağılımı, senkron hatası
+- [x] Maliyet görünümü: klinik bazında 30 günlük dakika ve gerçek maliyet (`calls.cost_usd`, Retell `combined_cost`)
+- [x] Demo talepleri listesi ve durum takibi (yeni, görüşüldü, müşteri oldu, olumsuz)
 
 **F6 çıkış kriterleri:** Yeni bir klinik, kod veya veritabanına dokunmadan, konsoldan 15 dakikada canlıya alınabiliyor.
 

@@ -8,22 +8,22 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-04 (Neon geliştirme dalı, asistan hız ayarları)_
+_Son güncelleme: 2026-10-05 (F5 kalanlar, F6 Recall konsolu)_
 
-| Konu                    | Durum                                                                                                                                                                                                                                                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | **F5 klinik paneli kullanılabilir**: Bugün, Takvim, Randevular, Aramalar, Geri aranacaklar, Hastalar, Ayarlar (klinik, saatler, hekimler, hizmetler, asistan, randevu kuralları, ekip, denetim). Açık: web test araması, tatiller, kişisel tercihler, özel rol arayüzü, E2E testleri. Sonra F6 (Recall yönetim konsolu) |
-| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo ajan canlı (`agent_d0b8d67285431ede3db2c75201`). Model `claude-4.5-haiku` + `eleven_flash_v2_5` + öncelikli LLM havuzu (ADR-003). Yeni gecikme ölçümü bekleniyor                                                                                                                        |
-| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                                               |
-| Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens`                          |
-| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                                                        |
-| Testler                 | **216 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                                                 |
-| Lokal DB                | **Neon** projesi `falling-mud-37269187` (Frankfurt), **`dev` dalı** (`.env.local` `DATABASE_URL`). Ana dal prod için ayrılmış (F8). PGlite `db:local` yedek seçenek olarak duruyor                                                                                                                                      |
-| Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                                                        |
-| GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                                         |
-| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                                         |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                                                                                                          |
-| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                                                 |
+| Konu                    | Durum                                                                                                                                                                                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aktif faz               | **F5 tamamına yakın, F6 konsol hazır.** Panel: test araması, tatil/izin, kişisel tercihler. Konsol `/admin`: klinik oluşturma, asistan, numara, duraklatma, metrikler, demo talepleri. Sırada: F2 (Netgsm), F8 (Vercel deploy), F7 (KVKK)                                                      |
+| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo ajan canlı (`agent_d0b8d67285431ede3db2c75201`). Model `claude-4.5-haiku` + `eleven_flash_v2_5` + öncelikli LLM havuzu (ADR-003). Yeni gecikme ölçümü bekleniyor                                                                                               |
+| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
+| Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
+| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
+| Testler                 | **223 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
+| Lokal DB                | **Neon** projesi `falling-mud-37269187` (Frankfurt), **`dev` dalı** (`.env.local` `DATABASE_URL`). Ana dal prod için ayrılmış (F8). PGlite `db:local` yedek seçenek olarak duruyor                                                                                                             |
+| Lokal ses testi         | `.env.local`: `APP_URL` = cloudflared hızlı tüneli (her açılışta değişir → `pnpm voice:sync --clinic gulus-dis`)                                                                                                                                                                               |
+| GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
+| Deploy                  | Yok. Vercel takımı `RECALL` (`recall25`) hazır, proje yok. Neon bekleniyor (F8)                                                                                                                                                                                                                |
+| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                                                                                 |
+| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                        |
 
 ### Dallar ve saklanan işler
 
@@ -34,12 +34,10 @@ _Son güncelleme: 2026-10-04 (Neon geliştirme dalı, asistan hız ayarları)_
 
 ### Sıradaki işler
 
-1. Ürün ekibi: paneli gezip geri bildirim (`sahip@gulus.test`, parola `.env.local` yorumunda); hızlandırılmış asistanla test araması; `git stash drop`
-2. F5 kalanlar: Retell web call ile tarayıcıdan test araması, ses seçimi, tatiller/izinler (`time_off`), kişisel tercihler, özel rol arayüzü, Playwright E2E
-3. F6: Recall yönetim konsolu (klinik açma, organizasyon + ilk owner + ajan tek akışta)
-4. F3: Better Auth, klinik hesapları, roller (stash'teki yarım işi değerlendir)
-5. Demo talepleri: ekibe e-posta bildirimi ve görüntüleme (F3/F6)
-6. Logo ve görsel varlıklar (ürün ekibiyle birlikte)
+1. Ürün ekibi: tarayıcıdan test araması (kendi Chrome'unuzda, mikrofon izniyle); Flash ses değerlendirmesi; `git stash drop`
+2. F2: Netgsm hesabı (birlikte), numaranın Retell'e SIP ile bağlanması, SMS onay ve hatırlatma
+3. F8: Vercel projesi, Neon ana dal, Resend alan adı doğrulaması (hesap ve ücret adımları ürün ekibi onayıyla)
+4. F7: KVKK saklama süreleri ve silme işleri; F5 kalanlar: ses seçimi, özel rol arayüzü, Playwright E2E
 
 ---
 
@@ -78,6 +76,18 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-05 · Test araması, tatiller, kişisel tercihler ve Recall konsolu · F5.3, F3.5, F6, ADR-010
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F5-kalanlar` · **Commit'ler:** bu kaydı içeren commit'ler
+
+- **Retell öncelikli LLM havuzu:** fiyat sayfasında Claude modelleri için "Fast Tier" yok (yalnızca bazı GPT'lerde, fiyatı 2 katı). `RETELL_LLM_HIGH_PRIORITY=false` yapıldı, ajan senkronlandı. Flash ses ek ücretsiz. Güncel maliyet ~0,12 $/dk (ADR-003).
+- **Tarayıcıdan test araması** (Ayarlar → Asistan): sunucu tek kullanımlık Retell web call token'ı üretir (`gateway` transport, ICE sunucuları); önce mikrofon izni istenir. `retell-client-js-sdk` 3.0.2'nin token tabanlı `RetellWebClient`'ı kullanılıyor (SDK 4.0'da kalkacak, geçiş gerekecek). Claude'un tarayıcı panelinde mikrofon engelli; token ve bağlantı doğrulandı, ses kısmı ürün ekibinin tarayıcısında denenecek.
+- **Tatil ve izinler:** `time_off` arayüzü; tüm klinik veya hekim; tam gün veya saat aralığı; 2026–2027 resmî tatil şablonu (dini bayramlar Diyanet takvimi, arife ve 28 Ekim yarım gün); çakışan aktif randevu sayısıyla uyarı; takvimde kapalı gün notu. Müsaitlik motoru `time_off`'u zaten okuyordu (testli).
+- **Kişisel tercihler** (`member_preferences`, `/panel/tercihler`): girişte açılan sayfa, takvim görünümü, varsayılan hekim filtresi. Girişten sonra `/panel/baslangic` yönlendirir.
+- **F6 konsol** (`/admin`, [ADR-010](docs/decisions/ADR-010-platform-console.md)): Better Auth admin eklentisi, `platform_admin` rolü (impersonation yok), `pnpm platform:admin`. Klinik listesi ve toplamlar, yeni klinik (sektör şablonu, owner, numara; tek transaction), klinik detayı (kontrol listesi, asistan oluştur/senkronize et, numara bağla/kaldır, duraklat/aç, 30 gün metrik, ekip ekle), demo talepleri durum takibi. Hasta verisi gösterilmez. Migration `0006`, `0007` Neon dev dalına uygulandı.
+- Lokal test hesapları: `sahip@gulus.test` (klinik), `konsol@recall.test` (konsol); parola `.env.local` yorumunda. Konsoldan "Deneme Fizik Tedavi" test kliniği açıldı (Retell'de gereksiz ajan açmamak için asistanı oluşturulmadı).
+- Vitest `hookTimeout` 60 sn (PGlite her dosyada tüm migration'ları uyguluyor). 223 test; lint, tokens, typecheck temiz.
 
 ### 2026-10-04 · Neon geliştirme dalı ve asistan hız ayarları · F8 (hazırlık), F1.8, ADR-003
 

@@ -44,7 +44,8 @@ Hedef (p50 < 1,0 sn, p95 < 1,8 sn) tutturulamadı; en büyük pay LLM'de. Sırad
 - Ürün ekibi `claude-4.5-haiku` ile test araması yaptı: Türkçe kalite yeterli, hız farkı "çok fark etmedi, bir tık daha hızlı olabilir". **Varsayılan model `claude-4.5-haiku`** (Retell'deki en hızlı Claude).
 - Ek hız için iki ayar açıldı (env ile, kod değişmeden geri alınabilir):
   - `RETELL_VOICE_MODEL=eleven_flash_v2_5`: ElevenLabs Flash, Türkçe destekli, multilingual v2'ye göre ilk ses çok daha erken başlar; ek ücret yok.
-  - `RETELL_LLM_HIGH_PRIORITY=true`: Retell'in öncelikli LLM havuzu (`model_high_priority`); daha düşük ve tutarlı LLM gecikmesi, **dakika başı ek ücret**.
+  - `RETELL_LLM_HIGH_PRIORITY`: Retell'in öncelikli LLM havuzu (`model_high_priority`). **Kapalı (`false`):** Retell fiyat sayfasında (2026-10-05) "Fast Tier" yalnızca bazı GPT modelleri için var ve fiyatı ikiye katlıyor (ör. GPT 5.4: 0,08 → 0,16 $/dk); Claude modelleri için sunulmuyor. Bayrak, desteklenen bir model seçilirse diye kodda kaldı.
+- Güncel dakika maliyeti (Retell fiyat sayfası, 2026-10-05): ses altyapısı 0,055 + ElevenLabs 0,040 (Flash dahil tüm ElevenLabs sesleri aynı fiyat) + Claude 4.5 Haiku 0,025 = **~0,12 $/dk**; kendi SIP hattımızla (Netgsm) Retell telefon ücreti yok.
 - Claude dışı modeller (Gemini Flash, GPT mini) Retell'de daha hızlı olabilir, ancak bu ADR'nin Claude kararını değiştirir; gerekirse ayrı ölçümle değerlendirilir.
 - Sonraki adım: aynı senaryoyla yeni bir ölçüm (Retell call detail → latency) ve sonuçların bu tabloya eklenmesi.
 
