@@ -2,6 +2,8 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -23,6 +25,11 @@ import {
   APPOINTMENT_STATUSES,
 } from "../../lib/contracts/appointment";
 import { CALL_OUTCOMES } from "../../lib/contracts/call";
+import {
+  FOLLOW_UP_INTERVAL_UNITS,
+  FOLLOW_UP_STATES,
+  FOLLOW_UP_VISIT_SOURCES,
+} from "../../lib/contracts/follow-up";
 import {
   NOTIFICATION_CHANNELS,
   NOTIFICATION_KINDS,
@@ -64,6 +71,12 @@ export const notificationKind = pgEnum("notification_kind", NOTIFICATION_KINDS);
 export const notificationChannel = pgEnum("notification_channel", NOTIFICATION_CHANNELS);
 
 export const notificationStatus = pgEnum("notification_status", NOTIFICATION_STATUSES);
+
+export const followUpIntervalUnit = pgEnum("follow_up_interval_unit", FOLLOW_UP_INTERVAL_UNITS);
+
+export const followUpState = pgEnum("follow_up_state", FOLLOW_UP_STATES);
+
+export const followUpVisitSource = pgEnum("follow_up_visit_source", FOLLOW_UP_VISIT_SOURCES);
 
 export { ACTIVE_APPOINTMENT_STATUSES };
 
@@ -304,6 +317,8 @@ export const services = pgTable(
   },
   (t) => [
     index().on(t.clinicId),
+    // Target of composite foreign keys (clinic_id, service_id).
+    uniqueIndex("services_clinic_id_id_key").on(t.clinicId, t.id),
     check("services_duration_positive", sql`${t.durationMinutes} > 0`),
   ],
 );
@@ -439,6 +454,8 @@ export const appointments = pgTable(
     index().on(t.clinicId, t.startsAt),
     index().on(t.practitionerId, t.startsAt),
     index().on(t.patientId),
+    // Target of composite foreign keys (clinic_id, appointment_id).
+    uniqueIndex("appointments_clinic_id_id_key").on(t.clinicId, t.id),
     check("appointments_range_valid", sql`${t.startsAt} < ${t.endsAt}`),
     // Overlap prevention lives in a custom migration (EXCLUDE USING gist).
   ],
@@ -506,6 +523,172 @@ export const notifications = pgTable(
     index().on(t.subjectId),
     index().on(t.patientId),
     check("notifications_attempts_range", sql`${t.attempts} between 0 and 10`),
+  ],
+);
+
+// ─── Follow-up / Takip (docs/proposals/TAKIP.md, V1) ─────────────────────────
+// Every cross-table reference carries clinic_id (composite foreign keys), so a
+// row of one clinic can never point at another clinic's patient, service,
+// rule, plan or appointment.
+
+/** A clinic's reusable follow-up rule. Archived, never deleted (plans keep history). */
+export const followUpRules = pgTable(
+  "follow_up_rules",
+  {
+    id: id(),
+    clinicId: clinicRef(),
+    name: text().notNull(),
+    /** Service that starts the follow-up (suggestions, later auto-start); null = manual only. */
+    triggerServiceId: uuid(),
+    /** Service booked for follow-up visits; appointment matching uses it. */
+    visitServiceId: uuid().notNull(),
+    /** Null = example template without an interval yet; cannot be activated. */
+    intervalValue: smallint(),
+    intervalUnit: followUpIntervalUnit(),
+    /** Null = indefinite. Includes the first visit when a plan starts from one. */
+    totalVisits: smallint(),
+    /** Kept for V1.1; no job path or UI in V1 (TAKIP.md decision log). */
+    autoStart: boolean().notNull().default(false),
+    smsReminders: boolean().notNull().default(false),
+    isActive: boolean().notNull().default(false),
+    /** Set when created from a sector example ("Örnek şablon"). */
+    templateKey: text(),
+    archivedAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index().on(t.clinicId),
+    uniqueIndex("follow_up_rules_clinic_id_id_key").on(t.clinicId, t.id),
+    foreignKey({
+      name: "follow_up_rules_trigger_service_fk",
+      columns: [t.clinicId, t.triggerServiceId],
+      foreignColumns: [services.clinicId, services.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "follow_up_rules_visit_service_fk",
+      columns: [t.clinicId, t.visitServiceId],
+      foreignColumns: [services.clinicId, services.id],
+    }).onDelete("restrict"),
+    check(
+      "follow_up_rules_interval_range",
+      sql`${t.intervalValue} is null or (${t.intervalUnit} = 'day' and ${t.intervalValue} between 1 and 730) or (${t.intervalUnit} = 'week' and ${t.intervalValue} between 1 and 104) or (${t.intervalUnit} = 'month' and ${t.intervalValue} between 1 and 36)`,
+    ),
+    check(
+      "follow_up_rules_interval_pair",
+      sql`(${t.intervalValue} is null) = (${t.intervalUnit} is null)`,
+    ),
+    check(
+      "follow_up_rules_total_range",
+      sql`${t.totalVisits} is null or ${t.totalVisits} between 1 and 50`,
+    ),
+    check(
+      "follow_up_rules_active_valid",
+      sql`not ${t.isActive} or (${t.intervalValue} is not null and ${t.archivedAt} is null)`,
+    ),
+  ],
+);
+
+/** One patient on one rule. The rule's numbers are copied at start (snapshot). */
+export const followUpPlans = pgTable(
+  "follow_up_plans",
+  {
+    id: id(),
+    clinicId: clinicRef(),
+    patientId: uuid().notNull(),
+    ruleId: uuid().notNull(),
+    name: text().notNull(),
+    visitServiceId: uuid().notNull(),
+    intervalValue: smallint().notNull(),
+    intervalUnit: followUpIntervalUnit().notNull(),
+    totalVisits: smallint(),
+    state: followUpState().notNull().default("active"),
+    /** Clinic-local day the follow-up counts from when no visit has happened. */
+    startedOn: date({ mode: "string" }).notNull(),
+    /** Staff's next date; a visit after `dueOverrideAt` supersedes it. */
+    dueOverrideOn: date({ mode: "string" }),
+    dueOverrideAt: timestamp({ withTimezone: true }),
+    /** Cache of recomputeFollowUp(); recalculated on every relevant event and daily. */
+    nextDueOn: date({ mode: "string" }),
+    visitsDone: smallint().notNull().default(0),
+    /** An appointment matched several plans: staff must link it ("Eşleştirme bekliyor"). */
+    needsReview: boolean().notNull().default(false),
+    smsConsentAt: timestamp({ withTimezone: true }),
+    smsConsentBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    /** One of FOLLOW_UP_STOP_REASONS; no free text (KVKK). */
+    stoppedReason: text(),
+    stateChangedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("follow_up_plans_open_key")
+      .on(t.patientId, t.ruleId)
+      .where(sql`${t.state} in ('active', 'paused')`),
+    index().on(t.clinicId, t.state, t.nextDueOn),
+    index().on(t.patientId),
+    uniqueIndex("follow_up_plans_clinic_id_id_key").on(t.clinicId, t.id),
+    foreignKey({
+      name: "follow_up_plans_patient_fk",
+      columns: [t.clinicId, t.patientId],
+      foreignColumns: [patients.clinicId, patients.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "follow_up_plans_rule_fk",
+      columns: [t.clinicId, t.ruleId],
+      foreignColumns: [followUpRules.clinicId, followUpRules.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "follow_up_plans_visit_service_fk",
+      columns: [t.clinicId, t.visitServiceId],
+      foreignColumns: [services.clinicId, services.id],
+    }).onDelete("restrict"),
+    check("follow_up_plans_interval_positive", sql`${t.intervalValue} > 0`),
+    check(
+      "follow_up_plans_override_pair",
+      sql`(${t.dueOverrideOn} is null) = (${t.dueOverrideAt} is null)`,
+    ),
+    check(
+      "follow_up_plans_stop_reason",
+      sql`(${t.state} = 'stopped') = (${t.stoppedReason} is not null)`,
+    ),
+  ],
+);
+
+/**
+ * A visit that counts toward a plan: a linked appointment (whether it counts
+ * follows the appointment's current status) or a visit recorded without one.
+ */
+export const followUpVisits = pgTable(
+  "follow_up_visits",
+  {
+    id: id(),
+    clinicId: clinicRef(),
+    planId: uuid().notNull(),
+    appointmentId: uuid(),
+    visitedOn: date({ mode: "string" }),
+    source: followUpVisitSource().notNull(),
+    createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    // An appointment belongs to at most one plan.
+    uniqueIndex().on(t.appointmentId),
+    index().on(t.planId),
+    foreignKey({
+      name: "follow_up_visits_plan_fk",
+      columns: [t.clinicId, t.planId],
+      foreignColumns: [followUpPlans.clinicId, followUpPlans.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "follow_up_visits_appointment_fk",
+      columns: [t.clinicId, t.appointmentId],
+      foreignColumns: [appointments.clinicId, appointments.id],
+    }).onDelete("cascade"),
+    check(
+      "follow_up_visits_has_date",
+      sql`${t.appointmentId} is not null or ${t.visitedOn} is not null`,
+    ),
   ],
 );
 
@@ -583,3 +766,6 @@ export type PhoneNumber = typeof phoneNumbers.$inferSelect;
 export type DemoRequest = typeof demoRequests.$inferSelect;
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type FollowUpRule = typeof followUpRules.$inferSelect;
+export type FollowUpPlan = typeof followUpPlans.$inferSelect;
+export type FollowUpVisit = typeof followUpVisits.$inferSelect;

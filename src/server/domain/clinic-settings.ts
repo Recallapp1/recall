@@ -37,6 +37,21 @@ export const clinicSettingsSchema = z.object({
       smsReminderHoursBefore: z.number().int().min(1).max(168).nullable().default(24),
     })
     .prefault({}),
+  /** Modules the Recall team turns on per clinic (console only; never panel forms). */
+  features: z
+    .object({
+      followUp: z.boolean().default(false),
+    })
+    .prefault({}),
+  /** Takip settings (docs/proposals/TAKIP.md); used only when features.followUp is on. */
+  followUp: z
+    .object({
+      /** Clinic-level switch for follow-up SMS; real sending also needs the global locks. */
+      smsReminders: z.boolean().default(false),
+      /** "Zamanı geldi" window: due within this many days. */
+      dueSoonDays: z.number().int().min(1).max(60).default(14),
+    })
+    .prefault({}),
   /** Clinic-wide panel preferences (F3.5); permissions still apply on top. */
   panel: z
     .object({

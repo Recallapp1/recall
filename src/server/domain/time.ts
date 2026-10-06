@@ -67,6 +67,20 @@ export function addLocalDays(date: LocalDate, days: number): LocalDate {
   return format(addDays(new Date(y, m - 1, d), days), "yyyy-MM-dd");
 }
 
+/**
+ * Calendar months, clamped to the month's last day: 31 Jan + 1 → 28/29 Feb.
+ * Pure date arithmetic, so DST and time zones cannot shift it.
+ */
+export function addLocalMonths(date: LocalDate, months: number): LocalDate {
+  const [y, m, d] = date.split("-").map(Number);
+  const target = new Date(Date.UTC(y, m - 1 + months, 1));
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  const day = Math.min(d, lastDay);
+  return `${target.getUTCFullYear()}-${String(target.getUTCMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 /** Whole days from `from` to `to` (both local dates). */
 export function diffLocalDays(from: LocalDate, to: LocalDate): number {
   const toUtc = (value: LocalDate) => {
