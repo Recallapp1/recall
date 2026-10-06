@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-06 (production canlı: recalltr.company)_
+_Son güncelleme: 2026-10-06 (ses seçimi, KVKK veri saklama, özel roller)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@ _Son güncelleme: 2026-10-06 (production canlı: recalltr.company)_
 | Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
 | Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
 | E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
-| Testler                 | **230 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
+| Testler                 | **241 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
 | Lokal DB                | **Neon** projesi `falling-mud-37269187` (Frankfurt), **`dev` dalı** (`.env.local` `DATABASE_URL`). Ana dal prod için ayrılmış (F8). PGlite `db:local` yedek seçenek olarak duruyor                                                                                                             |
 | Lokal ses testi         | `pnpm dev` + `pnpm dev:tunnel` (tüneli açar, `APP_URL`'i yazar, ajanları yönlendirir). Tarayıcı test araması uçtan uca doğrulandı (randevu DB'ye düşüyor)                                                                                                                                      |
 | GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
@@ -34,11 +34,10 @@ _Son güncelleme: 2026-10-06 (production canlı: recalltr.company)_
 
 ### Sıradaki işler
 
-1. Ürün ekibi: şirket bilgileri (yasal sayfalar için), Resend'de açılma/tıklama takibini kapatma, alan adı otomatik yenileme, `git stash drop`
-2. Web: KVKK aydınlatma ve gizlilik sayfaları, demo formuna bağlantı
-3. Kalan yazılım: ses seçimi, özel rol arayüzü, Playwright E2E, F7 (saklama süreleri, silme, dışa aktarma), izleme (Sentry/uptime)
-4. Canlıdan önce: Vercel Pro, Neon ücretli plan + auto-suspend kapalı
-5. En son F2: Netgsm (numara, SIP, SMS)
+1. Otomatik testler: Playwright E2E (giriş → randevu → iptal; ayar → senkron; yetkisiz rol), server action testleri
+2. Güvenlik: hız sınırlama (giriş, webhook), CSP; izleme (Sentry/uptime)
+3. Canlıdan önce: Vercel Pro, Neon ücretli plan + auto-suspend kapalı
+4. En son: yasal sayfalar ve şirket bilgileri, F2 Netgsm
 
 ---
 
@@ -77,6 +76,52 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-06 · Ses seçimi, KVKK veri saklama, özel roller · F5.3, F7, F3.5
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F5.3-ses-secimi`, `feat/F7-veri-saklama`, `feat/F3.5-ozel-roller` · **Commit'ler:** `27f3098`, `935ad2d`, `1cfd7ef`, bu kayıt
+
+**Ne yapıldı**
+
+- **Ses seçimi** (Ayarlar → Asistan → Ses):
+  - kadın ve erkek sesleri, örnek dinleme, Recall varsayılanı;
+  - kaydedince asistan yeniden senkronlanır;
+  - yalnızca paylaşılan TTS modelinin sağlayıcısındaki (ElevenLabs) sesler listelenir, sunucu da seçimi kontrol eder;
+  - yerel ad etiketleri ve tekrarlar temizlendi; liste 1 saat önbellekte.
+- **KVKK veri saklama:**
+  - Günlük cron (`/api/cron/retention`, `CRON_SECRET` Vercel'e doğrudan üretildi): kayıt bağlantısı 30 gün, döküm 90 gün, arayan numarası 2 yıl.
+  - Retell ajanları 30 günde kendi verisini siler. Kayıt bağlantıları imzalı ve süreli; panel her dinlemede yeni bağlantı alır.
+  - "Kayıt kapalı" seçiliyse arama, analiz bize ulaşınca Retell'den silinir.
+  - Anonimleştirme Retell'deki sesi de siler.
+  - Hasta "Verileri indir" (JSON), yeni `patients.export` yetkisiyle (sahip, yönetici); her indirme denetim kaydına yazılır.
+  - Production ajanına saklama ayarları doğrudan uygulandı.
+- **Özel roller** (Ayarlar → Ekip → Özel roller):
+  - yalnızca klinik verisi yetkileri; her işlem "görüntüle"yi de açar;
+  - ad oluşturulduktan sonra sabit; kullanımdaki rol silinemez;
+  - davet ve rol değiştirmede seçilebilir;
+  - e-posta ve davet sayfasında rol adı düzgün görünür;
+  - "Bugün" sayfası arama yetkisi olmayana arama sayısını göstermez.
+
+**Neden**
+
+- Retell'in `basic_attributes_only` ayarı gerçek aramayla denendi: Retell'de hiçbir şey saklamıyor ama webhook'tan da döküm, özet ve süreyi siliyor. Paneldeki özetler kaybolacağı için kullanılmadı; yerine analizden sonra silme.
+- Özel rollerin ekip veya faturalandırma yetkisi içerememesi, bir özel rolün kendi başına erişim dağıtamaması için.
+
+**Doğrulama**
+
+- `pnpm test`: 241/241; lint, tokens, typecheck temiz.
+- Tarayıcıda (yerel, kendi test hesabım `claude@gulus.test`):
+  - ses kaydetme → DB → Retell ajanı `11labs-Grace`, sonra varsayılana geri alındı;
+  - dışa aktarma 200 ve JSON;
+  - cron 401 ve 200;
+  - "Diş asistanı" rolüyle davet → kabul → Takvim, Randevular, Hastalar açık; Aramalar, Geri arama, Ayarlar, Ekip, Denetim, konsol 403.
+- Production: cron yetkisiz isteğe 401; production ajanında saklama 30 gün ve imzalı bağlantı açık.
+
+**Açık kalanlar / dikkat**
+
+- Yerel test hesapları (`claude@gulus.test`, `asistan@gulus.test`) ve "diş asistanı" rolü dev DB'de; parolalar `.env.local` yorumunda.
+- Dev ajanı `.env.local`'deki son tünele bakıyor; tünel kapanınca test araması ön kontrolü durumu söyler.
+- Sırada: otomatik testler (Playwright E2E, server action testleri), güvenlik (hız sınırlama, CSP), izleme. En son F2 Netgsm, yasal sayfalar ve şirket bilgileri.
 
 ### 2026-10-06 · Production canlı: Vercel, Neon, alan adı, Resend, web temeli · F8, F1.8
 
