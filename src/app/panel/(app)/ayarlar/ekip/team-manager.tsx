@@ -24,7 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { isBuiltInRole, ROLE_LABELS, type RoleName } from "@/lib/permissions";
+import {
+  CUSTOM_ROLE_PERMISSIONS,
+  isBuiltInRole,
+  roleLabel,
+  type CustomRoleResource,
+  type RoleName,
+} from "@/lib/permissions";
 
 import { cancelInvitation, inviteMember, removeMember, updateMember } from "./actions";
 import { SaveButton, SettingsCard, useSave } from "../_components/settings-ui";
@@ -46,32 +52,42 @@ const ROLE_HINTS: Record<RoleName, string> = {
 };
 
 function roleText(role: string) {
-  return role
-    .split(",")
-    .map((r) => (isBuiltInRole(r) ? ROLE_LABELS[r] : r))
-    .join(", ");
+  return role.split(",").map(roleLabel).join(", ");
+}
+
+/** Built-in roles describe themselves; custom ones list the areas they open. */
+function roleHint(role: string, customRoles: CustomRole[]): string | undefined {
+  if (isBuiltInRole(role)) return ROLE_HINTS[role];
+  const custom = customRoles.find((r) => r.name === role);
+  if (!custom) return undefined;
+  const areas = Object.keys(custom.permission)
+    .map((resource) => CUSTOM_ROLE_PERMISSIONS[resource as CustomRoleResource]?.label)
+    .filter(Boolean);
+  return `Özel rol: ${areas.join(", ")}`;
 }
 
 function RoleSelect({
   value,
   onChange,
   roles,
+  customRoles,
 }: {
-  value: RoleName;
-  onChange: (role: RoleName) => void;
-  roles: RoleName[];
+  value: string;
+  onChange: (role: string) => void;
+  roles: string[];
+  customRoles: CustomRole[];
 }) {
   return (
-    <FormField label="Rol" hint={ROLE_HINTS[value]}>
+    <FormField label="Rol" hint={roleHint(value, customRoles)}>
       {(field) => (
-        <Select value={value} onValueChange={(next) => onChange(next as RoleName)}>
+        <Select value={value} onValueChange={onChange}>
           <SelectTrigger {...field} className="w-full">
-            <SelectValue>{ROLE_LABELS[value]}</SelectValue>
+            <SelectValue>{roleLabel(value)}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {roles.map((role) => (
               <SelectItem key={role} value={role}>
-                {ROLE_LABELS[role]}
+                {roleLabel(role)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -81,22 +97,29 @@ function RoleSelect({
   );
 }
 
+interface CustomRole {
+  name: string;
+  permission: Record<string, string[]>;
+}
+
 export function TeamManager({
   currentUserId,
   members,
   invitations,
   practitioners,
   assignableRoles,
+  customRoles,
   permissions,
 }: {
   currentUserId: string;
   members: Member[];
   invitations: { id: string; email: string; role: string | null; expiresAt: Date }[];
   practitioners: { id: string; name: string }[];
-  assignableRoles: RoleName[];
+  assignableRoles: string[];
+  customRoles: CustomRole[];
   permissions: { update: boolean; remove: boolean; cancel: boolean };
 }) {
-  const [invite, setInvite] = useState<{ email: string; role: RoleName }>({
+  const [invite, setInvite] = useState<{ email: string; role: string }>({
     email: "",
     role: assignableRoles.includes("staff") ? "staff" : (assignableRoles[0] ?? "staff"),
   });
@@ -141,6 +164,7 @@ export function TeamManager({
             value={invite.role}
             onChange={(role) => setInvite((current) => ({ ...current, role }))}
             roles={assignableRoles}
+            customRoles={customRoles}
           />
         </div>
       </SettingsCard>
@@ -243,6 +267,7 @@ export function TeamManager({
               member={editing}
               practitioners={practitioners}
               roles={assignableRoles}
+              customRoles={customRoles}
               onDone={() => setEditing(null)}
             />
           )}
@@ -284,15 +309,18 @@ function MemberEditor({
   member,
   practitioners,
   roles,
+  customRoles,
   onDone,
 }: {
   member: Member;
   practitioners: { id: string; name: string }[];
-  roles: RoleName[];
+  roles: string[];
+  customRoles: CustomRole[];
   onDone: () => void;
 }) {
-  const initialRole = isBuiltInRole(member.role) ? member.role : "staff";
-  const [role, setRole] = useState<RoleName>(initialRole);
+  // Several roles ("admin,staff") are edited as one; the first is kept.
+  const initialRole = member.role.split(",")[0]?.trim() || "staff";
+  const [role, setRole] = useState(initialRole);
   const [practitionerId, setPractitionerId] = useState(member.practitionerId ?? "");
   const { pending, save } = useSave();
   const available = roles.includes(initialRole) ? roles : [initialRole, ...roles];
@@ -303,7 +331,7 @@ function MemberEditor({
         <DialogTitle>{member.name}</DialogTitle>
         <DialogDescription>{member.email}</DialogDescription>
       </DialogHeader>
-      <RoleSelect value={role} onChange={setRole} roles={available} />
+      <RoleSelect value={role} onChange={setRole} roles={available} customRoles={customRoles} />
       {role === "practitioner" && (
         <FormField
           label="Bağlı hekim"

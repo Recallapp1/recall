@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { isBuiltInRole, ROLE_LABELS } from "@/lib/permissions";
+import { roleLabel } from "@/lib/permissions";
 import { findOpenInvitation } from "@/server/auth/accounts";
 import { getSession } from "@/server/auth/session";
 
@@ -30,7 +30,7 @@ export default async function InvitationPage({ params }: PageProps<"/davet/[id]"
     );
   }
 
-  const role = isBuiltInRole(invitation.role) ? ROLE_LABELS[invitation.role] : invitation.role;
+  const role = roleLabel(invitation.role);
   const heading = (
     <AuthHeading
       title={`${invitation.clinicName} ekibine katılın`}

@@ -32,11 +32,12 @@ export default async function TodayPage() {
   const { context, scope } = await requirePanelScope({ appointments: ["read"] });
   const now = new Date();
 
-  const [overview, directory, recent, canSeeCallbacks] = await Promise.all([
+  const [overview, directory, recent, canSeeCallbacks, canSeeCalls] = await Promise.all([
     todayOverview(db(), scope, now),
     loadClinicDirectory(db(), context.clinic.id),
     recentAssistantBookings(db(), scope, 5),
     can({ callbacks: ["read"] }),
+    can({ calls: ["read"] }),
   ]);
   const callbacks = canSeeCallbacks ? await listCallbacks(db(), context.clinic.id, "open", 5) : [];
 
@@ -73,7 +74,9 @@ export default async function TodayPage() {
   const stats = [
     { icon: CalendarCheck2, value: overview.stats.appointmentsToday, label: "Bugünkü randevu" },
     { icon: Bot, value: overview.stats.bookedByAssistantToday, label: "Asistanın bugün aldığı" },
-    { icon: PhoneCall, value: overview.stats.callsToday, label: "Bugünkü arama" },
+    ...(canSeeCalls
+      ? [{ icon: PhoneCall, value: overview.stats.callsToday, label: "Bugünkü arama" }]
+      : []),
     ...(canSeeCallbacks
       ? [{ icon: PhoneForwarded, value: overview.stats.openCallbacks, label: "Açık geri arama" }]
       : []),

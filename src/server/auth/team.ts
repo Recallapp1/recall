@@ -5,7 +5,7 @@ import { and, asc, eq, gt } from "drizzle-orm";
 import { memberRoles } from "@/lib/permissions";
 
 import type { Executor } from "../db";
-import { invitations, members, practitioners, users } from "../db/schema";
+import { invitations, members, organizationRoles, practitioners, users } from "../db/schema";
 import { DomainError } from "../domain/errors";
 
 /** The clinic's team for the "Ekip" settings page (F3.3). */
@@ -98,4 +98,25 @@ export async function setMemberPractitioner(
     .where(and(eq(members.organizationId, input.organizationId), eq(members.id, input.memberId)))
     .returning({ id: members.id });
   if (updated.length === 0) throw new DomainError("NOT_FOUND", "Ekip üyesi bulunamadı.");
+}
+
+export interface CustomRole {
+  name: string;
+  permission: Record<string, string[]>;
+}
+
+/** The clinic's own roles (Better Auth dynamic access control), by name. */
+export async function listCustomRoles(
+  exec: Executor,
+  organizationId: string,
+): Promise<CustomRole[]> {
+  const rows = await exec
+    .select({ name: organizationRoles.role, permission: organizationRoles.permission })
+    .from(organizationRoles)
+    .where(eq(organizationRoles.organizationId, organizationId))
+    .orderBy(asc(organizationRoles.role));
+  return rows.map((row) => ({
+    name: row.name,
+    permission: JSON.parse(row.permission) as Record<string, string[]>,
+  }));
 }

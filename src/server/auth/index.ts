@@ -7,7 +7,7 @@ import { admin, organization } from "better-auth/plugins";
 import { and, asc, eq } from "drizzle-orm";
 
 import { env } from "@/lib/env";
-import { ac, ROLE_LABELS, roles, type RoleName } from "@/lib/permissions";
+import { ac, roleLabel, roles } from "@/lib/permissions";
 
 import { db } from "../db";
 import {
@@ -153,7 +153,7 @@ function createAuth() {
               to: email,
               clinicName: clinic?.name ?? org.name,
               inviterName: inviter.user.name,
-              roleLabel: ROLE_LABELS[role as RoleName] ?? role,
+              roleLabel: roleLabel(role),
               url: `${origin}/davet/${id}`,
               expiresInDays: INVITATION_DAYS,
             }),

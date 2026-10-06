@@ -26,4 +26,4 @@ Better Auth'ta `disableSignUp: true` yalnızca istemciyi değil sunucu tarafınd
 - ✅ Kayıt formu yok; hesap açma yüzeyi yalnızca geçerli davet bağlantısı ve Recall ekibi.
 - ✅ Parola belirleme ve parola sıfırlama aynı akış; e-posta şablonu türüne göre metin değişir.
 - ⚠️ `acceptInvitationAsNewUser()` Better Auth'un iç tablolarına doğrudan yazar. Better Auth sürüm yükseltmelerinde `accounts.test.ts` entegrasyon testi bu sözleşmeyi doğrular.
-- ⏳ Denetim kaydı (F3.4), ekip yönetimi arayüzü (F3.3) ve özel rol arayüzü sonraki adımlar.
+- ✅ Denetim kaydı (F3.4), ekip yönetimi arayüzü (F3.3) ve özel rol arayüzü (2026-10-06). Özel roller yalnızca klinik verisi yetkileri içerebilir (`CUSTOM_ROLE_PERMISSIONS`); ekip ve faturalandırma yetkisi veremez, tüm kliniğin takvimini görür (yalnızca yerleşik `practitioner` kendi takvimiyle sınırlıdır).

@@ -42,9 +42,9 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 | F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                              | —                                     |
 | F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                            | F0                                    |
 | F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                         | F1                                    |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | 🟡 F3.1–F3.4 ✅ · F3.5 kısmen (kişisel tercihler ve özel rol arayüzü açık) | F0                                    |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ✅ F3.1–F3.5 (özel rol arayüzü 2026-10-06)                                 | F0                                    |
 | F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor) | F0                                    |
-| F5  | Klinik paneli                                               | 🟡 F5.1–F5.4 ✅ (açık: ses seçimi, özel rol arayüzü, E2E testleri)         | F3, F4 (F1 ile paralel ilerleyebilir) |
+| F5  | Klinik paneli                                               | 🟡 F5.1–F5.4 ✅, ses seçimi ve özel roller ✅ (açık: E2E testleri)         | F3, F4 (F1 ile paralel ilerleyebilir) |
 | F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                          | F3, F1                                |
 | F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                         | F5                                    |
 | F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı                                                                   | F1, F3 (F2 gerçek numara için)        |
@@ -205,7 +205,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] Davet kabul ekranı (`/davet/[id]`); süresi dolan davetler listelenmez, bekleyen davet iptal edilebilir
 - [x] Üye çıkarma ve rol değiştirme; hekim rolü bir hekime bağlanır. Son owner çıkarılamaz / rolü düşürülemez
 - [x] Bir kullanıcı birden fazla kliniğe üye olabilir; panelde klinik değiştirici
-- [ ] Klinik başına özel rol oluşturma arayüzü (altyapı hazır: `organization_roles`)
+- [x] Klinik başına özel rol oluşturma arayüzü (Ayarlar → Ekip → Özel roller): yalnızca klinik verisi yetkileri (randevu, hasta, arama, geri arama, ayarlar, denetim); ekip, faturalandırma ve organizasyon yetkileri hazır rollerde kalır. Kişi kendinde olmayan yetkiyi role veremez (Better Auth). Rol adı oluşturulduktan sonra değişmez; kullanımdaki rol silinemez. Özel roller sekreter atayabilenlerce (sahip, yönetici) atanır
 
 ### F3.4 Denetim kaydı (audit log)
 

@@ -116,3 +116,45 @@ export function builtInRolesAllow(role: string, permissions: Permissions): boole
     (name) => roles[name as RoleName].authorize(permissions as Record<string, string[]>).success,
   );
 }
+
+/**
+ * What a clinic may put into a custom role (F5): clinic data only. Team
+ * management, billing and the organization stay with the built-in owner and
+ * admin roles, so a custom role can never hand out access by itself.
+ */
+export const CUSTOM_ROLE_PERMISSIONS = {
+  appointments: {
+    label: "Randevular",
+    actions: { read: "Görüntüle", create: "Oluştur", update: "Düzenle", cancel: "İptal et" },
+  },
+  patients: {
+    label: "Hastalar",
+    actions: {
+      read: "Görüntüle",
+      update: "Not düzenle",
+      export: "Verileri indir",
+      anonymize: "Anonimleştir",
+    },
+  },
+  calls: { label: "Aramalar", actions: { read: "Görüntüle", listen_recording: "Kayıt dinle" } },
+  callbacks: { label: "Geri aranacaklar", actions: { read: "Görüntüle", update: "Güncelle" } },
+  clinicSettings: { label: "Klinik ayarları", actions: { read: "Görüntüle", update: "Düzenle" } },
+  assistantSettings: {
+    label: "Asistan ayarları",
+    actions: { read: "Görüntüle", update: "Düzenle" },
+  },
+  audit: { label: "Denetim kaydı", actions: { read: "Görüntüle" } },
+} as const satisfies {
+  [R in Resource]?: {
+    label: string;
+    actions: Partial<Record<(typeof statement)[R][number], string>>;
+  };
+};
+
+export type CustomRoleResource = keyof typeof CUSTOM_ROLE_PERMISSIONS;
+
+/** "diş asistanı" → "Diş asistanı"; built-in roles use their Turkish label. */
+export function roleLabel(role: string): string {
+  if (isBuiltInRole(role)) return ROLE_LABELS[role];
+  return role.charAt(0).toLocaleUpperCase("tr-TR") + role.slice(1);
+}
