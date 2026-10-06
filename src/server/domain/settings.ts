@@ -56,6 +56,28 @@ async function mergeSettings(
   await exec.update(clinics).set({ settings: next }).where(eq(clinics.id, clinicId));
 }
 
+/** Takip settings (panel, clinicSettings.update). */
+export async function updateFollowUpSettings(
+  exec: Executor,
+  clinicId: string,
+  input: { smsReminders: boolean; dueSoonDays: number },
+): Promise<void> {
+  await mergeSettings(exec, clinicId, (current) => ({ ...current, followUp: input }));
+}
+
+/** Modules switched by the Recall team from the console only. */
+export async function setClinicFeature(
+  exec: Executor,
+  clinicId: string,
+  feature: "followUp",
+  enabled: boolean,
+): Promise<void> {
+  await mergeSettings(exec, clinicId, (current) => ({
+    ...current,
+    features: { ...current.features, [feature]: enabled },
+  }));
+}
+
 export async function updateAssistantSettings(
   exec: Executor,
   clinicId: string,

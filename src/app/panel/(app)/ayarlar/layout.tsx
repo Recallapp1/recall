@@ -4,7 +4,12 @@ import { can, requirePermission } from "@/server/auth/session";
 
 import { SettingsNav } from "./settings-nav";
 
-const SECTIONS: { href: string; label: string; permission: Permissions }[] = [
+const SECTIONS: {
+  href: string;
+  label: string;
+  permission: Permissions;
+  feature?: "followUp";
+}[] = [
   { href: "/panel/ayarlar", label: "Klinik", permission: { clinicSettings: ["read"] } },
   {
     href: "/panel/ayarlar/calisma-saatleri",
@@ -28,14 +33,24 @@ const SECTIONS: { href: string; label: string; permission: Permissions }[] = [
     label: "Randevu kuralları",
     permission: { clinicSettings: ["read"] },
   },
+  {
+    href: "/panel/ayarlar/takip",
+    label: "Takip kuralları",
+    permission: { clinicSettings: ["read"] },
+    feature: "followUp",
+  },
   { href: "/panel/ayarlar/ekip", label: "Ekip", permission: { invitation: ["create"] } },
   { href: "/panel/ayarlar/denetim", label: "Denetim kaydı", permission: { audit: ["read"] } },
 ];
 
 export default async function SettingsLayout({ children }: LayoutProps<"/panel/ayarlar">) {
-  await requirePermission({ clinicSettings: ["read"] });
+  const { settings } = await requirePermission({ clinicSettings: ["read"] });
   const allowed = await Promise.all(
-    SECTIONS.map(async (section) => ((await can(section.permission)) ? section : null)),
+    SECTIONS.map(async (section) =>
+      (!section.feature || settings.features[section.feature]) && (await can(section.permission))
+        ? section
+        : null,
+    ),
   );
   const items = allowed
     .filter((section) => section !== null)

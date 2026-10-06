@@ -27,7 +27,9 @@ export default async function PanelLayout({ children }: LayoutProps<"/panel">) {
     listMemberships(session.user.id),
     Promise.all(
       NAV_ITEMS.map(async (item) =>
-        (!item.module || !hidden.has(item.module)) && (await can(item.permission))
+        (!item.module || !hidden.has(item.module)) &&
+        (!item.feature || settings.features[item.feature]) &&
+        (await can(item.permission))
           ? item.href
           : null,
       ),

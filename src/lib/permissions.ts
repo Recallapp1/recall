@@ -19,6 +19,8 @@ export const statement = {
   patients: ["read", "update", "anonymize", "export"],
   calls: ["read", "listen_recording"],
   callbacks: ["read", "update"],
+  // Takip (TAKIP.md §G); rules and settings stay under clinicSettings.update.
+  followUps: ["read", "manage"],
   clinicSettings: ["read", "update"],
   assistantSettings: ["read", "update"],
   billing: ["read", "manage"],
@@ -37,6 +39,7 @@ export const owner = ac.newRole({
   patients: ["read", "update", "anonymize", "export"],
   calls: ["read", "listen_recording"],
   callbacks: ["read", "update"],
+  followUps: ["read", "manage"],
   clinicSettings: ["read", "update"],
   assistantSettings: ["read", "update"],
   billing: ["read", "manage"],
@@ -50,6 +53,7 @@ export const admin = ac.newRole({
   patients: ["read", "update", "anonymize", "export"],
   calls: ["read", "listen_recording"],
   callbacks: ["read", "update"],
+  followUps: ["read", "manage"],
   clinicSettings: ["read", "update"],
   assistantSettings: ["read", "update"],
   billing: ["read"],
@@ -63,6 +67,7 @@ export const staff = ac.newRole({
   patients: ["read", "update"],
   calls: ["read"],
   callbacks: ["read", "update"],
+  followUps: ["read", "manage"],
   clinicSettings: ["read"],
   assistantSettings: ["read"],
 });
@@ -138,6 +143,7 @@ export const CUSTOM_ROLE_PERMISSIONS = {
   },
   calls: { label: "Aramalar", actions: { read: "Görüntüle", listen_recording: "Kayıt dinle" } },
   callbacks: { label: "Geri aranacaklar", actions: { read: "Görüntüle", update: "Güncelle" } },
+  followUps: { label: "Takip", actions: { read: "Görüntüle", manage: "Yönet" } },
   clinicSettings: { label: "Klinik ayarları", actions: { read: "Görüntüle", update: "Düzenle" } },
   assistantSettings: {
     label: "Asistan ayarları",

@@ -734,6 +734,7 @@ export interface FollowUpListRow {
   patientName: string;
   patientPhone: string;
   name: string;
+  visitServiceId: string;
   state: FollowUpPlan["state"];
   view: FollowUpView;
   nextDueOn: LocalDate | null;
@@ -767,6 +768,7 @@ export async function listPlans(
       patientName: patients.fullName,
       patientPhone: patients.phone,
       name: followUpPlans.name,
+      visitServiceId: followUpPlans.visitServiceId,
       state: followUpPlans.state,
       nextDueOn: followUpPlans.nextDueOn,
       visitsDone: followUpPlans.visitsDone,
@@ -788,6 +790,7 @@ export async function listPlans(
     patientName: row.patientName,
     patientPhone: row.patientPhone,
     name: row.name,
+    visitServiceId: row.visitServiceId,
     state: row.state,
     view: followUpView(
       { state: row.state, nextDueOn: row.nextDueOn, booked: row.bookedAt !== null },
@@ -906,4 +909,39 @@ export async function listActiveRules(exec: Executor, clinicId: string) {
       ),
     )
     .orderBy(asc(followUpRules.name));
+}
+
+/** The patient's appointments not tied to any plan, for manual linking (newest first). */
+export async function listLinkableAppointments(
+  exec: Executor,
+  scope: FollowUpScope,
+  patientId: string,
+) {
+  const rows = await exec
+    .select({
+      id: appointments.id,
+      startsAt: appointments.startsAt,
+      status: appointments.status,
+      serviceName: services.name,
+    })
+    .from(appointments)
+    .innerJoin(
+      services,
+      and(eq(services.clinicId, appointments.clinicId), eq(services.id, appointments.serviceId)),
+    )
+    .where(
+      and(
+        eq(appointments.clinicId, scope.clinicId),
+        eq(appointments.patientId, patientId),
+        sql`${appointments.status} <> 'cancelled'`,
+        sql`not exists (select 1 from ${followUpVisits} v where v.appointment_id = ${appointments.id})`,
+      ),
+    )
+    .orderBy(desc(appointments.startsAt))
+    .limit(20);
+  return rows.map((row) => ({
+    id: row.id,
+    label: `${utcToLocal(row.startsAt, scope.timeZone).date} ${utcToLocal(row.startsAt, scope.timeZone).time} · ${row.serviceName}`,
+    status: row.status,
+  }));
 }

@@ -39,15 +39,24 @@ export interface BookingOptions {
 
 const ANY_PRACTITIONER = "any";
 
+/** Pre-filled fields, e.g. booking a follow-up visit from the Takip tab. */
+export interface BookingPrefill {
+  serviceId?: string;
+  patientName?: string;
+  patientPhone?: string;
+}
+
 /** "Yeni randevu": service → practitioner → date → free slot → patient. */
 export function NewAppointmentDialog({
   options,
   defaultDate,
   trigger,
+  prefill,
 }: {
   options: BookingOptions;
   defaultDate?: string;
   trigger?: React.ReactNode;
+  prefill?: BookingPrefill;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -71,6 +80,7 @@ export function NewAppointmentDialog({
           <BookingForm
             options={options}
             defaultDate={defaultDate ?? options.today}
+            prefill={prefill}
             onDone={() => setOpen(false)}
           />
         )}
@@ -82,14 +92,19 @@ export function NewAppointmentDialog({
 function BookingForm({
   options,
   defaultDate,
+  prefill,
   onDone,
 }: {
   options: BookingOptions;
   defaultDate: string;
+  prefill?: BookingPrefill;
   onDone: () => void;
 }) {
   const [initialQuery] = useState(() => ({
-    serviceId: options.services[0]?.id ?? "",
+    serviceId:
+      prefill?.serviceId && options.services.some((s) => s.id === prefill.serviceId)
+        ? prefill.serviceId
+        : (options.services[0]?.id ?? ""),
     practitionerId: ANY_PRACTITIONER,
     date: defaultDate,
   }));
@@ -285,7 +300,12 @@ function BookingForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label="Hasta adı soyadı" error={errors.patientName}>
-          <Input name="patientName" autoComplete="off" required />
+          <Input
+            name="patientName"
+            autoComplete="off"
+            defaultValue={prefill?.patientName}
+            required
+          />
         </FormField>
         <FormField label="Telefon" error={errors.patientPhone}>
           <Input
@@ -293,6 +313,7 @@ function BookingForm({
             type="tel"
             inputMode="tel"
             placeholder="0532 123 45 67"
+            defaultValue={prefill?.patientPhone}
             required
           />
         </FormField>

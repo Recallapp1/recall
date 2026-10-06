@@ -168,3 +168,22 @@ export function describeRule(rule: {
     : "süresiz";
   return `${start} ${every} takip et, ${length}. Takip ziyareti: ${rule.visitServiceName}.`;
 }
+
+/**
+ * "YYYY-MM-DD" plus an interval, as calendar arithmetic (no time zone, no DST).
+ * Months clamp to the month's last day: 31 Jan + 1 month = 28/29 Feb. Shared
+ * by the server calculation and the rule editor's preview.
+ */
+export function addIntervalToDate(date: string, value: number, unit: FollowUpIntervalUnit): string {
+  const [y, m, d] = date.split("-").map(Number) as [number, number, number];
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (unit === "month") {
+    const target = new Date(Date.UTC(y, m - 1 + value, 1));
+    const lastDay = new Date(
+      Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    return `${target.getUTCFullYear()}-${pad(target.getUTCMonth() + 1)}-${pad(Math.min(d, lastDay))}`;
+  }
+  const result = new Date(Date.UTC(y, m - 1, d + (unit === "week" ? value * 7 : value)));
+  return `${result.getUTCFullYear()}-${pad(result.getUTCMonth() + 1)}-${pad(result.getUTCDate())}`;
+}

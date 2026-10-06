@@ -32,7 +32,24 @@ export type AuditAction =
   | "platform.phone_number_added"
   | "platform.phone_number_removed"
   | "platform.assistant_synced"
-  | "platform.member_added";
+  | "platform.member_added"
+  | "follow_up_rule.saved"
+  | "follow_up_rule.archived"
+  | "follow_up_rule.examples_added"
+  | "follow_up.started"
+  | "follow_up.paused"
+  | "follow_up.resumed"
+  | "follow_up.stopped"
+  | "follow_up.due_changed"
+  | "follow_up.visit_recorded"
+  | "follow_up.linked"
+  | "follow_up.unlinked"
+  | "follow_up.consent_recorded"
+  | "follow_up.consent_withdrawn"
+  | "follow_up.settings_updated"
+  | "patient.sms_opt_out"
+  | "patient.sms_opt_in"
+  | "platform.feature_changed";
 
 export interface AuditInput {
   clinicId: string | null;

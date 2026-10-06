@@ -1,6 +1,8 @@
 import type { FollowUpIntervalUnit, FollowUpState, FollowUpView } from "@/lib/contracts/follow-up";
 
-import { addLocalDays, addLocalMonths, type LocalDate } from "./time";
+import { addIntervalToDate } from "@/lib/contracts/follow-up";
+
+import { addLocalDays, type LocalDate } from "./time";
 
 /**
  * Follow-up calculation (docs/proposals/TAKIP.md §D). Pure: the database
@@ -51,8 +53,7 @@ export function classifyVisit(visit: VisitInput): VisitStatus {
 }
 
 export function addInterval(date: LocalDate, value: number, unit: FollowUpIntervalUnit): LocalDate {
-  if (unit === "month") return addLocalMonths(date, value);
-  return addLocalDays(date, unit === "week" ? value * 7 : value);
+  return addIntervalToDate(date, value, unit);
 }
 
 export interface PlanOutcome {

@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   ClipboardList,
+  Repeat,
   LayoutDashboard,
   PhoneCall,
   PhoneForwarded,
@@ -20,6 +21,8 @@ export interface NavItem {
   permission: Permissions;
   /** Clinics can hide optional modules (settings.panel.hiddenModules). */
   module?: PanelModule;
+  /** Modules the Recall team turns on per clinic (settings.features). */
+  feature?: "followUp";
   /** Shown in the mobile tab bar; the rest go under "Daha fazla". */
   primary?: boolean;
 }
@@ -61,6 +64,13 @@ export const NAV_ITEMS: NavItem[] = [
     icon: PhoneForwarded,
     permission: { callbacks: ["read"] },
     module: "callbacks",
+  },
+  {
+    href: "/panel/takip",
+    label: "Takip",
+    icon: Repeat,
+    permission: { followUps: ["read"] },
+    feature: "followUp",
   },
   { href: "/panel/hastalar", label: "Hastalar", icon: Users, permission: { patients: ["read"] } },
   {

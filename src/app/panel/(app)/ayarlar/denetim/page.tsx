@@ -42,6 +42,23 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   "platform.phone_number_removed": "Numara kaldırdı (Recall)",
   "platform.assistant_synced": "Asistanı güncelledi (Recall)",
   "platform.member_added": "Ekibe kişi ekledi (Recall)",
+  "follow_up_rule.saved": "Takip kuralı kaydetti",
+  "follow_up_rule.archived": "Takip kuralını arşivledi",
+  "follow_up_rule.examples_added": "Örnek takip kurallarını ekledi",
+  "follow_up.started": "Takip başlattı",
+  "follow_up.paused": "Takibi duraklattı",
+  "follow_up.resumed": "Takibi sürdürdü",
+  "follow_up.stopped": "Takibi bıraktı",
+  "follow_up.due_changed": "Takip tarihini değiştirdi",
+  "follow_up.visit_recorded": "Takip ziyareti kaydetti",
+  "follow_up.linked": "Randevuyu takibe bağladı",
+  "follow_up.unlinked": "Randevuyu takipten ayırdı",
+  "follow_up.consent_recorded": "SMS onayı kaydetti",
+  "follow_up.consent_withdrawn": "SMS onayını kaldırdı",
+  "follow_up.settings_updated": "Takip ayarlarını değiştirdi",
+  "patient.sms_opt_out": "Hastayı SMS'ten çıkardı",
+  "patient.sms_opt_in": "Hastanın SMS iznini geri açtı",
+  "platform.feature_changed": "Modül ayarını değiştirdi (Recall)",
 };
 
 const TARGET_LABELS: Record<string, string> = {

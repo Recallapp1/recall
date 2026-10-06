@@ -55,3 +55,13 @@ describe("built-in role matrix", () => {
     expect(ASSIGNABLE_ROLES.staff).toEqual([]);
   });
 });
+
+describe("Takip permissions (TAKIP.md §G)", () => {
+  it("staff manage plans but not rules; practitioners have no access in V1", () => {
+    expect(builtInRolesAllow("staff", { followUps: ["read", "manage"] })).toBe(true);
+    // Rules and Takip settings live under clinic settings.
+    expect(builtInRolesAllow("staff", { clinicSettings: ["update"] })).toBe(false);
+    expect(builtInRolesAllow("admin", { followUps: ["manage"], clinicSettings: ["update"] })).toBe(true);
+    expect(builtInRolesAllow("practitioner", { followUps: ["read"] })).toBe(false);
+  });
+});
