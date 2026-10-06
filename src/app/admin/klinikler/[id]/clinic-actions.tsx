@@ -6,12 +6,14 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 import { SaveButton, useSave } from "../../../panel/(app)/ayarlar/_components/settings-ui";
 import {
   addClinicMemberAction,
   addPhoneNumberAction,
   removePhoneNumberAction,
+  setClinicFeatureAction,
   setClinicStatusAction,
   syncAssistantAction,
 } from "../../actions";
@@ -185,5 +187,29 @@ export function AddMemberForm({ clinicId }: { clinicId: string }) {
       </div>
       <p className="text-xs text-body">Diğer ekip üyelerini klinik kendi panelinden davet eder.</p>
     </div>
+  );
+}
+
+export function FeatureSwitch({
+  clinicId,
+  feature,
+  enabled,
+  label,
+}: {
+  clinicId: string;
+  feature: "followUp";
+  enabled: boolean;
+  label: string;
+}) {
+  const { pending, save } = useSave();
+  return (
+    <label className="flex items-center gap-3 text-sm text-heading">
+      <Switch
+        checked={enabled}
+        disabled={pending}
+        onCheckedChange={(next) => save(() => setClinicFeatureAction(clinicId, feature, next))}
+      />
+      {label}
+    </label>
   );
 }

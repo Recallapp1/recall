@@ -655,6 +655,7 @@ export async function getPatient(exec: Executor, scope: PanelScope, patientId: s
       fullName: patients.fullName,
       phone: patients.phone,
       notes: patients.notes,
+      smsOptOutAt: patients.smsOptOutAt,
       createdAt: patients.createdAt,
     })
     .from(patients)
@@ -888,4 +889,35 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
       kapanis: c.resolvedAt,
     })),
   };
+}
+
+/**
+ * Channel-level opt-out ("SMS istemiyor"). Pending messages are dropped at
+ * once; the dispatcher also re-checks it before every send.
+ */
+export async function setPatientSmsOptOut(
+  exec: Executor,
+  clinicId: string,
+  patientId: string,
+  optOut: boolean,
+  now: Date,
+): Promise<void> {
+  const updated = await exec
+    .update(patients)
+    .set({ smsOptOutAt: optOut ? now : null })
+    .where(and(eq(patients.clinicId, clinicId), eq(patients.id, patientId)))
+    .returning({ id: patients.id });
+  if (updated.length === 0) throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
+  if (optOut) {
+    await exec
+      .update(notifications)
+      .set({ status: "skipped", skipReason: "opted_out", lockedAt: null })
+      .where(
+        and(
+          eq(notifications.clinicId, clinicId),
+          eq(notifications.patientId, patientId),
+          eq(notifications.status, "pending"),
+        ),
+      );
+  }
 }

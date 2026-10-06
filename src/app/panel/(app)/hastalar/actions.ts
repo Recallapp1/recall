@@ -11,7 +11,7 @@ import { requirePermission } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { recordAudit } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
-import { anonymizePatient, updatePatientNotes } from "@/server/domain/panel";
+import { anonymizePatient, setPatientSmsOptOut, updatePatientNotes } from "@/server/domain/panel";
 import { deleteProviderCalls } from "@/server/voice/sync";
 
 const notesSchema = z.object({
@@ -87,4 +87,34 @@ export async function anonymizePatientAction(
   }
   revalidatePath("/panel", "layout");
   redirect("/panel/hastalar?durum=anonimlestirildi");
+}
+
+/** "SMS istemiyor": channel-level opt-out, audited (TAKIP.md, V1 decision 3). */
+export async function setSmsOptOut(
+  patientId: string,
+  optOut: boolean,
+): Promise<{ ok: boolean; message: string }> {
+  const { clinic, session } = await requirePermission({ patients: ["update"] });
+  if (!z.uuid().safeParse(patientId).success) return { ok: false, message: "Hasta bulunamadı." };
+  try {
+    await setPatientSmsOptOut(db(), clinic.id, patientId, optOut, new Date());
+    await recordAudit(db(), {
+      clinicId: clinic.id,
+      actorUserId: session.user.id,
+      action: optOut ? "patient.sms_opt_out" : "patient.sms_opt_in",
+      targetType: "patient",
+      targetId: patientId,
+    });
+  } catch (error) {
+    if (error instanceof DomainError) return { ok: false, message: error.userMessage };
+    console.error(
+      JSON.stringify({ msg: "panel.patient_sms_opt_out.failed", error: safeError(error) }),
+    );
+    return { ok: false, message: "İşlem şu anda yapılamadı." };
+  }
+  revalidatePath("/panel", "layout");
+  return {
+    ok: true,
+    message: optOut ? "Hastaya SMS gönderilmeyecek." : "Hastaya yeniden SMS gönderilebilir.",
+  };
 }

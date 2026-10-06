@@ -61,7 +61,9 @@ describe("Takip permissions (TAKIP.md §G)", () => {
     expect(builtInRolesAllow("staff", { followUps: ["read", "manage"] })).toBe(true);
     // Rules and Takip settings live under clinic settings.
     expect(builtInRolesAllow("staff", { clinicSettings: ["update"] })).toBe(false);
-    expect(builtInRolesAllow("admin", { followUps: ["manage"], clinicSettings: ["update"] })).toBe(true);
+    expect(builtInRolesAllow("admin", { followUps: ["manage"], clinicSettings: ["update"] })).toBe(
+      true,
+    );
     expect(builtInRolesAllow("practitioner", { followUps: ["read"] })).toBe(false);
   });
 });

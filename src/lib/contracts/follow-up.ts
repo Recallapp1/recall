@@ -33,6 +33,13 @@ export const TOTAL_VISITS_MAX = 50;
 export const FOLLOW_UP_STATES = ["active", "paused", "stopped", "completed"] as const;
 export type FollowUpState = (typeof FOLLOW_UP_STATES)[number];
 
+export const FOLLOW_UP_STATE_LABELS: Record<FollowUpState, string> = {
+  active: "Etkin",
+  paused: "Duraklatıldı",
+  stopped: "Bırakıldı",
+  completed: "Tamamlandı",
+};
+
 export const FOLLOW_UP_VISIT_SOURCES = ["start", "auto_link", "staff_link", "manual"] as const;
 export type FollowUpVisitSource = (typeof FOLLOW_UP_VISIT_SOURCES)[number];
 

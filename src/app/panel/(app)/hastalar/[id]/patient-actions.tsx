@@ -5,6 +5,7 @@ import { useActionState, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { FormField } from "@/components/panel";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FormState } from "@/lib/contracts/form-state";
 
-import { anonymizePatientAction, savePatientNotes } from "../actions";
+import { anonymizePatientAction, savePatientNotes, setSmsOptOut } from "../actions";
 
 export function PatientNotesForm({
   patientId,
@@ -118,5 +119,39 @@ export function AnonymizeButton({ patientId }: { patientId: string }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** "SMS istemiyor": no reminder of any kind reaches this patient by SMS. */
+export function SmsOptOutSwitch({
+  patientId,
+  optedOut,
+  editable,
+}: {
+  patientId: string;
+  optedOut: boolean;
+  editable: boolean;
+}) {
+  const [value, setValue] = useState(optedOut);
+  const [pending, startTransition] = useTransition();
+  return (
+    <label className="flex items-center gap-3 text-sm text-heading">
+      <Switch
+        checked={value}
+        disabled={!editable || pending}
+        onCheckedChange={(next) =>
+          startTransition(async () => {
+            const result = await setSmsOptOut(patientId, next);
+            if (result.ok) {
+              setValue(next);
+              toast.success(result.message);
+            } else {
+              toast.error(result.message);
+            }
+          })
+        }
+      />
+      SMS istemiyor
+    </label>
   );
 }

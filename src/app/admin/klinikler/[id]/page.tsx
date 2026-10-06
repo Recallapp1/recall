@@ -10,12 +10,14 @@ import { isBuiltInRole, ROLE_LABELS } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
 import { requirePlatformAdmin } from "@/server/auth/session";
 import { db } from "@/server/db";
+import { parseClinicSettings } from "@/server/domain/clinic-settings";
 import { getClinicOverview } from "@/server/platform/clinics";
 
 import {
   AddMemberForm,
   AssistantActions,
   ClinicStatusButton,
+  FeatureSwitch,
   PhoneNumbers,
 } from "./clinic-actions";
 
@@ -101,6 +103,19 @@ export default async function ClinicConsolePage({
           </ul>
           <p className="text-xs text-body">
             Hekim, hizmet, saat ve tatiller klinik panelinden; numara ve asistan buradan yönetilir.
+          </p>
+        </Card>
+
+        <Card title="Modüller">
+          <FeatureSwitch
+            clinicId={clinic.id}
+            feature="followUp"
+            enabled={parseClinicSettings(clinic.settings).features.followUp}
+            label="Takip (hasta tekrar ziyaret takibi)"
+          />
+          <p className="text-xs text-body">
+            Açılınca klinik panelinde Takip sekmesi ve Ayarlar → Takip kuralları görünür. SMS
+            gönderimi ayrıca genel olarak kapalıdır.
           </p>
         </Card>
 

@@ -11,7 +11,11 @@ import { formatLongDate, formatMinutes } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import { can, requirePanelScope } from "@/server/auth/session";
 import { db } from "@/server/db";
+import { listActiveRules, planForAppointment } from "@/server/domain/follow-ups";
 import { getAppointment } from "@/server/domain/panel";
+import { localToday } from "@/server/domain/time";
+
+import { StartFollowUpButton } from "../../takip/start-follow-up";
 
 import { AppointmentNotesForm, StatusActions } from "./appointment-actions";
 
@@ -19,14 +23,22 @@ export const metadata: Metadata = { title: "Randevu" };
 
 export default async function AppointmentPage({ params }: PageProps<"/panel/randevular/[id]">) {
   const { id } = await params;
-  const { scope } = await requirePanelScope({ appointments: ["read"] });
+  const { scope, context } = await requirePanelScope({ appointments: ["read"] });
   const appointment = /^[0-9a-f-]{36}$/i.test(id) ? await getAppointment(db(), scope, id) : null;
   if (!appointment) notFound();
 
-  const [canUpdate, canCancel, canSeeCalls] = await Promise.all([
-    can({ appointments: ["update"] }),
-    can({ appointments: ["cancel"] }),
-    can({ calls: ["read"] }),
+  const followUpOn = context.settings.features.followUp;
+  const [canUpdate, canCancel, canSeeCalls, canSeeFollowUps, canManageFollowUps] =
+    await Promise.all([
+      can({ appointments: ["update"] }),
+      can({ appointments: ["cancel"] }),
+      can({ calls: ["read"] }),
+      followUpOn ? can({ followUps: ["read"] }) : false,
+      followUpOn ? can({ followUps: ["manage"] }) : false,
+    ]);
+  const [linkedPlan, startRules] = await Promise.all([
+    canSeeFollowUps ? planForAppointment(db(), scope.clinicId, appointment.id) : null,
+    canManageFollowUps ? listActiveRules(db(), scope.clinicId) : [],
   ]);
   const transitions = STATUS_TRANSITIONS[appointment.status].filter((status) =>
     status === "cancelled" ? canCancel : canUpdate,
@@ -99,6 +111,28 @@ export default async function AppointmentPage({ params }: PageProps<"/panel/rand
             </p>
           ) : (
             <StatusActions appointmentId={appointment.id} transitions={transitions} />
+          )}
+          {canSeeFollowUps && (
+            <div className="flex flex-col gap-2 border-t border-hairline pt-4">
+              <h2 className="text-label text-body">Takip</h2>
+              {linkedPlan ? (
+                <Link
+                  href={`/panel/takip/${linkedPlan.planId}`}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  {linkedPlan.name}
+                </Link>
+              ) : canManageFollowUps && appointment.status !== "cancelled" ? (
+                <StartFollowUpButton
+                  rules={startRules}
+                  patientId={appointment.patientId}
+                  appointment={{ id: appointment.id, serviceId: appointment.serviceId }}
+                  today={localToday(new Date(), scope.timeZone)}
+                />
+              ) : (
+                <p className="text-sm text-body">Bu randevu bir takibe bağlı değil.</p>
+              )}
+            </div>
           )}
         </aside>
       </div>

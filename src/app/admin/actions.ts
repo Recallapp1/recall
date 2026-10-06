@@ -18,6 +18,7 @@ import { requirePlatformAdmin } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { recordAudit, type AuditInput } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
+import { setClinicFeature } from "@/server/domain/settings";
 import {
   addPhoneNumber,
   createClinic,
@@ -108,6 +109,36 @@ export async function setClinicStatusAction(
       status === "paused"
         ? "Klinik duraklatıldı. Asistan arayanlara randevu vermeyip geri arama notu alır."
         : "Klinik yeniden açıldı.",
+  };
+}
+
+/** Per-clinic modules (Takip). Only the Recall team switches them. */
+export async function setClinicFeatureAction(
+  clinicId: string,
+  feature: "followUp",
+  enabled: boolean,
+): Promise<SettingsResult> {
+  const session = await requirePlatformAdmin();
+  if (!z.uuid().safeParse(clinicId).success) return { ok: false, message: "Klinik bulunamadı." };
+  if (feature !== "followUp") return { ok: false, message: "Modül bulunamadı." };
+  try {
+    await setClinicFeature(db(), clinicId, feature, enabled);
+    await audit(session.user.id, {
+      clinicId,
+      action: "platform.feature_changed",
+      targetType: "clinic",
+      targetId: clinicId,
+      metadata: { feature, enabled },
+    });
+  } catch (error) {
+    return failure("platform.feature.failed", error);
+  }
+  revalidatePath("/admin", "layout");
+  return {
+    ok: true,
+    message: enabled
+      ? "Takip modülü açıldı. Klinik, kurallarını Ayarlar → Takip kurallarından tanımlar."
+      : "Takip modülü kapatıldı. Veriler korunur; hatırlatmalar durur.",
   };
 }
 
