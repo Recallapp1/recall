@@ -1,6 +1,10 @@
 import { TZDate } from "@date-fns/tz";
-import { addDays, format } from "date-fns";
-import { tr } from "date-fns/locale";
+// Per-function entry points: the barrels load ~250 modules (plus every locale)
+// in each test worker, and under parallel load on Windows that occasionally
+// failed with "Cannot find module" for files that exist.
+import { addDays } from "date-fns/addDays";
+import { format } from "date-fns/format";
+import { tr } from "date-fns/locale/tr";
 
 /** A calendar date in the clinic's local time: "2026-11-05". */
 export type LocalDate = string;
