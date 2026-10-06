@@ -1,6 +1,7 @@
 "use client";
 
 import { LoaderCircle, Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -35,8 +36,13 @@ export function SettingsCard({
   );
 }
 
-/** Runs a settings action and reports the result as a toast. */
+/**
+ * Runs a settings action, reports the result as a toast and re-renders the
+ * page, so data changed by the action (e.g. a follow-up recalculated after a
+ * status correction) shows without a manual reload.
+ */
 export function useSave() {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const save = (run: () => Promise<SettingsResult>, onSuccess?: () => void) =>
     startTransition(async () => {
@@ -44,6 +50,7 @@ export function useSave() {
       if (result.ok) {
         toast.success(result.message);
         onSuccess?.();
+        router.refresh();
       } else {
         toast.error(result.message);
       }
