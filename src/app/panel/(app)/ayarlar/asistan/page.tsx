@@ -4,20 +4,30 @@ import { can, requirePermission } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { loadClinicDirectory } from "@/server/domain/clinics";
 import { buildSystemPrompt } from "@/server/voice/prompt";
-import { assistantSyncStatus } from "@/server/voice/sync";
+import { safeError } from "@/lib/safe-error";
+import {
+  assistantSyncStatus,
+  defaultAssistantVoiceId,
+  listAssistantVoices,
+  type AssistantVoice,
+} from "@/server/voice/sync";
 
 import { AssistantForm, SyncStatusCard } from "./assistant-form";
 import { TestCall } from "./test-call";
+import { VoicePicker } from "./voice-picker";
 
 export const metadata: Metadata = { title: "Asistan" };
 
 export default async function AssistantSettingsPage() {
   const { clinic, settings } = await requirePermission({ assistantSettings: ["read"] });
-  const [editable, directory, syncStatus] = await Promise.all([
+  const [editable, directory, syncStatus, voices] = await Promise.all([
     can({ assistantSettings: ["update"] }),
     loadClinicDirectory(db(), clinic.id),
     assistantSyncStatus(clinic.id),
+    loadVoices(),
   ]);
+  const defaultVoiceId = syncStatus ? defaultAssistantVoiceId() : undefined;
+  const defaultVoice = voices.find((voice) => voice.id === defaultVoiceId) ?? null;
 
   // Readable stand-ins for values the phone platform fills in during a call.
   const prompt = buildSystemPrompt({
@@ -38,6 +48,14 @@ export default async function AssistantSettingsPage() {
     <>
       <SyncStatusCard status={syncStatus} editable={editable} />
       {editable && syncStatus && <TestCall />}
+      {syncStatus && (
+        <VoicePicker
+          voices={voices}
+          selected={settings.assistant.voiceId ?? null}
+          defaultVoice={defaultVoice}
+          editable={editable}
+        />
+      )}
       <AssistantForm
         editable={editable}
         initial={{
@@ -65,4 +83,14 @@ export default async function AssistantSettingsPage() {
       </details>
     </>
   );
+}
+
+/** The page still works when the voice platform is unreachable; the picker says so. */
+async function loadVoices(): Promise<AssistantVoice[]> {
+  try {
+    return await listAssistantVoices();
+  } catch (error) {
+    console.error(JSON.stringify({ msg: "voice.list_failed", error: safeError(error) }));
+    return [];
+  }
 }

@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import {
   assistantSettingsSchema,
+  assistantVoiceSchema,
   bookingRulesSchema,
   clinicProfileSchema,
   firstIssue,
@@ -30,12 +31,14 @@ import {
   savePractitioner,
   saveService,
   updateAssistantSettings,
+  updateAssistantVoice,
   updateBookingRules,
   updateClinicProfile,
   updatePanelPreferences,
 } from "@/server/domain/settings";
 import {
   createTestWebCall,
+  listAssistantVoices,
   scheduleAssistantSync,
   syncAssistantNow,
   type TestWebCall,
@@ -137,6 +140,23 @@ export async function saveAssistantSettings(input: unknown) {
     section: "assistant",
     write: ({ clinic }, data) => updateAssistantSettings(db(), clinic.id, data),
     success: "Asistan ayarları kaydedildi. Asistan birkaç saniye içinde güncellenir.",
+  });
+}
+
+export async function saveAssistantVoice(input: unknown) {
+  return saveSetting({
+    permission: { assistantSettings: ["update"] },
+    schema: assistantVoiceSchema,
+    input,
+    section: "assistant_voice",
+    write: async ({ clinic }, { voiceId }) => {
+      // Only voices the shared TTS model can speak; anything else would break the sync.
+      if (voiceId && !(await listAssistantVoices()).some((voice) => voice.id === voiceId)) {
+        throw new DomainError("INVALID_VOICE", "Bu ses kullanılamıyor. Listeden bir ses seçin.");
+      }
+      await updateAssistantVoice(db(), clinic.id, voiceId);
+    },
+    success: "Ses kaydedildi. Asistan birkaç saniye içinde yeni sesle konuşur.",
   });
 }
 

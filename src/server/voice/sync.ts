@@ -12,6 +12,11 @@ export {
   type AssistantSyncStatus,
 } from "./providers/retell/schedule-sync";
 export {
+  defaultAssistantVoiceId,
+  listAssistantVoices,
+  type AssistantVoice,
+} from "./providers/retell/voices";
+export {
   createTestWebCall,
   type TestWebCall,
   type TestWebCallResult,

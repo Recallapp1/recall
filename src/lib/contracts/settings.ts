@@ -101,6 +101,12 @@ export const assistantSettingsSchema = z.object({
 });
 export type AssistantSettingsInput = z.infer<typeof assistantSettingsSchema>;
 
+/** null = Recall's default voice. */
+export const assistantVoiceSchema = z.object({
+  voiceId: z.string().trim().min(1).max(100).nullable(),
+});
+export type AssistantVoiceInput = z.infer<typeof assistantVoiceSchema>;
+
 export const bookingRulesSchema = z.object({
   slotIntervalMinutes: z.number().int().min(5).max(120),
   minNoticeMinutes: z.number().int().min(0).max(10_080),

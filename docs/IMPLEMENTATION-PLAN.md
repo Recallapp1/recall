@@ -300,7 +300,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] Çalışma saatleri (gün başına birden çok aralık). Tatiller ve kapalı günler (`time_off`, 2026–2027 resmî tatil şablonu, yarım günler, çakışan randevu uyarısı, takvimde not)
 - [x] Hekimler: liste, hizmet eşleme, haftalık program, aktif/pasif, izin günleri
 - [x] Hizmetler: ad, eş anlamlılar, açıklama, süre, fiyat aralığı (₺ → kuruş), aktif/pasif
-- [x] Asistan: ad, karşılama, fiyat söylensin mi, kayıt, SSS (20), ek talimatlar, **prompt önizleme**, son senkron durumu, "Şimdi güncelle", **tarayıcıdan test araması** (Retell web call, tek kullanımlık token). [ ] Ses seçimi ve örnek dinleme
+- [x] Asistan: ad, karşılama, fiyat söylensin mi, kayıt, SSS (20), ek talimatlar, **prompt önizleme**, son senkron durumu, "Şimdi güncelle", **tarayıcıdan test araması** (Retell web call, tek kullanımlık token). [x] Ses seçimi ve örnek dinleme (paylaşılan TTS modelinin sağlayıcısındaki sesler; örnekler İngilizce, Türkçe için test araması)
 - [x] Randevu kuralları: slot aralığı, minimum ön süre, ileri gün sınırı, iptal kuralı, hekim tercihi sorulsun mu
 - [x] Bildirimler: SMS onayı ve hatırlatma saati (gönderim Netgsm ile, F2)
 - [x] Ekip ve roller (F3.3 arayüzü); denetim kaydı sayfası

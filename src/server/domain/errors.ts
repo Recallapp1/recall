@@ -12,6 +12,7 @@ export type DomainErrorCode =
   | "SLOT_UNAVAILABLE"
   | "PHONE_REQUIRED"
   | "INVALID_PHONE"
+  | "INVALID_VOICE"
   | "NOT_FOUND"
   | "TOO_LATE_TO_CANCEL"
   | "INVITATION_INVALID"

@@ -75,6 +75,17 @@ export async function updateAssistantSettings(
   }));
 }
 
+export async function updateAssistantVoice(
+  exec: Executor,
+  clinicId: string,
+  voiceId: string | null,
+): Promise<void> {
+  await mergeSettings(exec, clinicId, (current) => ({
+    ...current,
+    assistant: { ...current.assistant, voiceId: voiceId ?? undefined },
+  }));
+}
+
 export async function updateBookingRules(
   exec: Executor,
   clinicId: string,
