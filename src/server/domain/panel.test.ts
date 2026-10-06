@@ -97,7 +97,7 @@ beforeAll(async () => {
   await db
     .insert(schema.callbackRequests)
     .values({ clinicId: a.ctx.clinic.id, reason: "Fiyat sorusu" });
-}, 30_000);
+});
 
 afterAll(async () => close());
 

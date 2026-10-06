@@ -31,8 +31,7 @@ beforeAll(async () => {
   const email = await import("../notifications/email");
   email.setEmailProvider({ send: async (message) => void sent.push(message) });
   modules = { auth: (await import(".")).auth, accounts: await import("./accounts") };
-  // Migrations plus Better Auth's first import are slow when the suite runs in parallel.
-}, 30_000);
+});
 
 afterAll(async () => {
   vi.unstubAllEnvs();

@@ -32,7 +32,7 @@ beforeAll(async () => {
   ({ db, close } = await createTestDb());
   a = await createTestClinic(db);
   b = await createTestClinic(db);
-}, 30_000);
+});
 
 afterAll(async () => close());
 

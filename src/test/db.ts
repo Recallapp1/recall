@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
+
 import { PGlite } from "@electric-sql/pglite";
 import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
+import { inject } from "vitest";
 
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
@@ -14,9 +17,16 @@ import type { ClinicContext } from "@/server/domain/clinics";
  * integration tests exercise actual SQL and constraints without Docker.
  */
 export async function createTestDb(): Promise<{ db: Database; close: () => Promise<void> }> {
-  const client = new PGlite({ extensions: { btree_gist } });
+  // Start from the database migrated once in src/test/global-setup.ts.
+  const snapshot = inject("pgliteSnapshot");
+  const client = snapshot
+    ? new PGlite({
+        extensions: { btree_gist },
+        loadDataDir: new Blob([readFileSync(snapshot)]),
+      })
+    : new PGlite({ extensions: { btree_gist } });
   const pglite = drizzle({ client, schema, casing: "snake_case" });
-  await migrate(pglite, { migrationsFolder: "./drizzle" });
+  if (!snapshot) await migrate(pglite, { migrationsFolder: "./drizzle" });
   // Same query builder API; only the driver differs.
   return { db: pglite as unknown as Database, close: () => client.close() };
 }

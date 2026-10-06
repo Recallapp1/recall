@@ -11,7 +11,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
-    // PGlite applies every migration per test file; parallel files need headroom.
+    // Migrates one PGlite database per run; each file starts from its snapshot.
+    globalSetup: ["src/test/global-setup.ts"],
     hookTimeout: 60_000,
     testTimeout: 20_000,
   },
