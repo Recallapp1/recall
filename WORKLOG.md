@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-07 (Takip V1 yerel dalda, onay bekliyor)_
+_Son güncelleme: 2026-10-07 (Takip V1 production'da, tüm kliniklerde kapalı)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -76,6 +76,22 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-07 · Takip V1 production'a çıktı; belirsiz kelime gerçek aramayla doğrulandı · Takip V1, F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` (ff `feat/V1-takip`) · **Commit'ler:** `160e205`, bu kayıt
+
+**Ne yapıldı**
+
+- Birleştirilmiş `main` üzerinde lint, lint:tokens, typecheck, test (326/326) çıkış koduyla 0.
+- Migration'dan önce production yedeği: Neon dalı `backup-pre-0009-2026-10-07` (`br-tiny-king-b16e6let`, compute yok, 9 migration'lı hâl).
+- Deploy `160e205` READY. `/api/health` ok; 10 migration; Takip tabloları boş; Takip açık klinik sayısı 0; `SMS_SENDING_ENABLED` ve `NETGSM_*` hiçbir ortamda yok; cron sırsız 401.
+- "Şimdi güncelle" sonrası gerçek arama ("Diş beyazlatma için çekim Perşembe…"): asistan "yalnızca diş beyazlatma mı, diş çekimi de mi?" diye sordu; hangi Perşembe olduğunu sordu; müsaitlikten sonra saat verdi. DB'de yalnızca bir yeni randevu (8 Ekim 14:00 beyazlatma), hasta tekrarı yok.
+
+**Açık kalanlar / dikkat**
+
+- Yedek dal, 0009 bir süre sorunsuz çalıştıktan sonra silinebilir (ürün ekibi kararı).
+- Asistan adı küçük harfle tool'a geçirdi ("deneme test"); mevcut hasta telefonla eşleştiği için kayıt değişmedi. İzlenecek.
 
 ### 2026-10-07 · Takip V1 (yerel dal, production'a çıkmadı) ve sesli asistan düzeltmeleri · Takip V1, F1.8
 
