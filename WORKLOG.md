@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-06 (ses seçimi, KVKK veri saklama, özel roller)_
+_Son güncelleme: 2026-10-07 (Takip V1 yerel dalda, onay bekliyor)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@ _Son güncelleme: 2026-10-06 (ses seçimi, KVKK veri saklama, özel roller)_
 | Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
 | Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
 | E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
-| Testler                 | **241 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
+| Testler                 | **326 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
 | Lokal DB                | **Neon** projesi `falling-mud-37269187` (Frankfurt), **`dev` dalı** (`.env.local` `DATABASE_URL`). Ana dal prod için ayrılmış (F8). PGlite `db:local` yedek seçenek olarak duruyor                                                                                                             |
 | Lokal ses testi         | `pnpm dev` + `pnpm dev:tunnel` (tüneli açar, `APP_URL`'i yazar, ajanları yönlendirir). Tarayıcı test araması uçtan uca doğrulandı (randevu DB'ye düşüyor)                                                                                                                                      |
 | GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
@@ -76,6 +76,42 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-07 · Takip V1 (yerel dal, production'a çıkmadı) ve sesli asistan düzeltmeleri · Takip V1, F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/V1-takip` (yerel, push edilmedi) · **Commit'ler:** `b14f6ad` … `8dac7b8`, bu kayıt
+
+**Ne yapıldı**
+
+- **Sesli asistan** (önceki adımlarda production'a çıktı: `8e0ab07`, `b24075f`):
+  - hizmeti tahmin etmez, belirsiz kelimede sorar;
+  - hasta açıkça istemedikçe tek randevu alır;
+  - availability kontrolünden önce saat söylemez;
+  - sunucu tarafında `PATIENT_BUSY` koruması var.
+  - Production'da iki gerçek aramayla doğrulandı: yalnızca istenen randevu kaydedildi.
+  - "çekim" kelimesini sormak yerine yok saydığı görüldü; kural güçlendirildi (`b14f6ad`, V1 ile çıkacak).
+- **Test altyapısı:** `accounts.test.ts` kararsızlığının kökü bulundu ve giderildi (`2d74425`):
+  - üç dosya kurulum zaman aşımını 30 sn'ye düşürüyordu;
+  - her dosya tüm migration'ları paralel uyguluyordu.
+  - Artık bir kez migrate edilip snapshot'tan yükleniyor; çalışma süresi 20–36 sn'den 13–15 sn'ye indi.
+- **Takip V1** ([TAKIP.md](docs/proposals/TAKIP.md), karar günlüğü 24 madde):
+  - migration 0009 (bileşik FK'ler);
+  - alan mantığı ve eşleştirme;
+  - günlük işte stub takip hatırlatmaları;
+  - KVKK genişlemeleri;
+  - izinler ve denetim;
+  - Takip sekmesi, plan detayı, kural editörü, randevu ve hasta sayfasından takibe alma, "SMS istemiyor", konsol modül anahtarı.
+
+**Doğrulama**
+
+- `pnpm test`: 326/326; lint, tokens, typecheck temiz.
+- Tarayıcı (dev, `claude@gulus.test`): örnek kurallar, kural editörü önizlemesi, randevudan takibe alma, "otomatik sayıldı" + "Gelmedi", randevusuz ziyaret, liste ve ön doldurmalı randevu. Bulunan sayfa yenilenmeme hatası düzeltildi.
+
+**Açık kalanlar / dikkat**
+
+- V1 production'a çıkmadı. Push = deploy; 0009 yalnızca ekleme yapar (testli).
+- İlk günlük bildirim işi 7 Ekim 07:00 UTC'de; kontrol 10:30 İstanbul'a zamanlandı.
+- Dev'de Takip açık (`gulus-dis`); test planı ve örnek kurallar dev verisinde.
 
 ### 2026-10-06 · Takip V0: bildirim kaydı, randevu hatırlatma (stub), SMS kilitleri · Takip V0
 

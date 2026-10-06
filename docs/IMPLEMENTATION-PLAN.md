@@ -353,6 +353,17 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ---
 
+## Takip (hasta takip ve hatırlatma)
+
+Tasarım ve karar günlüğü: [proposals/TAKIP.md](proposals/TAKIP.md).
+
+- [x] V0: bildirim kaydı (0008), günlük iş, randevu hatırlatması (stub), SMS kilitleri, genel SMS metinleri. Production'da (2026-10-06)
+- [x] V1: kurallar, planlar, ziyaretler (0009), eşleştirme, Takip sekmesi, plan detayı, kural editörü, SMS izni, "SMS istemiyor", konsol anahtarı, KVKK. Yerel dalda; production için ürün ekibi onayı bekleniyor
+- [ ] V1.1: otomatik plan başlatma, kural değişikliğini mevcut planlara uygulama, kliniğe SMS kullanım görünürlüğü, saatlik iş (Vercel Pro)
+- [ ] V2: kademeli protokoller, sesli asistan önerisi, hekim erişimi
+
+---
+
 ## F8: Production (Vercel, Neon, izleme)
 
 - [x] GitHub reposu ve push (`recallapp0/recall`)
