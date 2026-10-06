@@ -112,3 +112,82 @@ export function slugify(name: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
 }
+
+/**
+ * Example follow-up rules per sector (docs/proposals/TAKIP.md, decision 6).
+ * Structure only: no intervals or session counts, since those are clinical
+ * decisions; the clinic fills them in. They arrive inactive and labelled
+ * "Örnek şablon · düzenlenebilir · tıbbi öneri değildir".
+ */
+export interface FollowUpExample {
+  key: string;
+  name: string;
+  triggerServiceName: string | null;
+  visitServiceName: string;
+  totalVisits?: number;
+}
+
+export const FOLLOW_UP_EXAMPLES: Record<ClinicTemplate, FollowUpExample[]> = {
+  dis: [
+    {
+      key: "dis.temizlik",
+      name: "Diş taşı temizliği takibi",
+      triggerServiceName: "Diş Taşı Temizliği",
+      visitServiceName: "Diş Taşı Temizliği",
+    },
+    {
+      key: "dis.kontrol",
+      name: "Düzenli kontrol",
+      triggerServiceName: "Muayene / Kontrol",
+      visitServiceName: "Muayene / Kontrol",
+    },
+    {
+      key: "dis.implant",
+      name: "İmplant sonrası kontroller",
+      triggerServiceName: "İmplant Görüşmesi",
+      visitServiceName: "Muayene / Kontrol",
+    },
+    {
+      key: "dis.ortodonti",
+      name: "Ortodonti kontrolleri",
+      triggerServiceName: "Ortodonti Görüşmesi",
+      visitServiceName: "Ortodonti Görüşmesi",
+    },
+  ],
+  estetik: [
+    {
+      key: "estetik.botoks",
+      name: "Botoks tekrarı",
+      triggerServiceName: "Botoks",
+      visitServiceName: "Botoks",
+    },
+    {
+      key: "estetik.mezoterapi",
+      name: "Mezoterapi seansları",
+      triggerServiceName: "Mezoterapi",
+      visitServiceName: "Mezoterapi",
+    },
+    {
+      key: "estetik.cilt",
+      name: "Cilt bakımı tekrarı",
+      triggerServiceName: "Cilt Bakımı",
+      visitServiceName: "Cilt Bakımı",
+    },
+  ],
+  fizyoterapi: [
+    {
+      key: "fizyoterapi.seans",
+      name: "Fizik tedavi seansları",
+      triggerServiceName: "İlk Değerlendirme",
+      visitServiceName: "Fizik Tedavi Seansı",
+    },
+  ],
+  genel: [
+    {
+      key: "genel.kontrol",
+      name: "Düzenli kontrol",
+      triggerServiceName: "Muayene",
+      visitServiceName: "Muayene",
+    },
+  ],
+};

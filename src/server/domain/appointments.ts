@@ -16,6 +16,11 @@ import {
 import type { ClinicContext } from "./clinics";
 import { practitionerDisplayName } from "./clinics";
 import { DomainError, isOverlapViolation } from "./errors";
+import {
+  autoLinkAppointment,
+  moveFollowUpLink,
+  recomputePlansForAppointment,
+} from "./follow-ups";
 import { findAvailability } from "./scheduling";
 import { isLocalTime, utcToLocal, type LocalDate, type LocalTime } from "./time";
 
@@ -136,6 +141,13 @@ export async function bookAppointment(
           notes: input.notes,
         })
         .returning({ id: appointments.id });
+      // Follow-up (Takip): attach to the patient's plan when exactly one fits.
+      await autoLinkAppointment(
+        tx,
+        { clinicId: clinic.id, timeZone: clinic.timezone },
+        { id: created.id, patientId: patient.id, serviceId: availability.service.id },
+        input.now,
+      );
       return created.id;
     });
     return { appointment: await summarize(db, clinic, appointmentId), created: true };
@@ -186,6 +198,12 @@ export async function cancelAppointment(
     .update(appointments)
     .set({ status: "cancelled", cancelledAt: input.now })
     .where(and(eq(appointments.id, owned.id), eq(appointments.clinicId, ctx.clinic.id)));
+  await recomputePlansForAppointment(
+    db,
+    { clinicId: ctx.clinic.id, timeZone: ctx.clinic.timezone },
+    owned.id,
+    input.now,
+  );
 
   return owned;
 }
@@ -245,6 +263,14 @@ export async function rescheduleAppointment(
           notes: current.notes,
         })
         .returning({ id: appointments.id });
+      // Rescheduling is cancel + new row: the follow-up link moves with it.
+      await moveFollowUpLink(
+        tx,
+        { clinicId: clinic.id, timeZone: clinic.timezone },
+        current.id,
+        created.id,
+        input.now,
+      );
       return created.id;
     });
     return { previous: owned, appointment: await summarize(db, clinic, newId) };

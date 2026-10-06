@@ -38,6 +38,7 @@ import {
 } from "../db/schema";
 import { practitionerDisplayName, type ClinicContext } from "./clinics";
 import { DomainError } from "./errors";
+import { recomputePlansForAppointment } from "./follow-ups";
 import { detachPatientNotifications } from "./notifications";
 import { addLocalDays, localToUtc, localToday, utcToLocal, type LocalDate } from "./time";
 
@@ -318,6 +319,13 @@ export async function changeAppointmentStatus(
     .where(
       and(eq(appointments.clinicId, scope.clinicId), eq(appointments.id, input.appointmentId)),
     );
+  // A correction ("Gelmedi", "Tamamlandı") changes what the follow-up counts.
+  await recomputePlansForAppointment(
+    exec,
+    { clinicId: scope.clinicId, timeZone: scope.timeZone },
+    input.appointmentId,
+    input.now,
+  );
   return { previous: current.status };
 }
 
