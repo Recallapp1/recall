@@ -65,6 +65,7 @@ describe("applyRetention", () => {
   it("clears recordings after 30 days, transcripts after 90, numbers after 2 years", async () => {
     const result = await applyRetention(db, NOW);
     expect(result).toEqual({
+      followUpsDeleted: 0,
       notificationsDeleted: 1,
       recordingsCleared: 3,
       transcriptsCleared: 2,
@@ -94,6 +95,7 @@ describe("applyRetention", () => {
 
   it("is idempotent", async () => {
     expect(await applyRetention(db, NOW)).toEqual({
+      followUpsDeleted: 0,
       notificationsDeleted: 0,
       recordingsCleared: 0,
       transcriptsCleared: 0,

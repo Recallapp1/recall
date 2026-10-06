@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, isNotNull, lt, sql } from "drizzle-orm";
+import { and, inArray, isNotNull, lt, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
-import { calls, notifications } from "../db/schema";
+import { calls, followUpPlans, notifications } from "../db/schema";
 
 /** docs/05-compliance/DATA-RETENTION.md */
 export const RETENTION_DAYS = {
@@ -14,6 +14,8 @@ export const RETENTION_DAYS = {
   callerNumber: 730,
   /** Notification log (proof of what was sent). Pending legal review. */
   notificationLog: 365,
+  /** Stopped or completed follow-up plans, after closing. Pending legal review. */
+  closedFollowUp: 730,
 } as const;
 
 export interface RetentionResult {
@@ -21,6 +23,7 @@ export interface RetentionResult {
   transcriptsCleared: number;
   callerNumbersCleared: number;
   notificationsDeleted: number;
+  followUpsDeleted: number;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -59,7 +62,21 @@ export async function applyRetention(exec: Executor, now: Date): Promise<Retenti
     )
     .returning({ id: notifications.id });
 
+  const closedPlans = await exec
+    .delete(followUpPlans)
+    .where(
+      and(
+        inArray(followUpPlans.state, ["stopped", "completed"]),
+        lt(
+          followUpPlans.stateChangedAt,
+          new Date(now.getTime() - RETENTION_DAYS.closedFollowUp * DAY_MS),
+        ),
+      ),
+    )
+    .returning({ id: followUpPlans.id });
+
   return {
+    followUpsDeleted: closedPlans.length,
     notificationsDeleted: oldNotifications.length,
     recordingsCleared: recordings.length,
     transcriptsCleared: transcripts.length,

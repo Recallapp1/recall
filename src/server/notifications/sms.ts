@@ -109,6 +109,9 @@ export const smsTemplates = {
   rescheduled: (clinicName: string, a: Pick<AppointmentSummary, "date" | "time">) =>
     `${clinicName}: Randevunuz ${displayDate(a.date)} saat ${a.time} olarak güncellendi.`,
 
+  followUpReminder: (clinicName: string) =>
+    `${clinicName}: Merhaba, takip ziyaretiniz için randevu planlamak üzere sizi bekliyoruz. Uygun bir zaman için bizi arayabilirsiniz.`,
+
   appointmentReminder: (clinicName: string, a: Pick<AppointmentSummary, "date" | "time">) =>
     `${clinicName}: ${displayDate(a.date)} saat ${a.time} randevunuzu hatırlatırız. Gelemeyecekseniz lütfen bizi arayın.`,
 };
@@ -116,6 +119,7 @@ export const smsTemplates = {
 /** Recorded in the notification log instead of the text. */
 export const SMS_TEMPLATE_KEYS = {
   appointmentReminder: "appointment_reminder.v1",
+  followUpReminder: "follow_up_reminder.v1",
 } as const;
 
 /** Sends without throwing: an SMS failure must never undo or fail a booking. */

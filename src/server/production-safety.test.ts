@@ -26,8 +26,8 @@ afterEach(() => {
   resetSmsProviderForTests();
 });
 
-describe("migration 0008", () => {
-  const sql = readFileSync("drizzle/0008_notifications.sql", "utf8");
+describe.each(["0008_notifications", "0009_follow_ups"])("migration %s", (file) => {
+  const sql = readFileSync(`drizzle/${file}.sql`, "utf8");
   const statements = sql
     .split("--> statement-breakpoint")
     .map((s) =>
@@ -52,9 +52,11 @@ describe("migration 0008", () => {
 
   it("adds only nullable columns to existing tables", () => {
     const added = statements.filter((s) => /ADD COLUMN/.test(s));
-    expect(added).toEqual([
-      'ALTER TABLE "patients" ADD COLUMN "sms_opt_out_at" timestamp with time zone;',
-    ]);
+    expect(added).toEqual(
+      file === "0008_notifications"
+        ? ['ALTER TABLE "patients" ADD COLUMN "sms_opt_out_at" timestamp with time zone;']
+        : [],
+    );
     for (const statement of added) expect(statement).not.toMatch(/NOT NULL/);
   });
 });
@@ -102,7 +104,8 @@ describe("SMS texts (KVKK)", () => {
       const text = (render as (clinic: string, a: never) => string)("Gülüş Diş", appointment);
       expect(text).not.toContain("Kanal");
       expect(text).not.toContain("Ayşe");
-      expect(text).toContain("14:30");
+      // Appointment texts carry the time; the follow-up text is fully generic.
+      if (_name !== "followUpReminder") expect(text).toContain("14:30");
     },
   );
 });

@@ -1,16 +1,27 @@
 import "server-only";
 
-import { and, asc, count, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
+import { and, asc, count, eq, gte, inArray, isNotNull, lt, lte, sql } from "drizzle-orm";
 
 import { ACTIVE_APPOINTMENT_STATUSES } from "@/lib/contracts/appointment";
 import type { SkipReason } from "@/lib/contracts/notification";
 import { normalizePhone } from "@/lib/phone";
 
 import type { Database, Executor } from "../db";
-import { appointments, clinics, notifications, patients, type Notification } from "../db/schema";
+import {
+  appointments,
+  clinics,
+  followUpPlans,
+  followUpRules,
+  followUpVisits,
+  notifications,
+  patients,
+  type Notification,
+} from "../db/schema";
 import type { SmsProvider } from "../notifications/sms";
 import { SMS_TEMPLATE_KEYS, smsTemplates } from "../notifications/sms";
 import { parseClinicSettings, type ClinicSettings } from "./clinic-settings";
+import { REMINDER_OFFSETS_DAYS } from "./follow-up-logic";
+import { recomputeStalePlans } from "./follow-ups";
 import { addLocalDays, localToday, localToUtc, utcToLocal, timeToMinutes } from "./time";
 
 /**
@@ -124,6 +135,78 @@ export async function planAppointmentReminders(
   return { planned: planned.length, tooLate: tooLate.length };
 }
 
+export function followUpReminderKey(planId: string, dueOn: string, n: number): string {
+  return `fu:${planId}:${dueOn}:${n}`;
+}
+
+/**
+ * Follow-up reminders (TAKIP.md §K): a week before the due date, and two
+ * weeks after it if the plan is still not booked. Only plans with SMS
+ * consent whose rule sends SMS; the dedupe key ties a row to one due date.
+ */
+export async function planFollowUpReminders(
+  exec: Executor,
+  clinic: ClinicRow,
+  now: Date,
+): Promise<number> {
+  if (!clinic.settings.features.followUp || !clinic.settings.followUp.smsReminders) return 0;
+  const today = localToday(now, clinic.timezone);
+  const plans = await exec
+    .select({
+      id: followUpPlans.id,
+      patientId: followUpPlans.patientId,
+      nextDueOn: followUpPlans.nextDueOn,
+    })
+    .from(followUpPlans)
+    .innerJoin(
+      followUpRules,
+      and(
+        eq(followUpRules.clinicId, followUpPlans.clinicId),
+        eq(followUpRules.id, followUpPlans.ruleId),
+      ),
+    )
+    .where(
+      and(
+        eq(followUpPlans.clinicId, clinic.id),
+        eq(followUpPlans.state, "active"),
+        isNotNull(followUpPlans.smsConsentAt),
+        isNotNull(followUpPlans.nextDueOn),
+        eq(followUpRules.smsReminders, true),
+        sql`not exists (
+          select 1 from ${followUpVisits} v
+          join ${appointments} a on a.clinic_id = v.clinic_id and a.id = v.appointment_id
+          where v.plan_id = ${followUpPlans.id}
+            and a.status in ('scheduled', 'confirmed') and a.ends_at > ${now}
+        )`,
+      ),
+    );
+  const rows = plans.flatMap((plan) => {
+    const due = plan.nextDueOn!;
+    const [first, second] = REMINDER_OFFSETS_DAYS.map((offset) => addLocalDays(due, offset));
+    // Only the latest reminder that applies; a late start never sends both.
+    const n = today >= second! ? 2 : today >= first! ? 1 : 0;
+    if (n === 0) return [];
+    return [
+      {
+        clinicId: clinic.id,
+        patientId: plan.patientId,
+        kind: "follow_up_reminder" as const,
+        subjectId: plan.id,
+        dedupeKey: followUpReminderKey(plan.id, due, n),
+        templateKey: SMS_TEMPLATE_KEYS.followUpReminder,
+        scheduledFor: now,
+      },
+    ];
+  });
+  if (rows.length === 0) return 0;
+  const inserted = await exec
+    .insert(notifications)
+    .values(rows)
+    .onConflictDoNothing({ target: notifications.dedupeKey })
+    .returning({ id: notifications.id });
+  return inserted.length;
+}
+
 export interface DispatchDeps {
   now: Date;
   /** SMS_SENDING_ENABLED; false means no provider is ever called. */
@@ -204,17 +287,28 @@ async function sendOne(
   // The locks come first: with any of them closed no provider is called.
   if (!deps.sendingEnabled) return skip("sending_disabled");
   if (!deps.provider.delivers) return skip("provider_disabled");
-  if (clinic.settings.notifications.smsReminderHoursBefore === null) return skip("feature_off");
+  if (!featureOn(clinic, notification.kind)) return skip("feature_off");
 
-  const target = await resolveAppointmentTarget(db, notification);
-  if ("skip" in target) return skip(target.skip);
+  let phone: string;
+  let body: string;
+  if (notification.kind === "follow_up_reminder") {
+    const target = await resolveFollowUpTarget(db, notification, deps.now);
+    if ("skip" in target) return skip(target.skip);
+    phone = target.phone;
+    body = smsTemplates.followUpReminder(clinic.name);
+  } else {
+    const target = await resolveAppointmentTarget(db, notification);
+    if ("skip" in target) return skip(target.skip);
+    phone = target.phone;
+    body = smsTemplates.appointmentReminder(
+      clinic.name,
+      utcToLocal(target.startsAt, clinic.timezone),
+    );
+  }
   if (await capReached(db, clinic, notification, deps.now)) return skip("cap_reached");
 
   try {
-    await deps.provider.send(
-      target.phone,
-      smsTemplates.appointmentReminder(clinic.name, utcToLocal(target.startsAt, clinic.timezone)),
-    );
+    await deps.provider.send(phone, body);
     await finish(db, notification, {
       status: "sent",
       sentAt: deps.now,
@@ -241,6 +335,40 @@ async function resolveAppointmentTarget(
   db: Database,
   notification: Notification,
 ): Promise<{ phone: string; startsAt: Date } | { skip: SkipReason }> {
+  const patient = await resolvePatientPhone(db, notification);
+  if ("skip" in patient) return patient;
+  const { phone } = patient;
+
+  const [appointment] = await db
+    .select({ startsAt: appointments.startsAt, status: appointments.status })
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.clinicId, notification.clinicId),
+        eq(appointments.id, notification.subjectId),
+        eq(appointments.patientId, notification.patientId!),
+      ),
+    );
+  const stillDue =
+    appointment &&
+    (ACTIVE_APPOINTMENT_STATUSES as readonly string[]).includes(appointment.status) &&
+    appointmentReminderKey(notification.subjectId, appointment.startsAt) === notification.dedupeKey;
+  if (!stillDue) return { skip: "subject_changed" };
+  return { phone, startsAt: appointment.startsAt };
+}
+
+function featureOn(clinic: ClinicRow, kind: Notification["kind"]): boolean {
+  if (kind === "follow_up_reminder") {
+    return clinic.settings.features.followUp && clinic.settings.followUp.smsReminders;
+  }
+  return clinic.settings.notifications.smsReminderHoursBefore !== null;
+}
+
+/** Patient phone, opted out or not, within the notification's own clinic. */
+async function resolvePatientPhone(
+  db: Database,
+  notification: Notification,
+): Promise<{ phone: string } | { skip: SkipReason }> {
   if (!notification.patientId) return { skip: "patient_removed" };
   const [patient] = await db
     .select({ phone: patients.phone, smsOptOutAt: patients.smsOptOutAt })
@@ -252,23 +380,54 @@ async function resolveAppointmentTarget(
   if (patient.smsOptOutAt) return { skip: "opted_out" };
   const phone = normalizePhone(patient.phone);
   if (!phone) return { skip: "invalid_phone" };
+  return { phone };
+}
 
-  const [appointment] = await db
-    .select({ startsAt: appointments.startsAt, status: appointments.status })
-    .from(appointments)
+/**
+ * A follow-up reminder still applies only while the plan is active, has SMS
+ * consent, its rule still sends SMS, it is not booked and its due date is
+ * the one the reminder was planned for.
+ */
+async function resolveFollowUpTarget(
+  db: Database,
+  notification: Notification,
+  now: Date,
+): Promise<{ phone: string } | { skip: SkipReason }> {
+  const [plan] = await db
+    .select({
+      state: followUpPlans.state,
+      nextDueOn: followUpPlans.nextDueOn,
+      smsConsentAt: followUpPlans.smsConsentAt,
+      patientId: followUpPlans.patientId,
+      ruleSms: followUpRules.smsReminders,
+      booked: sql<boolean>`exists (
+        select 1 from ${followUpVisits} v
+        join ${appointments} a on a.clinic_id = v.clinic_id and a.id = v.appointment_id
+        where v.plan_id = ${followUpPlans.id}
+          and a.status in ('scheduled', 'confirmed') and a.ends_at > ${now}
+      )`,
+    })
+    .from(followUpPlans)
+    .innerJoin(
+      followUpRules,
+      and(
+        eq(followUpRules.clinicId, followUpPlans.clinicId),
+        eq(followUpRules.id, followUpPlans.ruleId),
+      ),
+    )
     .where(
       and(
-        eq(appointments.clinicId, notification.clinicId),
-        eq(appointments.id, notification.subjectId),
-        eq(appointments.patientId, notification.patientId),
+        eq(followUpPlans.clinicId, notification.clinicId),
+        eq(followUpPlans.id, notification.subjectId),
       ),
     );
-  const stillDue =
-    appointment &&
-    (ACTIVE_APPOINTMENT_STATUSES as readonly string[]).includes(appointment.status) &&
-    appointmentReminderKey(notification.subjectId, appointment.startsAt) === notification.dedupeKey;
-  if (!stillDue) return { skip: "subject_changed" };
-  return { phone, startsAt: appointment.startsAt };
+  if (!plan || plan.patientId !== notification.patientId) return { skip: "subject_changed" };
+  if (!plan.smsConsentAt) return { skip: "no_consent" };
+  const dueInKey = notification.dedupeKey.split(":")[2];
+  if (plan.state !== "active" || !plan.ruleSms || plan.booked || plan.nextDueOn !== dueInKey) {
+    return { skip: "subject_changed" };
+  }
+  return resolvePatientPhone(db, notification);
 }
 
 /** Per clinic per day, and one message per patient per day. */
@@ -347,6 +506,11 @@ export async function runNotificationJob(
       const plan = await planAppointmentReminders(db, clinic, deps.now);
       result.planned += plan.planned;
       result.tooLate += plan.tooLate;
+      if (clinic.settings.features.followUp) {
+        // Passed appointments count by time alone; refresh before deciding reminders.
+        await recomputeStalePlans(db, { clinicId: clinic.id, timeZone: clinic.timezone }, deps.now);
+        result.planned += await planFollowUpReminders(db, clinic, deps.now);
+      }
       const sent = await dispatchNotifications(db, clinic, deps);
       for (const key of Object.keys(sent) as (keyof DispatchResult)[]) {
         result.dispatched[key] += sent[key];

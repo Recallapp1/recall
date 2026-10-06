@@ -16,11 +16,7 @@ import {
 import type { ClinicContext } from "./clinics";
 import { practitionerDisplayName } from "./clinics";
 import { DomainError, isOverlapViolation } from "./errors";
-import {
-  autoLinkAppointment,
-  moveFollowUpLink,
-  recomputePlansForAppointment,
-} from "./follow-ups";
+import { autoLinkAppointment, moveFollowUpLink, recomputePlansForAppointment } from "./follow-ups";
 import { findAvailability } from "./scheduling";
 import { isLocalTime, utcToLocal, type LocalDate, type LocalTime } from "./time";
 

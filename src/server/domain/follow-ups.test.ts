@@ -1,11 +1,12 @@
 import { and, eq } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { Database } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
 import { bookAppointment, cancelAppointment, rescheduleAppointment } from "./appointments";
+import { parseClinicSettings, type ClinicSettingsInput } from "./clinic-settings";
 import { DomainError } from "./errors";
 import {
   addExampleRules,
@@ -19,7 +20,9 @@ import {
   startPlan,
   type FollowUpScope,
 } from "./follow-ups";
-import { changeAppointmentStatus, scopeFor } from "./panel";
+import { anonymizePatient, changeAppointmentStatus, exportPatientData, scopeFor } from "./panel";
+import { applyRetention } from "./retention";
+import { dispatchNotifications, followUpReminderKey, planFollowUpReminders } from "./notifications";
 import { localToUtc } from "./time";
 
 let db: Database;
@@ -546,5 +549,208 @@ describe("tenant isolation", () => {
     expect((await listPlans(db, scope(b), NOW, 14)).map((r) => r.id)).not.toContain(planA);
     // Auto-linking B's booking never touches A's plan.
     expect(await visitsOf(planA)).toEqual([]);
+  });
+});
+
+describe("KVKK", () => {
+  it("export includes the plans; anonymizing deletes them; retention removes old closed plans", async () => {
+    const clinic = await createTestClinic(db);
+    const ruleId = await rule(clinic);
+    const phone = nextPhone();
+    await book(clinic, phone, "2026-10-05", "10:00");
+    const patientId = await patientIdOf(clinic, phone);
+    const planId = await startPlan(
+      db,
+      scope(clinic),
+      null,
+      { ruleId, patientId, appointmentId: null, startedOn: "2026-04-01", smsConsent: true },
+      NOW,
+    );
+    await applyPlanAction(
+      db,
+      scope(clinic),
+      null,
+      { type: "record_visit", planId, visitedOn: "2026-04-01" },
+      NOW,
+    );
+
+    const exported = await exportPatientData(db, scopeFor(clinic.ctx), patientId);
+    expect(exported?.takipler).toEqual([
+      expect.objectContaining({
+        ad: "Kontrol takibi",
+        ziyaretler: [expect.objectContaining({ tarih: "2026-04-01", kaynak: "manual" })],
+      }),
+    ]);
+
+    await anonymizePatient(db, clinic.ctx.clinic.id, patientId);
+    expect(
+      await db
+        .select()
+        .from(schema.followUpPlans)
+        .where(eq(schema.followUpPlans.patientId, patientId)),
+    ).toEqual([]);
+    expect(await visitsOf(planId)).toEqual([]);
+  });
+
+  it("deletes stopped or completed plans two years after closing", async () => {
+    const clinic = await createTestClinic(db);
+    const ruleId = await rule(clinic);
+    const phone = nextPhone();
+    await book(clinic, phone, "2026-10-05", "10:00");
+    const patientId = await patientIdOf(clinic, phone);
+    const planId = await startPlan(
+      db,
+      scope(clinic),
+      null,
+      { ruleId, patientId, appointmentId: null, startedOn: "2024-01-01", smsConsent: false },
+      NOW,
+    );
+    await applyPlanAction(db, scope(clinic), null, { type: "stop", planId, reason: "other" }, NOW);
+    expect((await applyRetention(db, NOW)).followUpsDeleted).toBe(0);
+    const later = new Date(NOW.getTime() + 731 * 24 * 60 * 60 * 1000);
+    expect((await applyRetention(db, later)).followUpsDeleted).toBeGreaterThanOrEqual(1);
+    expect(
+      await db.select().from(schema.followUpPlans).where(eq(schema.followUpPlans.id, planId)),
+    ).toEqual([]);
+  });
+});
+
+describe("follow-up reminders (stub)", () => {
+  async function setup(settings: ClinicSettingsInput, consent = true) {
+    const clinic = await createTestClinic(db);
+    const ruleId = await rule(clinic, {
+      intervalValue: 30,
+      intervalUnit: "day",
+      smsReminders: true,
+    });
+    const phone = nextPhone();
+    await book(clinic, phone, "2026-10-05", "10:00");
+    const patientId = await patientIdOf(clinic, phone);
+    // Due 9 October: inside the week before the due date.
+    const planId = await startPlan(
+      db,
+      scope(clinic),
+      null,
+      { ruleId, patientId, appointmentId: null, startedOn: "2026-09-09", smsConsent: consent },
+      NOW,
+    );
+    const row = {
+      id: clinic.ctx.clinic.id,
+      name: clinic.ctx.clinic.name,
+      timezone: TZ,
+      settings: parseClinicSettings(settings),
+    };
+    return { clinic, row, planId, patientId };
+  }
+  const on: ClinicSettingsInput = {
+    features: { followUp: true },
+    followUp: { smsReminders: true },
+  };
+
+  function fake(delivers = true) {
+    const sent: string[] = [];
+    return {
+      sent,
+      provider: {
+        delivers,
+        send: vi.fn(async (_to: string, body: string) => void sent.push(body)),
+      },
+    };
+  }
+
+  it("plans once per due date, only with consent and the clinic switches on", async () => {
+    const { row, planId } = await setup(on);
+    expect(await planFollowUpReminders(db, row, NOW)).toBe(1);
+    expect(await planFollowUpReminders(db, row, NOW)).toBe(0);
+    const [reminder] = await db
+      .select()
+      .from(schema.notifications)
+      .where(eq(schema.notifications.subjectId, planId));
+    expect(reminder).toMatchObject({
+      kind: "follow_up_reminder",
+      status: "pending",
+      dedupeKey: followUpReminderKey(planId, "2026-10-09", 1),
+    });
+
+    expect(await planFollowUpReminders(db, (await setup(on, false)).row, NOW)).toBe(0);
+    expect(await planFollowUpReminders(db, (await setup({})).row, NOW)).toBe(0);
+    const smsOff = await setup({ features: { followUp: true } });
+    expect(await planFollowUpReminders(db, smsOff.row, NOW)).toBe(0);
+  });
+
+  it("sends nothing while real sending is off; sends a generic text when allowed", async () => {
+    const off = await setup(on);
+    await planFollowUpReminders(db, off.row, NOW);
+    const stub = fake(true);
+    await dispatchNotifications(db, off.row, {
+      now: NOW,
+      sendingEnabled: false,
+      provider: stub.provider,
+      providerName: "test",
+    });
+    expect(stub.provider.send).not.toHaveBeenCalled();
+    const [skipped] = await db
+      .select()
+      .from(schema.notifications)
+      .where(eq(schema.notifications.subjectId, off.planId));
+    expect(skipped).toMatchObject({ status: "skipped", skipReason: "sending_disabled" });
+
+    const allowed = await setup(on);
+    await planFollowUpReminders(db, allowed.row, NOW);
+    const delivering = fake(true);
+    await dispatchNotifications(db, allowed.row, {
+      now: NOW,
+      sendingEnabled: true,
+      provider: delivering.provider,
+      providerName: "test",
+    });
+    expect(delivering.sent).toHaveLength(1);
+    expect(delivering.sent[0]).not.toContain("Muayene");
+    expect(delivering.sent[0]).not.toContain("Ayşe");
+  });
+
+  it("drops a planned reminder when consent is withdrawn or the plan gets booked", async () => {
+    const withdrawn = await setup(on);
+    await planFollowUpReminders(db, withdrawn.row, NOW);
+    await applyPlanAction(
+      db,
+      scope(withdrawn.clinic),
+      null,
+      { type: "consent", planId: withdrawn.planId, granted: false },
+      NOW,
+    );
+    const [afterWithdraw] = await db
+      .select()
+      .from(schema.notifications)
+      .where(eq(schema.notifications.subjectId, withdrawn.planId));
+    expect(afterWithdraw).toMatchObject({ status: "skipped", skipReason: "subject_changed" });
+
+    const booked = await setup(on);
+    await planFollowUpReminders(db, booked.row, NOW);
+    // The patient books the follow-up visit: auto-linked, so the reminder is moot.
+    const [patient] = await db
+      .select({ phone: schema.patients.phone })
+      .from(schema.patients)
+      .where(eq(schema.patients.id, booked.patientId));
+    await book(booked.clinic, patient!.phone, "2026-10-08", "10:00");
+    const delivering = fake(true);
+    await dispatchNotifications(db, booked.row, {
+      now: NOW,
+      sendingEnabled: true,
+      provider: delivering.provider,
+      providerName: "test",
+    });
+    expect(delivering.provider.send).not.toHaveBeenCalled();
+  });
+
+  it("sends the second reminder two weeks after the due date, never both", async () => {
+    const { row, planId } = await setup(on);
+    const late = new Date("2026-10-24T09:00:00Z"); // 15 days after 9 October
+    expect(await planFollowUpReminders(db, row, late)).toBe(1);
+    const rows = await db
+      .select({ key: schema.notifications.dedupeKey })
+      .from(schema.notifications)
+      .where(eq(schema.notifications.subjectId, planId));
+    expect(rows.map((r) => r.key)).toEqual([followUpReminderKey(planId, "2026-10-09", 2)]);
   });
 });

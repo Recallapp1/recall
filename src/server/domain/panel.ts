@@ -30,6 +30,8 @@ import {
   appointments,
   callbackRequests,
   calls,
+  followUpPlans,
+  followUpVisits,
   notifications,
   patients,
   practitioners,
@@ -719,6 +721,10 @@ export async function anonymizePatient(
       .set({ notes: null })
       .where(and(eq(appointments.clinicId, clinicId), eq(appointments.patientId, patientId)));
     await detachPatientNotifications(tx, clinicId, patientId);
+    // Follow-up plans reveal treatments; they go with the identity (visits cascade).
+    await tx
+      .delete(followUpPlans)
+      .where(and(eq(followUpPlans.clinicId, clinicId), eq(followUpPlans.patientId, patientId)));
     await tx
       .update(patients)
       .set({
@@ -741,7 +747,7 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
   if (!found) return null;
   const { patient } = found;
 
-  const [callRows, callbackRows, notificationRows] = await Promise.all([
+  const [callRows, callbackRows, notificationRows, planRows, visitRows] = await Promise.all([
     exec
       .select({
         startedAt: calls.startedAt,
@@ -783,6 +789,47 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
         and(eq(notifications.clinicId, scope.clinicId), eq(notifications.patientId, patient.id)),
       )
       .orderBy(desc(notifications.createdAt)),
+    exec
+      .select({
+        id: followUpPlans.id,
+        name: followUpPlans.name,
+        state: followUpPlans.state,
+        startedOn: followUpPlans.startedOn,
+        nextDueOn: followUpPlans.nextDueOn,
+        visitsDone: followUpPlans.visitsDone,
+        totalVisits: followUpPlans.totalVisits,
+        smsConsentAt: followUpPlans.smsConsentAt,
+      })
+      .from(followUpPlans)
+      .where(
+        and(eq(followUpPlans.clinicId, scope.clinicId), eq(followUpPlans.patientId, patient.id)),
+      ),
+    exec
+      .select({
+        planId: followUpVisits.planId,
+        visitedOn: followUpVisits.visitedOn,
+        source: followUpVisits.source,
+        appointmentStartsAt: appointments.startsAt,
+        appointmentStatus: appointments.status,
+      })
+      .from(followUpVisits)
+      .innerJoin(
+        followUpPlans,
+        and(
+          eq(followUpPlans.clinicId, followUpVisits.clinicId),
+          eq(followUpPlans.id, followUpVisits.planId),
+        ),
+      )
+      .leftJoin(
+        appointments,
+        and(
+          eq(appointments.clinicId, followUpVisits.clinicId),
+          eq(appointments.id, followUpVisits.appointmentId),
+        ),
+      )
+      .where(
+        and(eq(followUpVisits.clinicId, scope.clinicId), eq(followUpPlans.patientId, patient.id)),
+      ),
   ]);
 
   return {
@@ -809,6 +856,22 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
       ozet: c.summary,
       dokum: c.transcript,
       sesKaydiVar: c.hasRecording,
+    })),
+    takipler: planRows.map((p) => ({
+      ad: p.name,
+      durum: p.state,
+      baslangic: p.startedOn,
+      sonrakiTarih: p.nextDueOn,
+      ziyaretSayisi: p.visitsDone,
+      toplamZiyaret: p.totalVisits,
+      smsOnayi: p.smsConsentAt,
+      ziyaretler: visitRows
+        .filter((v) => v.planId === p.id)
+        .map((v) => ({
+          tarih: v.visitedOn ?? v.appointmentStartsAt,
+          kaynak: v.source,
+          randevuDurumu: v.appointmentStatus,
+        })),
     })),
     // What was sent and when; message texts are never stored.
     bildirimler: notificationRows.map((n) => ({
