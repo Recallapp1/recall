@@ -12,11 +12,17 @@
 | Uygulama logları             | 30 gün (Vercel planına bağlı)                                | Otomatik                                                 | Vercel           |
 | Klinik hesabı kapatıldığında | 30 gün içinde tüm veri silinir, kliniğe dışa aktarım verilir | —                                                        | Operasyon        |
 
-## Uygulama
+## Uygulama (2026-10-06)
 
-- `GET /api/cron/retention`: günlük çalışır (Vercel Cron, `vercel.json`).
-- Her silme işlemi sayısal olarak loglanır ("12 transkript temizlendi"), içerik loglanmaz.
-- Sağlayıcı tarafı (Retell kayıtları): Retell ajan ayarları `data_storage_setting` ve `data_storage_retention_days` ile saklama sınırlanabilir; arama silme API'si de değerlendirilecek (F7).
+- **Cron:** `GET /api/cron/retention` her gün 03:30 UTC çalışır (`vercel.json`, `Authorization: Bearer $CRON_SECRET`). [`applyRetention`](../../src/server/domain/retention.ts):
+  - 30 günden eski aramaların kayıt bağlantısı silinir;
+  - 90 günden eski dökümler silinir;
+  - 2 yıldan eski aramalarda arayan numarası silinir.
+  - Özet ve arama satırı istatistik için kalır. Yalnızca sayılar loglanır (`cron.retention`).
+- **Retell tarafı:** her ajan `data_storage_retention_days: 30` ile kurulur; Retell ses, döküm ve logları 30 günde kendisi siler. Kayıt bağlantıları **imzalı ve 24 saat geçerli** (`opt_in_signed_url`). Panel her dinlemede yeni bağlantı ister; dinleme denetim kaydına yazılır.
+- **"Aramaları kaydet" kapalıysa:** Retell'de yalnızca sesi kapatan bir ayar yok. `basic_attributes_only` webhook'tan da döküm ve özeti siliyor (2026-10-05'te gerçek aramayla doğrulandı), bu yüzden kullanılmadı. Bunun yerine arama analizi bize ulaşınca (`call_analyzed`) arama Retell'den silinir. Döküm ve özet yalnızca bizde kalır ve 90 günlük kurala tabidir.
+- **Anonimleştirme** bu numaradan gelen aramaları Retell'den de siler (ses dahil).
+- **Dışa aktarma (m.11 bilgi talebi):** Panel → Hastalar → hasta → "Verileri indir" (JSON: hasta, randevular, aramalar, geri arama talepleri). Yetki `patients.export` (sahip ve yönetici); her indirme denetim kaydına yazılır.
 
 ## Anonimleştirme
 

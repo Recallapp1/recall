@@ -15,7 +15,8 @@ import {
 export const statement = {
   ...defaultStatements,
   appointments: ["read", "create", "update", "cancel"],
-  patients: ["read", "update", "anonymize"],
+  // export: KVKK access request (m.11), a copy of everything held on a patient.
+  patients: ["read", "update", "anonymize", "export"],
   calls: ["read", "listen_recording"],
   callbacks: ["read", "update"],
   clinicSettings: ["read", "update"],
@@ -33,7 +34,7 @@ export type Permissions = { [R in Resource]?: (typeof statement)[R][number][] };
 export const owner = ac.newRole({
   ...ownerAc.statements,
   appointments: ["read", "create", "update", "cancel"],
-  patients: ["read", "update", "anonymize"],
+  patients: ["read", "update", "anonymize", "export"],
   calls: ["read", "listen_recording"],
   callbacks: ["read", "update"],
   clinicSettings: ["read", "update"],
@@ -46,7 +47,7 @@ export const owner = ac.newRole({
 export const admin = ac.newRole({
   ...adminAc.statements,
   appointments: ["read", "create", "update", "cancel"],
-  patients: ["read", "update", "anonymize"],
+  patients: ["read", "update", "anonymize", "export"],
   calls: ["read", "listen_recording"],
   callbacks: ["read", "update"],
   clinicSettings: ["read", "update"],

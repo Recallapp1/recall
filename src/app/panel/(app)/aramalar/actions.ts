@@ -2,14 +2,17 @@
 
 import { z } from "zod";
 
+import { safeError } from "@/lib/safe-error";
 import { requirePanelScope } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { recordAudit } from "@/server/domain/audit";
 import { getCall } from "@/server/domain/panel";
+import { freshRecordingUrl } from "@/server/voice/sync";
 
 /**
- * Hands out the recording URL only to roles with `calls.listen_recording`
- * and records every playback (KVKK: recordings are health data).
+ * Hands out a short-lived recording link only to roles with
+ * `calls.listen_recording` and records every playback (KVKK: recordings are
+ * health data). The stored link is just a marker; signed links expire.
  */
 export async function getRecordingUrl(
   callId: string,
@@ -20,6 +23,15 @@ export async function getRecordingUrl(
   const call = await getCall(db(), scope, callId);
   if (!call?.recordingUrl) return { ok: false, message: "Bu aramanın kaydı yok." };
 
+  let url: string | null;
+  try {
+    url = await freshRecordingUrl(call.providerCallId);
+  } catch (error) {
+    console.error(JSON.stringify({ msg: "call.recording_fetch_failed", error: safeError(error) }));
+    return { ok: false, message: "Kayıt şu anda açılamadı. Lütfen tekrar deneyin." };
+  }
+  if (!url) return { ok: false, message: "Bu kaydın saklama süresi doldu." };
+
   await recordAudit(db(), {
     clinicId: context.clinic.id,
     actorUserId: context.session.user.id,
@@ -27,5 +39,5 @@ export async function getRecordingUrl(
     targetType: "call",
     targetId: callId,
   });
-  return { ok: true, url: call.recordingUrl };
+  return { ok: true, url };
 }

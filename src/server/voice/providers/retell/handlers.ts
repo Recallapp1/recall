@@ -26,6 +26,8 @@ export interface RetellHandlerDeps {
   now: () => Date;
   defer: (task: () => Promise<void>) => void;
   smsDelivers: boolean;
+  /** Removes the call (audio included) from the provider. */
+  deleteProviderCall: (providerCallId: string) => Promise<void>;
 }
 
 /**
@@ -154,6 +156,22 @@ export async function handleCallEvent(request: Request, deps: RetellHandlerDeps)
       recordingUrl: ctx.settings.assistant.recordCalls ? call.recording_url : null,
       summary: call.call_analysis?.call_summary,
       costUsd: combinedCostCents != null ? combinedCostCents / 100 : null,
+    });
+  }
+
+  // Recording off: Retell has no audio-only switch, and storing nothing also
+  // strips the webhook (no transcript or summary). So the call is deleted on
+  // Retell once its last event (the analysis) has reached us.
+  if (event === "call_analyzed" && !ctx.settings.assistant.recordCalls) {
+    deps.defer(async () => {
+      try {
+        await deps.deleteProviderCall(call.call_id);
+      } catch (error) {
+        log("error", "retell.call_delete_failed", {
+          clinicId: ctx.clinic.id,
+          error: String(error),
+        });
+      }
     });
   }
   return Response.json({});

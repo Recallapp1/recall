@@ -56,6 +56,9 @@ describe("buildRetellAgentSpec", () => {
       timezone: "Europe/Istanbul",
       webhook_url: "https://recall.example/api/voice/retell/events",
       webhook_events: ["call_started", "call_ended", "call_analyzed"],
+      // KVKK: provider deletes call data after 30 days; recording links expire.
+      data_storage_retention_days: 30,
+      opt_in_signed_url: true,
     });
     expect(agent.boosted_keywords).toEqual([
       "Diş Hekimi Can Demir",

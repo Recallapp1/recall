@@ -7,6 +7,7 @@ import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 import {
   anonymizePatient,
   changeAppointmentStatus,
+  exportPatientData,
   getAppointment,
   getCall,
   getPatient,
@@ -229,6 +230,32 @@ describe("patients", () => {
     expect(rows.map((row) => row.fullName)).toEqual(["Can Tunç"]);
   });
 
+  it("exports everything held on a patient, and nothing of others", async () => {
+    const created = await insertAppointment(a, {
+      phone: "+905320000008",
+      name: "Bilgi Talep Eden",
+      minute: 16 * 60,
+    });
+    await db.insert(schema.calls).values({
+      clinicId: a.ctx.clinic.id,
+      provider: "retell",
+      providerCallId: "export-test",
+      fromNumber: "+905320000008",
+      summary: "Randevu aldı.",
+      transcript: "Agent: Merhaba",
+    });
+    const { patientId } = (await getAppointment(db, scopeFor(a.ctx), created.id))!;
+
+    const data = await exportPatientData(db, scopeFor(a.ctx), patientId);
+    expect(data?.hasta).toMatchObject({ adSoyad: "Bilgi Talep Eden", telefon: "+905320000008" });
+    expect(data?.randevular).toHaveLength(1);
+    expect(data?.aramalar).toEqual([
+      expect.objectContaining({ ozet: "Randevu aldı.", dokum: "Agent: Merhaba" }),
+    ]);
+    // Another clinic cannot export this patient.
+    expect(await exportPatientData(db, scopeFor(b.ctx), patientId)).toBeNull();
+  });
+
   it("anonymises a patient and the calls from their number", async () => {
     const created = await insertAppointment(a, {
       phone: "+905320000007",
@@ -248,7 +275,9 @@ describe("patients", () => {
       .returning();
     const { patientId } = (await getAppointment(db, scopeFor(a.ctx), created.id))!;
 
-    await anonymizePatient(db, a.ctx.clinic.id, patientId);
+    const providerCalls = await anonymizePatient(db, a.ctx.clinic.id, patientId);
+    // The caller deletes these on the voice platform (audio).
+    expect(providerCalls).toEqual([{ provider: "retell", providerCallId: "anon-test" }]);
 
     expect(await getPatient(db, scopeFor(a.ctx), patientId)).toBeNull();
     const detail = await getCall(db, scopeFor(a.ctx), call!.id);

@@ -23,6 +23,7 @@ let close: () => Promise<void>;
 let clinic: TestClinic;
 let other: TestClinic;
 let deferred: Array<() => Promise<void>>;
+let deletedCalls: string[] = [];
 
 beforeAll(async () => {
   ({ db, close } = await createTestDb());
@@ -39,12 +40,16 @@ afterAll(async () => {
 
 function deps(overrides: Partial<RetellHandlerDeps> = {}): RetellHandlerDeps {
   deferred = [];
+  deletedCalls = [];
   return {
     db,
     apiKey: API_KEY,
     now: () => NOW,
     defer: (task) => deferred.push(task),
     smsDelivers: true,
+    deleteProviderCall: async (id) => {
+      deletedCalls.push(id);
+    },
     ...overrides,
   };
 }
@@ -271,6 +276,43 @@ describe("call events", () => {
       summary: "Hasta muayene randevusu aldı.",
       recordingUrl: "https://rec.test/1.wav",
       costUsd: "0.3100",
+    });
+    // Recording is on: the call stays on the provider until its retention ends.
+    await Promise.all(deferred.map((task) => task()));
+    expect(deletedCalls).toEqual([]);
+  });
+
+  it("deletes the call on the provider after analysis when recording is off", async () => {
+    const quiet = await createTestClinic(db, {
+      settings: { assistant: { recordCalls: false } },
+    });
+    const quietCall = {
+      call_id: "call_quiet_1",
+      agent_id: quiet.agentId,
+      call_type: "web_call",
+      duration_ms: 60_000,
+      transcript: "Agent: Merhaba",
+      recording_url: "https://rec.test/q.wav",
+    };
+    await handleCallEvent(await signedRequest({ event: "call_ended", call: quietCall }), deps());
+    expect(deferred).toHaveLength(0);
+
+    await handleCallEvent(
+      await signedRequest({
+        event: "call_analyzed",
+        call: { ...quietCall, call_analysis: { call_summary: "Bilgi aldı." } },
+      }),
+      deps(),
+    );
+    await Promise.all(deferred.map((task) => task()));
+    expect(deletedCalls).toEqual(["call_quiet_1"]);
+
+    const [row] = await db.select().from(calls).where(eq(calls.providerCallId, "call_quiet_1"));
+    // Transcript and summary stay with us; no recording link is kept.
+    expect(row).toMatchObject({
+      transcript: "Agent: Merhaba",
+      summary: "Bilgi aldı.",
+      recordingUrl: null,
     });
   });
 

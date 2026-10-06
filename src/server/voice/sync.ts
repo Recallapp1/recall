@@ -12,6 +12,11 @@ export {
   type AssistantSyncStatus,
 } from "./providers/retell/schedule-sync";
 export {
+  deleteProviderCall,
+  deleteProviderCalls,
+  freshRecordingUrl,
+} from "./providers/retell/recordings";
+export {
   defaultAssistantVoiceId,
   listAssistantVoices,
   type AssistantVoice,

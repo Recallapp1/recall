@@ -53,7 +53,7 @@ Retell ve onun STT, TTS, LLM sağlayıcıları büyük ihtimalle **yurt dışın
 
 | Talep            | Uygulama                                                                                                       |
 | ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| Bilgi talebi     | Panelden hasta kaydının dışa aktarımı (JSON/PDF), Faz 2                                                        |
+| Bilgi talebi     | Panelden hasta kaydının dışa aktarımı (JSON), `patients.export` yetkisi                                        |
 | Düzeltme         | Panelden düzenleme                                                                                             |
 | Silme / yok etme | Panelde "Anonimleştir": isim ve telefon silinir, transkript ve kayıt silinir, randevu istatistiği anonim kalır |
 | İtiraz           | Klinik üzerinden; Recall klinik talimatıyla uygular                                                            |
@@ -74,4 +74,4 @@ Veri sorumlusu olarak kliniğin VERBİS kaydı kendi yükümlülüğüdür. Reca
 - [ ] DPA şablonu
 - [ ] Aydınlatma metni şablonu (klinik web sitesi için)
 - [ ] Alt işleyenler listesi ve her biri için veri saklama/eğitim ayarları
-- [ ] Panelde anonimleştirme ve dışa aktarma
+- [x] Panelde anonimleştirme ve dışa aktarma (anonimleştirme Retell'deki sesi de siler; bkz. [DATA-RETENTION.md](DATA-RETENTION.md#uygulama-2026-10-06))

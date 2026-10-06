@@ -1,4 +1,4 @@
-import { ArrowLeft, Phone } from "lucide-react";
+import { ArrowLeft, Download, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,6 +9,7 @@ import {
   EmptyState,
   PageHeader,
 } from "@/components/panel";
+import { Button } from "@/components/ui/button";
 import { formatMinutes, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import { can, requirePanelScope } from "@/server/auth/session";
@@ -25,9 +26,10 @@ export default async function PatientPage({ params }: PageProps<"/panel/hastalar
   const result = /^[0-9a-f-]{36}$/i.test(id) ? await getPatient(db(), scope, id) : null;
   if (!result) notFound();
   const { patient, appointments } = result;
-  const [canUpdate, canAnonymize] = await Promise.all([
+  const [canUpdate, canAnonymize, canExport] = await Promise.all([
     can({ patients: ["update"] }),
     can({ patients: ["anonymize"] }),
+    can({ patients: ["export"] }),
   ]);
 
   return (
@@ -91,14 +93,33 @@ export default async function PatientPage({ params }: PageProps<"/panel/hastalar
             notes={patient.notes ?? ""}
             editable={canUpdate}
           />
-          {canAnonymize && (
-            <div className="flex flex-col gap-2 border-t border-hairline pt-5">
+          {(canExport || canAnonymize) && (
+            <div className="flex flex-col gap-3 border-t border-hairline pt-5">
               <h2 className="text-label text-body">KVKK</h2>
-              <p className="text-xs text-body">
-                Hasta silme talebinde ad, telefon, notlar ve bu numaradan gelen aramaların dökümü
-                kalıcı olarak silinir. Randevu geçmişi istatistik için anonim kalır.
-              </p>
-              <AnonymizeButton patientId={patient.id} />
+              {canExport && (
+                <>
+                  <p className="text-xs text-body">
+                    Bilgi talebinde hastanın kliniğinizdeki tüm kayıtlarını (randevular, arama
+                    özetleri ve dökümleri, geri arama talepleri) dosya olarak indirin.
+                  </p>
+                  <Button asChild variant="outline" size="sm" className="w-fit">
+                    <a href={`/panel/hastalar/${patient.id}/disa-aktar`} download>
+                      <Download data-icon="inline-start" />
+                      Verileri indir
+                    </a>
+                  </Button>
+                </>
+              )}
+              {canAnonymize && (
+                <>
+                  <p className="text-xs text-body">
+                    Hasta silme talebinde ad, telefon, notlar, bu numaradan gelen aramaların dökümü
+                    ve ses kayıtları kalıcı olarak silinir. Randevu geçmişi istatistik için anonim
+                    kalır.
+                  </p>
+                  <AnonymizeButton patientId={patient.id} />
+                </>
+              )}
             </div>
           )}
         </aside>

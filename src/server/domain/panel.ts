@@ -485,6 +485,8 @@ export interface PanelCallDetail extends PanelCall {
   endedReason: string | null;
   transcript: string | null;
   recordingUrl: string | null;
+  provider: string;
+  providerCallId: string;
   appointments: PanelAppointment[];
 }
 
@@ -522,6 +524,8 @@ export async function getCall(
     endedReason: call.endedReason,
     transcript: call.transcript,
     recordingUrl: call.recordingUrl,
+    provider: call.provider,
+    providerCallId: call.providerCallId,
     appointments: linked.map((a) => toPanelAppointment(a, scope.timeZone)),
   };
 }
@@ -670,13 +674,16 @@ export async function updatePatientNotes(
  * records while keeping appointment history for statistics. Calls from the
  * patient's number lose the number, transcript, summary and recording link;
  * callback requests lose name and number. Not reversible.
+ *
+ * Returns the voice provider's ids for those calls, so the caller can delete
+ * the provider's copy (audio) as well.
  */
 export async function anonymizePatient(
   db: Database,
   clinicId: string,
   patientId: string,
-): Promise<void> {
-  await db.transaction(async (tx) => {
+): Promise<{ provider: string; providerCallId: string }[]> {
+  return db.transaction(async (tx) => {
     const [patient] = await tx
       .select({ phone: patients.phone })
       .from(patients)
@@ -686,10 +693,11 @@ export async function anonymizePatient(
       throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
     }
 
-    await tx
+    const providerCalls = await tx
       .update(calls)
       .set({ fromNumber: null, transcript: null, summary: null, recordingUrl: null })
-      .where(and(eq(calls.clinicId, clinicId), eq(calls.fromNumber, patient.phone)));
+      .where(and(eq(calls.clinicId, clinicId), eq(calls.fromNumber, patient.phone)))
+      .returning({ provider: calls.provider, providerCallId: calls.providerCallId });
     await tx
       .update(callbackRequests)
       .set({ patientName: null, phone: null })
@@ -709,5 +717,80 @@ export async function anonymizePatient(
         kvkkNoticeAt: null,
       })
       .where(and(eq(patients.clinicId, clinicId), eq(patients.id, patientId)));
+    return providerCalls;
   });
+}
+
+/**
+ * KVKK access request (m.11): everything the clinic holds on one patient, in
+ * a portable shape. Labels are Turkish because the file goes to the patient.
+ */
+export async function exportPatientData(exec: Executor, scope: PanelScope, patientId: string) {
+  const found = await getPatient(exec, scope, patientId);
+  if (!found) return null;
+  const { patient } = found;
+
+  const [callRows, callbackRows] = await Promise.all([
+    exec
+      .select({
+        startedAt: calls.startedAt,
+        createdAt: calls.createdAt,
+        durationSeconds: calls.durationSeconds,
+        outcome: calls.outcome,
+        summary: calls.summary,
+        transcript: calls.transcript,
+        hasRecording: sql<boolean>`${calls.recordingUrl} is not null`,
+      })
+      .from(calls)
+      .where(and(eq(calls.clinicId, scope.clinicId), eq(calls.fromNumber, patient.phone)))
+      .orderBy(desc(calls.createdAt)),
+    exec
+      .select({
+        createdAt: callbackRequests.createdAt,
+        reason: callbackRequests.reason,
+        status: callbackRequests.status,
+        resolvedAt: callbackRequests.resolvedAt,
+      })
+      .from(callbackRequests)
+      .where(
+        and(
+          eq(callbackRequests.clinicId, scope.clinicId),
+          eq(callbackRequests.phone, patient.phone),
+        ),
+      )
+      .orderBy(desc(callbackRequests.createdAt)),
+  ]);
+
+  return {
+    hasta: {
+      adSoyad: patient.fullName,
+      telefon: patient.phone,
+      not: patient.notes,
+      kayitTarihi: patient.createdAt,
+    },
+    randevular: found.appointments.map((a) => ({
+      baslangic: a.startsAt,
+      bitis: a.endsAt,
+      hizmet: a.serviceName,
+      hekim: a.practitionerName,
+      durum: a.status,
+      kaynak: a.source,
+      not: a.notes,
+      olusturulma: a.createdAt,
+    })),
+    aramalar: callRows.map((c) => ({
+      tarih: c.startedAt ?? c.createdAt,
+      sureSaniye: c.durationSeconds,
+      sonuc: c.outcome,
+      ozet: c.summary,
+      dokum: c.transcript,
+      sesKaydiVar: c.hasRecording,
+    })),
+    geriAramaTalepleri: callbackRows.map((c) => ({
+      tarih: c.createdAt,
+      sebep: c.reason,
+      durum: c.status,
+      kapanis: c.resolvedAt,
+    })),
+  };
 }

@@ -50,6 +50,13 @@ const DEFAULT_CALL_VARIABLES: CallVariables = {
 const MAX_BOOSTED_KEYWORDS = 100;
 
 /**
+ * Retell deletes call data (audio, transcript, logs) after this many days
+ * (docs/05-compliance/DATA-RETENTION.md: recordings 30 days). Our own copy of
+ * the transcript lives on and is cleared by the retention cron.
+ */
+export const PROVIDER_RETENTION_DAYS = 30;
+
+/**
  * Retell's default summary is English and repeats personal data. Ours is
  * Turkish (shown in the panel) and minimal, because summaries outlive
  * transcripts under the retention policy (docs/05-compliance/DATA-RETENTION.md).
@@ -153,6 +160,9 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
       boosted_keywords: boostedKeywords(directory),
       end_call_after_silence_ms: 20_000,
       max_call_duration_ms: 15 * 60_000,
+      data_storage_retention_days: PROVIDER_RETENTION_DAYS,
+      // Recording links expire (24 h); the panel asks for a fresh one per playback.
+      opt_in_signed_url: true,
       post_call_analysis_data: [
         { type: "system-presets", name: "call_summary", description: SUMMARY_INSTRUCTION },
       ],

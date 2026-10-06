@@ -342,9 +342,9 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ## F7: KVKK, güvenlik ve veri saklama
 
-- [ ] Hasta anonimleştirme ve dışa aktarma ([DATA-RETENTION.md](05-compliance/DATA-RETENTION.md))
-- [ ] Saklama cron'u: `GET /api/cron/retention` (transkript 90 gün, kayıt 30 gün; Retell tarafında kayıt silme)
-- [ ] Retell veri saklama ayarlarının klinik tercihine göre ayarlanması
+- [x] Hasta anonimleştirme ve dışa aktarma ([DATA-RETENTION.md](05-compliance/DATA-RETENTION.md)); anonimleştirme Retell'deki sesi de siler
+- [x] Saklama cron'u: `GET /api/cron/retention` (kayıt 30 gün, döküm 90 gün, numara 2 yıl); Retell tarafında 30 gün otomatik silme
+- [x] Retell veri saklama ayarlarının klinik tercihine göre ayarlanması (imzalı kayıt bağlantıları; kayıt kapalıysa arama analizden sonra Retell'den silinir)
 - [ ] Hassas alanların uygulama seviyesinde şifrelenmesinin değerlendirilmesi (transkript, telefon)
 - [ ] Güvenlik başlıkları ve CSP, hız sınırlama (giriş, webhook), Retell IP izin listesi (opsiyonel ek katman)
 - [ ] Aydınlatma metni şablonu, DPA şablonu, alt işleyenler listesi (Retell, Neon, Vercel, Netgsm, Resend)

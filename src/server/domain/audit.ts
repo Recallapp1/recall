@@ -22,6 +22,7 @@ export type AuditAction =
   | "assistant.test_call"
   | "patient.updated"
   | "patient.anonymized"
+  | "patient.exported"
   | "call.recording_played"
   | "appointment.created"
   | "appointment.updated"

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
 import type { FormState } from "@/lib/contracts/form-state";
@@ -11,6 +12,7 @@ import { db } from "@/server/db";
 import { recordAudit } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
 import { anonymizePatient, updatePatientNotes } from "@/server/domain/panel";
+import { deleteProviderCalls } from "@/server/voice/sync";
 
 const notesSchema = z.object({
   patientId: z.uuid(),
@@ -55,7 +57,20 @@ export async function anonymizePatientAction(
   const { clinic, session } = await requirePermission({ patients: ["anonymize"] });
   if (!z.uuid().safeParse(patientId).success) return { ok: false, message: "Hasta bulunamadı." };
   try {
-    await anonymizePatient(db(), clinic.id, patientId);
+    const providerCalls = await anonymizePatient(db(), clinic.id, patientId);
+    // The voice platform still holds the audio of those calls; erase it too.
+    after(async () => {
+      try {
+        await deleteProviderCalls(providerCalls);
+      } catch (error) {
+        console.error(
+          JSON.stringify({
+            msg: "panel.patient_anonymize.provider_failed",
+            error: safeError(error),
+          }),
+        );
+      }
+    });
     await recordAudit(db(), {
       clinicId: clinic.id,
       actorUserId: session.user.id,
