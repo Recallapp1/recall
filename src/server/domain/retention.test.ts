@@ -39,6 +39,22 @@ beforeAll(async () => {
   await insertCall("month", daysAgo(31));
   await insertCall("quarter", daysAgo(91));
   await insertCall("old", daysAgo(731));
+  for (const [key, age] of [
+    ["recent", 300],
+    ["expired", 366],
+  ] as const) {
+    await db.insert(schema.notifications).values({
+      clinicId: clinic.ctx.clinic.id,
+      kind: "appointment_reminder",
+      subjectId: clinic.ctx.clinic.id,
+      dedupeKey: key,
+      templateKey: "appointment_reminder.v1",
+      status: "skipped",
+      skipReason: "sending_disabled",
+      scheduledFor: daysAgo(age),
+      createdAt: daysAgo(age),
+    });
+  }
 });
 
 afterAll(async () => {
@@ -49,10 +65,14 @@ describe("applyRetention", () => {
   it("clears recordings after 30 days, transcripts after 90, numbers after 2 years", async () => {
     const result = await applyRetention(db, NOW);
     expect(result).toEqual({
+      notificationsDeleted: 1,
       recordingsCleared: 3,
       transcriptsCleared: 2,
       callerNumbersCleared: 1,
     });
+    // The notification log keeps a year (pending legal review).
+    const left = await db.select().from(schema.notifications);
+    expect(left.map((n) => n.dedupeKey)).toEqual(["recent"]);
 
     expect(await row("fresh")).toMatchObject({
       recordingUrl: "https://rec.test/x.wav",
@@ -74,6 +94,7 @@ describe("applyRetention", () => {
 
   it("is idempotent", async () => {
     expect(await applyRetention(db, NOW)).toEqual({
+      notificationsDeleted: 0,
       recordingsCleared: 0,
       transcriptsCleared: 0,
       callerNumbersCleared: 0,

@@ -3,7 +3,7 @@ import "server-only";
 import { and, isNotNull, lt, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
-import { calls } from "../db/schema";
+import { calls, notifications } from "../db/schema";
 
 /** docs/05-compliance/DATA-RETENTION.md */
 export const RETENTION_DAYS = {
@@ -12,12 +12,15 @@ export const RETENTION_DAYS = {
   transcript: 90,
   /** Call metadata stays for statistics; the caller's number goes. */
   callerNumber: 730,
+  /** Notification log (proof of what was sent). Pending legal review. */
+  notificationLog: 365,
 } as const;
 
 export interface RetentionResult {
   recordingsCleared: number;
   transcriptsCleared: number;
   callerNumbersCleared: number;
+  notificationsDeleted: number;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -46,7 +49,18 @@ export async function applyRetention(exec: Executor, now: Date): Promise<Retenti
     .where(and(isNotNull(calls.fromNumber), olderThan(RETENTION_DAYS.callerNumber)))
     .returning({ id: calls.id });
 
+  const oldNotifications = await exec
+    .delete(notifications)
+    .where(
+      lt(
+        notifications.createdAt,
+        new Date(now.getTime() - RETENTION_DAYS.notificationLog * DAY_MS),
+      ),
+    )
+    .returning({ id: notifications.id });
+
   return {
+    notificationsDeleted: oldNotifications.length,
     recordingsCleared: recordings.length,
     transcriptsCleared: transcripts.length,
     callerNumbersCleared: numbers.length,

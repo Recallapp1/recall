@@ -32,6 +32,15 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
+  /**
+   * Master switch for real SMS. Only the exact string "true" enables it; unset
+   * (the production default until Netgsm and the İYS review are done) keeps
+   * every message on the non-delivering stub, whatever SMS_PROVIDER says.
+   */
+  SMS_SENDING_ENABLED: z
+    .string()
+    .optional()
+    .transform((value) => value === "true"),
   NETGSM_USERCODE: optionalString,
   NETGSM_PASSWORD: optionalString,
   NETGSM_HEADER: optionalString,

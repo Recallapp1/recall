@@ -77,6 +77,49 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-06 · Takip V0: bildirim kaydı, randevu hatırlatma (stub), SMS kilitleri · Takip V0
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/V0-bildirimler` (yerel, **push edilmedi**; ürün ekibi onayı bekleniyor) · **Commit'ler:** bu kayıt
+
+**Ne yapıldı**
+
+- Tasarım: [docs/proposals/TAKIP.md](docs/proposals/TAKIP.md), V0 onayı ve ek kararlar.
+- **Migration 0008** (yalnızca ekleme):
+  - `notifications` tablosu ve 3 enum;
+  - `patients.sms_opt_out_at`;
+  - `patients (clinic_id, id)` tekil indeksi;
+  - bileşik FK `notifications (clinic_id, patient_id)`, `ON DELETE SET NULL (patient_id)`, elle yazıldı. Dev dalına uygulandı.
+- **`domain/notifications.ts`:**
+  - planlama: ertesi günün aktif randevuları; bugünün planlanmamış randevuları `skipped(too_late)`;
+  - gönderim: klinik başına, 09–20 penceresi, `SKIP LOCKED`, en fazla bir kez, takılan gönderim `unknown`, 3 deneme;
+  - sınırlar: klinik başına günde 100, hasta başına günde 1;
+  - günlük iş klinikleri birbirinden yalıtır.
+- **SMS kilitleri:**
+  - `SMS_SENDING_ENABLED` (yalnızca `"true"` açar; production'da tanımsız);
+  - `smsProvider()` anahtar kapalıyken Netgsm'i hiç kurmaz;
+  - sağlayıcı `delivers`;
+  - kliniğin hatırlatma ayarı.
+- **Cron:** `/api/cron/notifications` (07:00 UTC). İki cron ortak `rejectUnauthorizedCron` kullanıyor (sabit zamanlı karşılaştırma, secret yoksa 503).
+- **KVKK:**
+  - SMS metinlerinden hasta adı ve hizmet çıkarıldı;
+  - anonimleştirme bildirimleri ayırır, bekleyenleri atlar;
+  - dışa aktarmada `bildirimler`;
+  - saklama: bildirim kaydı 1 yıl (hukuki inceleme bekliyor).
+- Randevu kuralları ayarında saat alanı yerine dürüst açıklama: bir gün önce, 10:00; SMS henüz etkin değil.
+
+**Doğrulama**
+
+- `pnpm test`: 289/289 (24 dosya). İlk çalıştırmada `accounts.test.ts` dosya düzeyinde bir kez düştü, tekrar çalıştırmada geçti; paralel PGlite yükünde hook zaman aşımı olabilir, izlenecek.
+- Yeni testler:
+  - `notifications.test.ts` (18): idempotency, too_late, kilitler, tek gönderim, yeniden deneme, unknown, pencere, sınırlar, kiracı izolasyonu (bileşik FK reddi dahil), iş yalıtımı, anonimleştirme;
+  - `production-safety.test.ts` (30): migration yalnızca ekleme, ana anahtar, şablonlarda ad ve hizmet yok, cron 401/503.
+- Vercel: `SMS_SENDING_ENABLED` hiçbir ortamda tanımlı değil; production `SMS_PROVIDER=console`.
+
+**Açık kalanlar / dikkat**
+
+- `main`'e push = production deploy. Ürün ekibi onaylayınca birleştirilecek.
+- İlk production çalıştırmasında tüm hatırlatmalar `skipped(sending_disabled)` kaydedilir; bu beklenen davranış.
+
 ### 2026-10-06 · Ses seçimi, KVKK veri saklama, özel roller · F5.3, F7, F3.5
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F5.3-ses-secimi`, `feat/F7-veri-saklama`, `feat/F3.5-ozel-roller` · **Commit'ler:** `27f3098`, `935ad2d`, `1cfd7ef`, bu kayıt

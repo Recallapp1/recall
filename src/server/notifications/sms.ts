@@ -62,11 +62,16 @@ class NetgsmSmsProvider implements SmsProvider {
 
 let provider: SmsProvider | undefined;
 
+/**
+ * The only place a delivering provider is created. Without SMS_SENDING_ENABLED
+ * a configured Netgsm is never constructed, so no code path can send by
+ * accident (docs/proposals/TAKIP.md: no real SMS before Netgsm and İYS).
+ */
 export function smsProvider(): SmsProvider {
   if (provider) return provider;
   const config = env();
   provider =
-    config.SMS_PROVIDER === "netgsm"
+    config.SMS_SENDING_ENABLED && config.SMS_PROVIDER === "netgsm"
       ? new NetgsmSmsProvider(
           config.NETGSM_USERCODE!,
           config.NETGSM_PASSWORD!,
@@ -76,20 +81,42 @@ export function smsProvider(): SmsProvider {
   return provider;
 }
 
+/** Tests swap providers; production builds it once from env(). */
+export function resetSmsProviderForTests(): void {
+  provider = undefined;
+}
+
 // ─── Message templates (docs/03-telephony/NOTIFICATIONS.md) ─────────────────
 
+/**
+ * Generic by design (KVKK, docs/proposals/TAKIP.md): no patient name, no
+ * service or treatment, only the clinic, date and time. A changed text gets a
+ * new template key, since the key is what the notification log records.
+ */
 export const smsTemplates = {
-  confirmation: (clinicName: string, a: AppointmentSummary, address?: string | null) =>
-    `${clinicName}: Sayın ${a.patientName}, ${displayDate(a.date)} ${a.time} tarihli ${a.serviceName} randevunuz oluşturuldu.` +
+  confirmation: (
+    clinicName: string,
+    a: Pick<AppointmentSummary, "date" | "time">,
+    address?: string | null,
+  ) =>
+    `${clinicName}: ${displayDate(a.date)} saat ${a.time} için randevunuz oluşturuldu.` +
     (address ? ` Adres: ${address}.` : "") +
     ` Değişiklik için bu numarayı arayabilirsiniz.`,
 
-  cancellation: (clinicName: string, a: AppointmentSummary) =>
-    `${clinicName}: ${displayDate(a.date)} ${a.time} tarihli randevunuz iptal edilmiştir. Yeni randevu için bizi arayabilirsiniz.`,
+  cancellation: (clinicName: string, a: Pick<AppointmentSummary, "date" | "time">) =>
+    `${clinicName}: ${displayDate(a.date)} saat ${a.time} randevunuz iptal edildi. Yeni randevu için bizi arayabilirsiniz.`,
 
-  rescheduled: (clinicName: string, a: AppointmentSummary) =>
-    `${clinicName}: Randevunuz ${displayDate(a.date)} ${a.time} olarak güncellenmiştir.`,
+  rescheduled: (clinicName: string, a: Pick<AppointmentSummary, "date" | "time">) =>
+    `${clinicName}: Randevunuz ${displayDate(a.date)} saat ${a.time} olarak güncellendi.`,
+
+  appointmentReminder: (clinicName: string, a: Pick<AppointmentSummary, "date" | "time">) =>
+    `${clinicName}: ${displayDate(a.date)} saat ${a.time} randevunuzu hatırlatırız. Gelemeyecekseniz lütfen bizi arayın.`,
 };
+
+/** Recorded in the notification log instead of the text. */
+export const SMS_TEMPLATE_KEYS = {
+  appointmentReminder: "appointment_reminder.v1",
+} as const;
 
 /** Sends without throwing: an SMS failure must never undo or fail a booking. */
 export async function sendSmsSafely(to: string, body: string, context: Record<string, unknown>) {

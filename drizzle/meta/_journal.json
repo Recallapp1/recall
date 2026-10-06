@@ -57,6 +57,13 @@
       "when": 1791196125154,
       "tag": "0007_platform_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791284564492,
+      "tag": "0008_notifications",
+      "breakpoints": true
     }
   ]
 }

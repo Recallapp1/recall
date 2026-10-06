@@ -22,6 +22,26 @@
 
 Kilitlerden biri kapalıysa kayıt `skipped` olur ve hiçbir sağlayıcı çağrılmaz.
 
+## V0 onayı ile gelen ek kararlar (2026-10-06)
+
+1. **Kiracı izolasyonu:** Ucuz olan yerde **bileşik yabancı anahtar** kullanılır.
+   - V0: `notifications (clinic_id, patient_id)` → `patients (clinic_id, id)`, `ON DELETE SET NULL (patient_id)`.
+   - V1: `follow_up_plans (clinic_id, patient_id)`, `follow_up_visits (clinic_id, plan_id)` ve `(clinic_id, appointment_id)`.
+   - Hedef tablolara `UNIQUE (clinic_id, id)` eklenir.
+   - Bileşik anahtar konamayan her yazma yolu (çok biçimli `subject_id`, iş, eşleştirme) için klinik eşitliğini kontrol eden ayrı test yazılır. İş klinikleri asla karıştırmaz.
+2. **Otomatik sayılan ziyaret:** V1'de arayüzde açıkça "otomatik sayıldı" diye gösterilir ve tek tıkla düzeltilir ("Gelmedi" / "Tamamlandı").
+   - Bu bilgi türetilir: bağlı randevu `scheduled`/`confirmed` ve saati geçmiş. Personel durumu değiştirince "otomatik" etiketi kalkar.
+   - Ek kolon gerekmez. `follow_up_visits.source` bağlanma şeklini, randevu durumu sayılma şeklini taşır.
+3. **Otomatik başlatma (satır 15):** `follow_up_rules.auto_start` kolonu **kalır** (varsayılan `false`). V1'de **iş yolu ve arayüzü yapılmaz**; V1.1'e ertelendi.
+4. **Geç alınan randevu:** Günlük işten sonra ertesi sabah için alınan randevu hatırlatılamaz. Sessizce düşürülmez; `skipped` + `too_late` olarak kaydedilir.
+   - **Sınırlama:** İş günde bir kez çalıştığı sürece (Vercel Hobby) hatırlatma "bir gün önce, 10:00"dır.
+   - Bir önceki günün işinden sonra alınan, o güne ait her randevu `too_late` olur. Vercel Pro'da saatlik işle kalkar.
+5. **Production güvenliği:**
+   - 0008 yalnızca ekleme yapar (test: `production-safety.test.ts`). Deploy'da otomatik uygulanması güvenlidir.
+   - `SMS_SENDING_ENABLED` production'da **tanımlı değildir**.
+   - Cron rotaları doğru `CRON_SECRET` olmadan 401, secret yoksa 503 döner (testli).
+6. **Saklama süreleri** "hukuki inceleme bekliyor" olarak işaretlidir (DATA-RETENTION.md).
+
 ## A. Özet
 
 Ne yapılacak:
@@ -370,8 +390,8 @@ pending ──(iş sahiplenir)──> sending ──> sent
 ## M. Yol haritası
 
 - **V0:** `notifications` kaydı, günlük iş, randevu hatırlatması (stub), SMS kilitleri, şablonların genelleştirilmesi, `sms_opt_out_at`.
-- **V1:** kurallar, planlar, ziyaretler, eşleştirme, Takip sekmesi, plan bazlı izin, takip hatırlatması (stub), otomatik başlatma (varsayılan kapalı), KVKK genişlemeleri, konsol anahtarı.
-- **V1.1:** kural değişikliğini mevcut planlara uygulama, kliniğe SMS kullanım görünürlüğü, saatlik iş (Pro).
+- **V1:** kurallar, planlar, ziyaretler, eşleştirme ("otomatik sayıldı" etiketi ve kolay düzeltme), Takip sekmesi, plan bazlı izin, takip hatırlatması (stub), KVKK genişlemeleri, konsol anahtarı. `auto_start` kolonu var ama iş yolu ve arayüzü yok.
+- **V1.1:** otomatik plan başlatma (iş yolu ve arayüz), kural değişikliğini mevcut planlara uygulama, kliniğe SMS kullanım görünürlüğü, saatlik iş (Pro).
 - **V2:** kademeli protokoller (`follow_up_rule_steps` + plan adım sayacı; V1 planı = tek adımlı tekrar), sesli asistan önerisi, Netgsm gelen RET/STOP (F2), hekim erişimi.
 
 ## N. Test planı

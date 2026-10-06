@@ -249,6 +249,7 @@ describe("patients", () => {
     const data = await exportPatientData(db, scopeFor(a.ctx), patientId);
     expect(data?.hasta).toMatchObject({ adSoyad: "Bilgi Talep Eden", telefon: "+905320000008" });
     expect(data?.randevular).toHaveLength(1);
+    expect(data?.bildirimler).toEqual([]);
     expect(data?.aramalar).toEqual([
       expect.objectContaining({ ozet: "Randevu aldı.", dokum: "Agent: Merhaba" }),
     ]);

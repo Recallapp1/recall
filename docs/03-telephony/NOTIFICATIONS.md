@@ -31,3 +31,19 @@ Randevu onayı ve hatırlatma, hasta ile klinik arasındaki hizmet ilişkisine d
 - Seçim: `SMS_PROVIDER=netgsm|console`.
 - Gönderim randevu transaction'ından **sonra** yapılır. SMS hatası randevuyu geri almaz, hata loglanır.
 - Faz 2: `notifications` tablosu (tip, randevu, durum, sağlayıcı mesaj ID'si) ile idempotency ve hatırlatmaların tekrar gönderilmemesi sağlanır.
+
+## Uygulama (V0, 2026-10-06)
+
+- **Kayıt:** `notifications` tablosu. Her mesaj için bir satır: tür, konu (randevu), `dedupe_key`, şablon anahtarı, durum ve gönderilmeme sebebi. **Mesaj metni ve telefon saklanmaz.**
+- **İş:** `/api/cron/notifications`, her gün 07:00 UTC (10:00 İstanbul). Klinik klinik çalışır; önce planlar, sonra gönderir. Gönderim yalnızca kliniğin yerel 09:00–20:00 aralığında yapılır.
+- **Randevu hatırlatması** bir gün önce gönderilir. İşten sonra alınan yarın sabahki randevular `skipped(too_late)` olarak kaydedilir (saatlik iş Vercel Pro ile).
+- **Gerçek SMS kilitleri:** üçü de açık olmadan sağlayıcı çağrılmaz.
+  1. `SMS_SENDING_ENABLED=true`: production'da tanımlı değil.
+  2. Teslim eden sağlayıcı (`SMS_PROVIDER=netgsm`).
+  3. Kliniğin hatırlatma ayarı.
+- **Gönderimin güvenceleri:**
+  - en fazla bir kez gönderim: takılan gönderim `unknown` olur, yeniden denenmez;
+  - en fazla 3 deneme;
+  - klinik başına günde 100, hasta başına günde 1 SMS.
+- **Şablonlar genel:** hasta adı, hizmet veya tedavi yok (onay, iptal, erteleme ve hatırlatma).
+- **Hasta "SMS istemiyor":** `patients.sms_opt_out_at`. Dolu olunca tüm mesajlar `skipped(opted_out)` olur.

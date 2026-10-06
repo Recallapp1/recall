@@ -1,18 +1,13 @@
 import { env } from "@/lib/env";
 import { safeError } from "@/lib/safe-error";
+import { rejectUnauthorizedCron } from "@/server/cron-auth";
 import { db } from "@/server/db";
 import { applyRetention } from "@/server/domain/retention";
 
-/** Daily (vercel.json). Vercel Cron sends `Authorization: Bearer $CRON_SECRET`. */
+/** Daily (vercel.json). */
 export async function GET(request: Request) {
-  const secret = env().CRON_SECRET;
-  if (!secret) {
-    console.error(JSON.stringify({ msg: "cron.not_configured", job: "retention" }));
-    return Response.json({ error: "CRON_SECRET is not set" }, { status: 503 });
-  }
-  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const rejected = rejectUnauthorizedCron(request, env().CRON_SECRET, "retention");
+  if (rejected) return rejected;
 
   try {
     const result = await applyRetention(db(), new Date());

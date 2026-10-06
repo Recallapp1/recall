@@ -150,17 +150,13 @@ export function BookingRulesForm({
           />
           <Label htmlFor="smsReminder">Randevudan önce hatırlatma SMS&apos;i gönder</Label>
         </div>
-        {value.smsReminderHoursBefore !== null && (
-          <NumberField
-            label="Hatırlatma zamanı"
-            value={value.smsReminderHoursBefore}
-            onChange={set("smsReminderHoursBefore")}
-            min={1}
-            max={168}
-            unit="saat önce"
-            disabled={!editable}
-          />
-        )}
+        {/* The job runs once a day for now (docs/proposals/TAKIP.md, V0), so the
+            stored hours are not offered until hourly runs exist. */}
+        <p className="text-sm text-body">
+          Hatırlatma, randevudan bir gün önce saat 10:00 civarında gönderilir. Mesajlarda hizmet
+          veya tedavi bilgisi yer almaz. SMS gönderimi henüz etkin değil; etkinleştiğinde bu ayarlar
+          geçerli olur.
+        </p>
       </SettingsCard>
     </>
   );

@@ -30,6 +30,7 @@ import {
   appointments,
   callbackRequests,
   calls,
+  notifications,
   patients,
   practitioners,
   services,
@@ -37,6 +38,7 @@ import {
 } from "../db/schema";
 import { practitionerDisplayName, type ClinicContext } from "./clinics";
 import { DomainError } from "./errors";
+import { detachPatientNotifications } from "./notifications";
 import { addLocalDays, localToUtc, localToday, utcToLocal, type LocalDate } from "./time";
 
 /*
@@ -708,6 +710,7 @@ export async function anonymizePatient(
       .update(appointments)
       .set({ notes: null })
       .where(and(eq(appointments.clinicId, clinicId), eq(appointments.patientId, patientId)));
+    await detachPatientNotifications(tx, clinicId, patientId);
     await tx
       .update(patients)
       .set({
@@ -730,7 +733,7 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
   if (!found) return null;
   const { patient } = found;
 
-  const [callRows, callbackRows] = await Promise.all([
+  const [callRows, callbackRows, notificationRows] = await Promise.all([
     exec
       .select({
         startedAt: calls.startedAt,
@@ -759,6 +762,19 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
         ),
       )
       .orderBy(desc(callbackRequests.createdAt)),
+    exec
+      .select({
+        kind: notifications.kind,
+        status: notifications.status,
+        skipReason: notifications.skipReason,
+        createdAt: notifications.createdAt,
+        sentAt: notifications.sentAt,
+      })
+      .from(notifications)
+      .where(
+        and(eq(notifications.clinicId, scope.clinicId), eq(notifications.patientId, patient.id)),
+      )
+      .orderBy(desc(notifications.createdAt)),
   ]);
 
   return {
@@ -785,6 +801,14 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
       ozet: c.summary,
       dokum: c.transcript,
       sesKaydiVar: c.hasRecording,
+    })),
+    // What was sent and when; message texts are never stored.
+    bildirimler: notificationRows.map((n) => ({
+      tur: n.kind,
+      durum: n.status,
+      gonderilmemeSebebi: n.skipReason,
+      olusturulma: n.createdAt,
+      gonderim: n.sentAt,
     })),
     geriAramaTalepleri: callbackRows.map((c) => ({
       tarih: c.createdAt,

@@ -23,6 +23,11 @@ import {
   APPOINTMENT_STATUSES,
 } from "../../lib/contracts/appointment";
 import { CALL_OUTCOMES } from "../../lib/contracts/call";
+import {
+  NOTIFICATION_CHANNELS,
+  NOTIFICATION_KINDS,
+  NOTIFICATION_STATUSES,
+} from "../../lib/contracts/notification";
 
 import type { ClinicSettingsInput } from "../domain/clinic-settings";
 
@@ -53,6 +58,12 @@ export const callOutcome = pgEnum("call_outcome", CALL_OUTCOMES);
 export const callbackStatus = pgEnum("callback_status", ["open", "done"]);
 
 export const voiceAgentStatus = pgEnum("voice_agent_status", ["pending", "synced", "error"]);
+
+export const notificationKind = pgEnum("notification_kind", NOTIFICATION_KINDS);
+
+export const notificationChannel = pgEnum("notification_channel", NOTIFICATION_CHANNELS);
+
+export const notificationStatus = pgEnum("notification_status", NOTIFICATION_STATUSES);
 
 export { ACTIVE_APPOINTMENT_STATUSES };
 
@@ -363,10 +374,17 @@ export const patients = pgTable(
     notes: text(),
     /** First time the privacy notice was played to this patient. */
     kvkkNoticeAt: timestamp({ withTimezone: true }),
+    /** The patient asked not to receive SMS (channel-level opt-out). */
+    smsOptOutAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [uniqueIndex().on(t.clinicId, t.phone)],
+  (t) => [
+    uniqueIndex().on(t.clinicId, t.phone),
+    // Target of composite foreign keys (clinic_id, patient_id): a row of one
+    // clinic can never point at another clinic's patient.
+    uniqueIndex("patients_clinic_id_id_key").on(t.clinicId, t.id),
+  ],
 );
 
 export const calls = pgTable(
@@ -442,6 +460,55 @@ export const callbackRequests = pgTable(
   (t) => [index().on(t.clinicId, t.status)],
 );
 
+// ─── Notifications (docs/proposals/TAKIP.md, V0) ─────────────────────────────
+
+/**
+ * Outbound message log: one row per message we intend to send, so a reminder
+ * is planned once, sent at most once and its outcome is visible. No message
+ * text and no phone number are stored (KVKK): the template key says what was
+ * sent and the number is read from the patient at send time.
+ *
+ * `patient_id` references patients through a composite foreign key
+ * (clinic_id, patient_id) with ON DELETE SET NULL (patient_id), written by
+ * hand in migration 0008 because Drizzle cannot express the column list.
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: id(),
+    clinicId: clinicRef(),
+    patientId: uuid(),
+    kind: notificationKind().notNull(),
+    channel: notificationChannel().notNull().default("sms"),
+    /** The appointment or follow-up plan the message is about (polymorphic, no FK). */
+    subjectId: uuid().notNull(),
+    /** Makes planning idempotent, e.g. "appt:<id>:<startsAt epoch ms>". */
+    dedupeKey: text().notNull(),
+    templateKey: text().notNull(),
+    status: notificationStatus().notNull().default("pending"),
+    /** One of SKIP_REASONS (src/lib/contracts/notification.ts). */
+    skipReason: text(),
+    attempts: smallint().notNull().default(0),
+    /** Earliest time the message may go out. */
+    scheduledFor: timestamp({ withTimezone: true }).notNull(),
+    lockedAt: timestamp({ withTimezone: true }),
+    sentAt: timestamp({ withTimezone: true }),
+    provider: text(),
+    providerMessageId: text(),
+    errorCode: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex().on(t.dedupeKey),
+    index().on(t.status, t.scheduledFor),
+    index().on(t.clinicId, t.createdAt),
+    index().on(t.subjectId),
+    index().on(t.patientId),
+    check("notifications_attempts_range", sql`${t.attempts} between 0 and 10`),
+  ],
+);
+
 // ─── Personal panel preferences (F3.5) ───────────────────────────────────────
 
 export const memberPreferences = pgTable("member_preferences", {
@@ -515,3 +582,4 @@ export type VoiceAgent = typeof voiceAgents.$inferSelect;
 export type PhoneNumber = typeof phoneNumbers.$inferSelect;
 export type DemoRequest = typeof demoRequests.$inferSelect;
 export type AuditEvent = typeof auditEvents.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
