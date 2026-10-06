@@ -82,6 +82,7 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("yalnızca bir randevu oluştur");
     expect(prompt).toContain("Aynı saate iki randevu asla oluşturma");
     expect(prompt).toContain("hizmeti, günü ve saati geri okuyup onay al");
+    expect(prompt).toContain("check_availability sonucu gelmeden asla belirli bir saat önerme");
   });
 
   it("does not guess gendered titles from names", () => {

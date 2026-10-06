@@ -62,7 +62,11 @@ Güvenlik: Dönüşte sadece randevu tarihi, saati, hizmet ve hekim bilgisi bulu
 
 Akış: hasta bul veya oluştur → slotun hâlâ uygun olduğunu doğrula → transaction içinde ekle (exclusion constraint son savunma hattı) → SMS kuyruğa al.
 
-Hatalar: `SLOT_UNAVAILABLE`, `INVALID_SERVICE`, `INVALID_PRACTITIONER`, `OUTSIDE_BOOKING_WINDOW`, `PHONE_REQUIRED`.
+Hatalar: `SLOT_UNAVAILABLE`, `INVALID_SERVICE`, `INVALID_PRACTITIONER`, `OUTSIDE_BOOKING_WINDOW`, `PHONE_REQUIRED`, `INVALID_PHONE`, `PATIENT_BUSY`.
+
+**`PATIENT_BUSY` (2026-10-06):** Sesli asistanla alınan randevu, aynı telefon numarasının çakışan aktif randevusuyla örtüşemez. Canlı testte yanlış duyulan ikinci bir hizmet ("sekiz Ekim" → "çekim") arayanın kendi saatine yazılmaya çalışıldı; bunu sunucu tarafında kapatır. Aynı randevunun tekrarlanan çağrısı (idempotency) ve panelden personel kayıtları etkilenmez.
+
+> **Bilinen sınırlama:** Hasta kimliği telefon numarasıdır. Aynı numaradan bir aile üyesi için **aynı saate** randevu istenirse de reddedilir; asistan başka saat önerir veya personel panelden kaydeder. Olası sonraki adım: "başkası adına randevu" akışı. Asistan randevunun kimin için olduğunu sorar ve ikinci kişiyi ayrı hasta olarak kaydeder. Bu, hasta kimliğinin yalnızca telefona bağlı olmamasını gerektirir (şema değişikliği).
 
 ## `cancel_appointment`
 
