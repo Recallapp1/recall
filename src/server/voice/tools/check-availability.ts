@@ -13,7 +13,7 @@ const MAX_OFFERED_SLOTS = 6;
 export const checkAvailability = defineTool({
   name: "check_availability",
   description:
-    "Bir hizmet için belirli bir gündeki uygun randevu saatlerini getirir. Saat önermeden önce mutlaka çağır; asla tahminle saat söyleme.",
+    "Bir hizmet için belirli bir gündeki uygun randevu saatlerini getirir. Saat önermeden önce mutlaka çağır; asla tahminle saat söyleme. Yalnızca hastanın açıkça istediği hizmet için çağır; hizmet belirsizse önce hastaya sor.",
   fillerMessage: "Hemen takvime bakıyorum.",
   input: z.object({
     serviceId: entityId("Hizmet"),

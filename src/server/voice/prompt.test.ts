@@ -75,6 +75,15 @@ describe("buildSystemPrompt", () => {
     expect(buildSystemPrompt(promptInput())).toBe(buildSystemPrompt(promptInput()));
   });
 
+  it("never guesses the service and books one appointment unless asked for more", () => {
+    const prompt = buildSystemPrompt(promptInput());
+    expect(prompt).toContain("Hizmeti asla tahmin etme");
+    expect(prompt).toContain('"sekiz" ile "çekim"');
+    expect(prompt).toContain("yalnızca bir randevu oluştur");
+    expect(prompt).toContain("Aynı saate iki randevu asla oluşturma");
+    expect(prompt).toContain("hizmeti, günü ve saati geri okuyup onay al");
+  });
+
   it("does not guess gendered titles from names", () => {
     expect(buildSystemPrompt(promptInput())).toContain('"Bey" veya "Hanım" kullanma');
   });

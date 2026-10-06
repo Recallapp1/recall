@@ -14,7 +14,7 @@ import { entityId, localDate, localTime, phone } from "./schemas";
 export const bookAppointmentTool = defineTool({
   name: "book_appointment",
   description:
-    "Randevu oluşturur. Sadece check_availability'nin döndürdüğü bir saat için ve hasta bilgileri geri okuyup açıkça onayladıktan sonra çağır.",
+    "Randevu oluşturur. Sadece check_availability'nin döndürdüğü bir saat için ve hasta hizmeti, günü ve saati açıkça onayladıktan sonra çağır. Hasta açıkça birden fazla hizmet istemedikçe bir görüşmede tek randevu oluştur; aynı saate ikinci randevu oluşturma.",
   fillerMessage: "Randevunuzu oluşturuyorum.",
   input: z.object({
     serviceId: entityId("Hizmet"),

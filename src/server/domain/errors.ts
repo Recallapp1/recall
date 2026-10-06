@@ -10,6 +10,7 @@ export type DomainErrorCode =
   | "INVALID_DATE"
   | "OUTSIDE_BOOKING_WINDOW"
   | "SLOT_UNAVAILABLE"
+  | "PATIENT_BUSY"
   | "PHONE_REQUIRED"
   | "INVALID_PHONE"
   | "INVALID_VOICE"

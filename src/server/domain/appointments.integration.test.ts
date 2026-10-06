@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
 import type { Database } from "../db";
-import { appointments, patients } from "../db/schema";
+import { appointments, patients, practitioners, services } from "../db/schema";
 import {
   bookAppointment,
   cancelAppointment,
@@ -92,6 +92,43 @@ describe("bookAppointment", () => {
       book(clinic, { patientName: "Mehmet Kaya", patientPhone: "+905559998877" }),
       "SLOT_UNAVAILABLE",
     );
+  });
+
+  it("refuses a second voice booking that overlaps the caller's own appointment", async () => {
+    const clinic = await createTestClinic(db);
+    // A second practitioner and service, so the slot itself is free.
+    const [other] = await db
+      .insert(practitioners)
+      .values({ clinicId: clinic.ctx.clinic.id, name: "Elif Kaya", title: "Dt." })
+      .returning();
+    const [extraction] = await db
+      .insert(services)
+      .values({ clinicId: clinic.ctx.clinic.id, name: "Diş Çekimi", durationMinutes: 30 })
+      .returning();
+    await book(clinic, { time: "10:00" });
+
+    // Seen live: "sekiz Ekim" heard as "çekim" → a second booking in the same slot.
+    await expectDomainError(
+      book(clinic, { time: "10:00", practitionerId: other!.id, serviceId: extraction!.id }),
+      "PATIENT_BUSY",
+    );
+    // A retried call for the same booking is still idempotent, not refused.
+    const retry = await book(clinic, { time: "10:00" });
+    expect(retry.created).toBe(false);
+    // Another time is fine, and staff booking from the panel keep full control.
+    const later = await book(clinic, {
+      time: "11:00",
+      practitionerId: other!.id,
+      serviceId: extraction!.id,
+    });
+    expect(later.created).toBe(true);
+    const staff = await book(clinic, {
+      time: "10:00",
+      practitionerId: other!.id,
+      serviceId: extraction!.id,
+      source: "panel",
+    });
+    expect(staff.created).toBe(true);
   });
 
   it("requires a phone number when caller ID is withheld", async () => {

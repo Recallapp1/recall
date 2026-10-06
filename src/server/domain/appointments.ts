@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, lt, sql } from "drizzle-orm";
 
 import { normalizePhone } from "@/lib/phone";
 
@@ -82,6 +82,33 @@ export async function bookAppointment(
   const slot = availability.slots.find((s) => s.time === input.time);
   if (!slot) {
     throw new DomainError("SLOT_UNAVAILABLE", "Bu saat artık uygun değil.");
+  }
+  // The assistant once booked a second, misheard service into the caller's own
+  // slot ("sekiz Ekim" heard as "çekim"). A caller cannot be in two treatments
+  // at once, so voice bookings may not overlap the patient's own appointments.
+  // Staff booking from the panel keep full control.
+  if (input.source === "voice") {
+    const [busy] = await db
+      .select({ id: appointments.id })
+      .from(appointments)
+      .innerJoin(patients, eq(patients.id, appointments.patientId))
+      .where(
+        and(
+          eq(appointments.clinicId, clinic.id),
+          eq(patients.clinicId, clinic.id),
+          eq(patients.phone, phone),
+          inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
+          lt(appointments.startsAt, slot.endsAt),
+          gt(appointments.endsAt, slot.startsAt),
+        ),
+      )
+      .limit(1);
+    if (busy) {
+      throw new DomainError(
+        "PATIENT_BUSY",
+        "Bu saatte adınıza zaten bir randevu var. Başka bir saat mi istersiniz, yoksa yalnızca mevcut randevunuz yeterli mi?",
+      );
+    }
   }
 
   try {
