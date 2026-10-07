@@ -39,6 +39,20 @@ describe("safeNextPath", () => {
     expect(safeNextPath("/panel/randevular")).toBe("/panel/randevular");
   });
 
+  it("rejects targets a browser would turn into another host", () => {
+    // Browsers drop tabs and line breaks in URLs and read "\" as "/".
+    for (const sneaky of [
+      "/\t/evil.com",
+      "/\n/evil.com",
+      "/\r/evil.com",
+      "/ /evil.com",
+      "/a\\..\\\\evil.com",
+    ]) {
+      expect(safeNextPath(sneaky)).toBe("/panel/baslangic");
+    }
+    expect(safeNextPath("/panel/takvim?gun=2026-10-08#x")).toBe("/panel/takvim?gun=2026-10-08#x");
+  });
+
   it("rejects external and protocol-relative targets", () => {
     expect(safeNextPath("https://evil.example")).toBe("/panel/baslangic");
     expect(safeNextPath("//evil.example")).toBe("/panel/baslangic");

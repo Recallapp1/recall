@@ -48,6 +48,11 @@ export type AcceptInvitationField = keyof z.input<typeof acceptInvitationSchema>
  */
 export function safeNextPath(value: unknown, fallback = "/panel/baslangic"): string {
   if (typeof value !== "string") return fallback;
-  if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return fallback;
-  return value;
+  // Browsers drop tabs and line breaks and read "\" as "/", so "/\t/evil.com"
+  // would become "//evil.com": allow visible characters only, no backslash.
+  if (!/^\/[^\s\\]*$/.test(value) || value.startsWith("//")) return fallback;
+  // Resolved against a placeholder origin, the target must stay on it.
+  const resolved = new URL(value, "https://recall.invalid");
+  if (resolved.origin !== "https://recall.invalid") return fallback;
+  return resolved.pathname + resolved.search + resolved.hash;
 }
