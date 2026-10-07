@@ -230,3 +230,34 @@ describe("single SMS path", () => {
     expect(files.filter((f) => f.text.includes("sendSmsSafely"))).toEqual([]);
   });
 });
+
+// The WORKLOG noted a 3-hour shift when a database tool read `AT TIME ZONE`
+// output as local time. The app avoids that class of bug by construction.
+describe("time zone handling", () => {
+  const schemaSource = readFileSync("src/server/db/schema.ts", "utf8");
+
+  it("stores every instant as timestamptz", () => {
+    const timestamps = schemaSource.match(/timestamp\([^)]*\)/g) ?? [];
+    expect(timestamps.length).toBeGreaterThan(10);
+    for (const column of timestamps) expect(column).toContain("withTimezone: true");
+  });
+
+  it("reads calendar dates as strings, never as JavaScript dates", () => {
+    const dates = schemaSource.match(/\bdate\([^)]*\)/g) ?? [];
+    expect(dates.length).toBeGreaterThan(3);
+    for (const column of dates) expect(column).toContain('mode: "string"');
+  });
+
+  it("never converts time zones in SQL", () => {
+    const sources = (dir: string): string[] =>
+      readdirSync(dir).flatMap((name) => {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) return sources(path);
+        return /\.(ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name) ? [path] : [];
+      });
+    const offenders = sources("src").filter((path) =>
+      /at time zone/i.test(readFileSync(path, "utf8")),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

@@ -3,7 +3,7 @@ import "server-only";
 import { and, inArray, isNotNull, lt, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
-import { callbackRequests, calls, followUpPlans, notifications } from "../db/schema";
+import { callbackRequests, calls, followUpPlans, jobRuns, notifications } from "../db/schema";
 import { deleteExpiredRateLimits } from "./rate-limit";
 
 /** docs/05-compliance/DATA-RETENTION.md */
@@ -19,6 +19,8 @@ export const RETENTION_DAYS = {
   closedFollowUp: 730,
   /** Callback notes (free text may describe a complaint). Pending legal review. */
   callbackRequest: 90,
+  /** Job run records (counts only): enough history to see a pattern. */
+  jobRun: 90,
 } as const;
 
 export interface RetentionResult {
@@ -29,6 +31,7 @@ export interface RetentionResult {
   followUpsDeleted: number;
   rateLimitsDeleted: number;
   callbacksDeleted: number;
+  jobRunsDeleted: number;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -92,7 +95,13 @@ export async function applyRetention(exec: Executor, now: Date): Promise<Retenti
     )
     .returning({ id: callbackRequests.id });
 
+  const oldRuns = await exec
+    .delete(jobRuns)
+    .where(lt(jobRuns.startedAt, new Date(now.getTime() - RETENTION_DAYS.jobRun * DAY_MS)))
+    .returning({ id: jobRuns.id });
+
   return {
+    jobRunsDeleted: oldRuns.length,
     callbacksDeleted: oldCallbacks.length,
     rateLimitsDeleted,
     followUpsDeleted: closedPlans.length,

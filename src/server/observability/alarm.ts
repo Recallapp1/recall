@@ -2,6 +2,8 @@ import "server-only";
 
 import { safeError } from "@/lib/safe-error";
 
+import { captureAlarm } from "./sentry";
+
 /**
  * Something the Recall team must look at now. Logged at error level with a
  * fixed `ALARM` marker that error tracking and log alerts match on
@@ -12,12 +14,10 @@ export function raiseAlarm(
   fields: Record<string, string | number | boolean | null> = {},
   error?: unknown,
 ): void {
-  console.error(
-    JSON.stringify({
-      msg: "ALARM",
-      event,
-      ...fields,
-      ...(error === undefined ? {} : { error: safeError(error) }),
-    }),
-  );
+  const record = {
+    ...fields,
+    ...(error === undefined ? {} : { error: safeError(error) }),
+  };
+  console.error(JSON.stringify({ msg: "ALARM", event, ...record }));
+  captureAlarm(event, record);
 }

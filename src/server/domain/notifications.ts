@@ -34,6 +34,7 @@ import { SMS_TEMPLATE_KEYS, smsTemplates } from "../notifications/sms";
 import { parseClinicSettings, type ClinicSettings } from "./clinic-settings";
 import { REMINDER_OFFSETS_DAYS } from "./follow-up-logic";
 import { recomputeStalePlans } from "./follow-ups";
+import { beginRun, endRun, finishedClinicIds, recordClinic, type RunStatus } from "./job-runs";
 import { addLocalDays, localToday, localToUtc, utcToLocal, timeToMinutes } from "./time";
 
 /**
@@ -613,29 +614,54 @@ async function finish(
 }
 
 export interface JobResult {
+  /** skipped: today's run had already finished every clinic. */
+  status: RunStatus | "skipped";
   clinics: number;
   planned: number;
   tooLate: number;
   dispatched: DispatchResult;
   failedClinics: number;
+  /** Clinics left for a continuation when the time budget ran out. */
+  remaining: number;
+  invocations: number;
+}
+
+export interface JobOptions {
+  /** Stop starting new clinics after this long; the rest go to a continuation. */
+  budgetMs?: number;
+  /** Milliseconds, for tests. */
+  clock?: () => number;
 }
 
 /**
  * The daily job: each clinic on its own (a failure in one never stops or
- * touches another), planning first, then sending.
+ * touches another), planning first, then sending. Progress is recorded per
+ * clinic in today's run, so a continuation or a re-run only does what is left
+ * (failed clinics are tried again).
  */
 export async function runNotificationJob(
   db: Database,
   deps: DispatchDeps,
   log: (failure: { clinicId: string; error: unknown }) => void = () => {},
+  options: JobOptions = {},
 ): Promise<JobResult> {
+  const clock = options.clock ?? (() => performance.now());
+  const startedAt = clock();
+  const budget = options.budgetMs ?? Number.POSITIVE_INFINITY;
+  const run = await beginRun(db, "notifications", deps.now);
   const result: JobResult = {
+    status: "succeeded",
     clinics: 0,
     planned: 0,
     tooLate: 0,
     dispatched: { sent: 0, failed: 0, retried: 0, skipped: 0, unknown: 0 },
     failedClinics: 0,
+    remaining: 0,
+    invocations: run.invocations,
   };
+  if (run.status === "succeeded") return { ...result, status: "skipped" };
+
+  const done = await finishedClinicIds(db, run.id);
   const rows = await db
     .select({
       id: clinics.id,
@@ -646,11 +672,16 @@ export async function runNotificationJob(
     })
     .from(clinics)
     .orderBy(asc(clinics.createdAt));
+  const pending = rows.filter((row) => !done.has(row.id));
 
-  for (const row of rows) {
-    const clinic: ClinicRow = { ...row, settings: parseClinicSettings(row.settings) };
+  for (const [index, row] of pending.entries()) {
+    if (clock() - startedAt > budget) {
+      result.remaining = pending.length - index;
+      break;
+    }
     result.clinics += 1;
     try {
+      const clinic: ClinicRow = { ...row, settings: parseClinicSettings(row.settings) };
       const plan = await planAppointmentReminders(db, clinic, deps.now);
       result.planned += plan.planned;
       result.tooLate += plan.tooLate;
@@ -663,12 +694,36 @@ export async function runNotificationJob(
       for (const key of Object.keys(sent) as (keyof DispatchResult)[]) {
         result.dispatched[key] += sent[key];
       }
+      await recordClinic(db, run.id, row.id, { status: "done" }, deps.now);
     } catch (error) {
       result.failedClinics += 1;
-      log({ clinicId: clinic.id, error });
+      log({ clinicId: row.id, error });
+      await recordClinic(
+        db,
+        run.id,
+        row.id,
+        { status: "failed", errorCode: errorCodeOf(error) },
+        deps.now,
+      ).catch(() => {});
     }
   }
+
+  result.status =
+    result.remaining > 0 ? "partial" : result.failedClinics > 0 ? "failed" : "succeeded";
+  const { status, ...counts } = result;
+  await endRun(db, run.id, status as Exclude<RunStatus, "running">, counts, deps.now);
   return result;
+}
+
+/** A short, data-free code for the run record: a domain or database code, or the error name. */
+function errorCodeOf(error: unknown): string {
+  if (error && typeof error === "object") {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === "string") return code.slice(0, 40);
+    const cause = (error as { cause?: { code?: unknown } }).cause?.code;
+    if (typeof cause === "string") return cause.slice(0, 40);
+  }
+  return error instanceof Error ? error.name.slice(0, 40) : "error";
 }
 
 /** KVKK erasure: the log keeps no link to the person; pending messages are dropped. */

@@ -53,3 +53,31 @@ Yapılandırılmış JSON, kişisel veri yok ([SECURITY.md](../05-compliance/SEC
 
 - Mesai saatlerinde (08:00–20:00) alarmlar ekibe bildirim olarak gider.
 - Pilot klinikler için doğrudan WhatsApp destek hattı.
+
+## Kurulu izleme (2026-10-07)
+
+| Ne                | Nasıl                                                                                                                                                                                                         | Durum                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Hata takibi       | Sentry, yalnızca sunucu (`src/instrumentation.ts`, `src/server/observability/sentry.ts`). `SENTRY_DSN` yoksa kapalı. Olaylardan istek gövdesi, sorgu, çerez, başlık, kullanıcı ve breadcrumb silinir (testli) | Kod hazır, hesap bekleniyor           |
+| Alarmlar          | `raiseAlarm()` → `{"msg":"ALARM", ...}` logu + Sentry sorunu (etiket `alarm`). Kaynaklar: kritik denetim kaydı yazılamadı, cron başarısız, klinik işi başarısız, iş bitirilemedi                              | Hazır                                 |
+| Uygulama sağlığı  | `GET /api/health` → 200 / 503 (veritabanı)                                                                                                                                                                    | Hazır                                 |
+| Zamanlanmış işler | `GET /api/health/jobs` → 200 / 503: bir işin son başarılı çalışması 26 saatten eskiyse, son çalışma başarısızsa veya 10 dk'dır kalp atışı yoksa. Yalnızca iş adı, durum ve saat                               | Hazır (ilk kayıtlar 8 Ekim'de oluşur) |
+| İş kayıtları      | `job_runs` (gün başına bir satır) ve `job_run_clinics` (klinik bazında ilerleme); 90 gün saklanır                                                                                                             | Hazır                                 |
+
+### Ürün ekibinin yapacakları
+
+**1. Sentry (ücretsiz Developer planı yeterli)**
+
+1. https://sentry.io/signup → hesap aç. Organizasyon oluştururken **Data Storage Location: European Union (Frankfurt)** seç (KVKK; sonradan değiştirilemez).
+2. Projects → Create Project → platform **Next.js** → ad `recall` → Create.
+3. Gösterilen **DSN**'i kopyala (`https://…@o….ingest.de.sentry.io/…`). Sihirbazın kurulum adımlarını uygulama; kod hazır.
+4. Vercel → proje `recall` → Settings → Environment Variables → **Add**: `SENTRY_DSN` = DSN, yalnızca **Production**, Sensitive işaretli → Save.
+5. Deployments → son production deploy → ⋯ → **Redeploy**.
+6. Sentry → Alerts → Create Alert → Issues → "A new issue is created" → e-posta (varsayılan kural genelde zaten açık).
+
+**2. Uptime izleme (ücretsiz: Better Stack Uptime veya UptimeRobot)**
+
+1. https://betterstack.com/uptime (veya https://uptimerobot.com) → ücretsiz hesap.
+2. Monitor 1: URL `https://recalltr.company/api/health`, beklenen durum 200, aralık planın en kısası (3–5 dk), bildirim e-posta (+ istersen telefon uygulaması).
+3. Monitor 2: URL `https://recalltr.company/api/health/jobs`, beklenen durum 200, aralık 30–60 dk. **8 Ekim 11:00 (İstanbul) sonrası ekle**: işlerin ilk kaydı o zamana kadar oluşmaz ve uç 503 döner.
+4. Alan adı taşınınca iki URL'i de güncelle ([DOMAIN-MIGRATION.md](DOMAIN-MIGRATION.md)).

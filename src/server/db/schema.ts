@@ -837,6 +837,46 @@ export const rateLimits = pgTable(
   (t) => [index().on(t.resetAt)],
 );
 
+/**
+ * One row per scheduled job per day (docs/HARDENING-2026-10.md): progress
+ * survives a timeout, a re-run continues where it stopped, and the heartbeat
+ * makes a missed or stuck run visible on /api/health/jobs.
+ */
+export const jobRuns = pgTable(
+  "job_runs",
+  {
+    id: id(),
+    job: text().notNull(),
+    /** UTC day the run belongs to. */
+    runOn: date({ mode: "string" }).notNull(),
+    /** running | partial (budget used up, continues) | succeeded | failed */
+    status: text().notNull().default("running"),
+    invocations: integer().notNull().default(1),
+    startedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    heartbeatAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp({ withTimezone: true }),
+    /** Counts only, never personal data. */
+    result: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (t) => [uniqueIndex().on(t.job, t.runOn), index().on(t.job, t.finishedAt)],
+);
+
+/** Which clinics a run has finished, so a continuation skips them. */
+export const jobRunClinics = pgTable(
+  "job_run_clinics",
+  {
+    runId: uuid()
+      .notNull()
+      .references(() => jobRuns.id, { onDelete: "cascade" }),
+    clinicId: clinicRef(),
+    /** done | failed */
+    status: text().notNull(),
+    errorCode: text(),
+    finishedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.runId, t.clinicId] })],
+);
+
 export type Clinic = typeof clinics.$inferSelect;
 export type Practitioner = typeof practitioners.$inferSelect;
 export type Service = typeof services.$inferSelect;
