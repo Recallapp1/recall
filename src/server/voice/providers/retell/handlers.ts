@@ -15,6 +15,8 @@ import {
   loadClinicDirectory,
   type ClinicContext,
 } from "../../../domain/clinics";
+import { consumeRateLimit, hashKey } from "../../../domain/rate-limit";
+import { allow } from "../../../security/rate-limits";
 import { buildCallVariables } from "../../prompt";
 import { runTool } from "../../tools";
 import { RETELL_PROVIDER } from "./config";
@@ -102,6 +104,34 @@ export async function handleFunctionCall(request: Request, deps: RetellHandlerDe
 
   const ctx = await resolveClinic(deps.db, call);
   if (!ctx) return errorResponse(404, "CLINIC_NOT_FOUND", "No clinic for this agent");
+
+  // A signature is valid for five minutes (SDK). Within that window a
+  // byte-identical request is a replay: it is answered, never executed twice.
+  // Retell retries are re-signed, and the mutating tools are idempotent anyway.
+  const now = deps.now();
+  const signature = request.headers.get("x-retell-signature") ?? "";
+  const firstSighting = await consumeRateLimit(
+    deps.db,
+    `retell-replay:${hashKey(signature)}`,
+    REPLAY_WINDOW,
+    now,
+  );
+  if (!firstSighting.allowed) {
+    log("warn", "retell.replay_rejected", { clinicId: ctx.clinic.id });
+    return Response.json({
+      ok: false,
+      error: "DUPLICATE_REQUEST",
+      message: "Bu istek zaten alındı. Sonucu görmek için find_appointments kullan.",
+    });
+  }
+  if (!(await allow("voiceToolsPerCall", [ctx.clinic.id, call.call_id], { exec: deps.db, now }))) {
+    return Response.json({
+      ok: false,
+      error: "RATE_LIMITED",
+      message:
+        "Bu görüşmede çok fazla işlem yapıldı. Hastaya klinik ekibinin geri arayacağını söyle ve görüşmeyi nazikçe bitir.",
+    });
+  }
 
   const callerPhone = normalizePhone(call.from_number);
   const callRow = await upsertCall(deps.db, {
@@ -193,6 +223,9 @@ async function resolveClinic(db: Database, call: RetellCall): Promise<ClinicCont
   }
   return ctx;
 }
+
+/** Signatures expire after five minutes; remembering them twice as long covers clock skew. */
+const REPLAY_WINDOW = { limit: 1, windowMs: 10 * 60 * 1000 };
 
 type Verified<T> = { ok: true; data: T } | { ok: false; response: Response };
 

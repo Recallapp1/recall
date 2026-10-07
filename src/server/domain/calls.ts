@@ -124,6 +124,14 @@ export async function completeCall(exec: Executor, call: Call, report: CallRepor
   if (derived) await markCallOutcome(exec, call.clinicId, call.id, derived);
 }
 
+/** Longest callback reason kept (it may describe a complaint: health data, KVKK). */
+export const CALLBACK_REASON_MAX = 500;
+
+/**
+ * One open note per call and number: a retried or repeated tool call returns
+ * the note that is already there (`created: false`). With `onlyIfExisting`
+ * nothing is inserted.
+ */
 export async function createCallbackRequest(
   exec: Executor,
   input: {
@@ -133,16 +141,38 @@ export async function createCallbackRequest(
     patientName?: string | null;
     phone?: string | null;
   },
-) {
+  options: { onlyIfExisting?: boolean } = {},
+): Promise<{ id: string; created: boolean } | null> {
+  const phone = normalizePhone(input.phone);
+  const findExisting = async () => {
+    if (!input.callId || !phone) return null;
+    const [row] = await exec
+      .select({ id: callbackRequests.id })
+      .from(callbackRequests)
+      .where(
+        and(
+          eq(callbackRequests.clinicId, input.clinicId),
+          eq(callbackRequests.callId, input.callId),
+          eq(callbackRequests.phone, phone),
+          eq(callbackRequests.status, "open"),
+        ),
+      );
+    return row ? { id: row.id, created: false } : null;
+  };
+
+  const existing = await findExisting();
+  if (existing || options.onlyIfExisting) return existing;
   const [row] = await exec
     .insert(callbackRequests)
     .values({
       clinicId: input.clinicId,
       callId: input.callId,
-      reason: input.reason.trim(),
-      patientName: input.patientName?.trim() || null,
-      phone: normalizePhone(input.phone),
+      reason: input.reason.trim().slice(0, CALLBACK_REASON_MAX),
+      patientName: input.patientName?.trim().slice(0, 100) || null,
+      phone,
     })
+    // A concurrent duplicate loses the race on the partial unique index.
+    .onConflictDoNothing()
     .returning({ id: callbackRequests.id });
-  return row;
+  return row ? { id: row.id, created: true } : await findExisting();
 }

@@ -67,6 +67,7 @@ describe("applyRetention", () => {
     expect(result).toEqual({
       followUpsDeleted: 0,
       rateLimitsDeleted: 0,
+      callbacksDeleted: 0,
       notificationsDeleted: 1,
       recordingsCleared: 3,
       transcriptsCleared: 2,
@@ -98,6 +99,7 @@ describe("applyRetention", () => {
     expect(await applyRetention(db, NOW)).toEqual({
       followUpsDeleted: 0,
       rateLimitsDeleted: 0,
+      callbacksDeleted: 0,
       notificationsDeleted: 0,
       recordingsCleared: 0,
       transcriptsCleared: 0,

@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { contentSecurityPolicy } from "./src/lib/security/csp";
+
 // Read raw here: next.config runs before the app and its env() validation.
 const appHost = process.env.APP_URL ? new URL(process.env.APP_URL).host : null;
 
@@ -10,6 +12,10 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // The panel's browser test call needs the microphone on our own origin only.
   { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=()" },
+  {
+    key: "Content-Security-Policy",
+    value: contentSecurityPolicy({ dev: process.env.NODE_ENV === "development" }),
+  },
 ];
 
 const nextConfig: NextConfig = {

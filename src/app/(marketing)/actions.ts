@@ -8,6 +8,7 @@ import {
 import { safeError } from "@/lib/safe-error";
 import { db } from "@/server/db";
 import { createDemoRequest } from "@/server/domain/demo-requests";
+import { allow, requestIp } from "@/server/security/rate-limits";
 
 /** Landing page demo request. Bots fill the hidden `website` field and are ignored. */
 export async function submitDemoRequest(
@@ -33,6 +34,13 @@ export async function submitDemoRequest(
       fieldErrors[field] ??= issue.message;
     }
     return { status: "error", message: "Lütfen işaretli alanları kontrol edin.", fieldErrors };
+  }
+
+  if (!(await allow("demoRequestIp", [await requestIp()]))) {
+    return {
+      status: "error",
+      message: "Kısa sürede çok fazla talep gönderildi. Lütfen daha sonra tekrar deneyin.",
+    };
   }
 
   try {

@@ -474,7 +474,14 @@ export const callbackRequests = pgTable(
     resolvedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index().on(t.clinicId, t.status)],
+  (t) => [
+    index().on(t.clinicId, t.status),
+    // One open note per call and number (idempotent tool retries, no flooding).
+    uniqueIndex("callback_requests_open_call_phone_key")
+      .on(t.clinicId, t.callId, t.phone)
+      .where(sql`${t.callId} is not null and ${t.status} = 'open'`),
+    index().on(t.createdAt),
+  ],
 );
 
 // ─── Notifications (docs/proposals/TAKIP.md, V0) ─────────────────────────────

@@ -502,6 +502,72 @@ describe("caller identity (abuse cases)", () => {
   });
 });
 
+describe("replay and abuse limits", () => {
+  it("answers a byte-identical replay of a signed tool call without running it again", async () => {
+    const body = {
+      name: "create_callback_request",
+      args: { reason: "Fiyat bilgisi istiyor" },
+      call: call({ call_id: "replay_1", from_number: "+905320000099" }),
+    };
+    const first = await signedRequest(body);
+    const replay = new Request(first.url, {
+      method: "POST",
+      headers: first.headers,
+      body: JSON.stringify(body),
+    });
+    expect(await (await handleFunctionCall(first, deps())).json()).toMatchObject({ ok: true });
+    expect(await (await handleFunctionCall(replay, deps())).json()).toMatchObject({
+      ok: false,
+      error: "DUPLICATE_REQUEST",
+    });
+    const rows = await db
+      .select()
+      .from(callbackRequests)
+      .where(eq(callbackRequests.phone, "+905320000099"));
+    expect(rows).toHaveLength(1);
+  });
+
+  it("keeps one callback note per call and number, and caps notes per call", async () => {
+    const callOverrides = { call_id: "cb_flood_1", from_number: "+905320000098" };
+    const first = await tool("create_callback_request", { reason: "Geri arayın" }, callOverrides);
+    const again = await tool("create_callback_request", { reason: "Geri arayın" }, callOverrides);
+    expect(first.body).toMatchObject({ ok: true });
+    expect(again.body).toMatchObject({ ok: true, alreadyExisted: true });
+    const rows = await db
+      .select()
+      .from(callbackRequests)
+      .where(eq(callbackRequests.phone, "+905320000098"));
+    expect(rows).toHaveLength(1);
+
+    // Different numbers in one call: three notes at most.
+    const results = [];
+    for (const n of ["11", "12", "13", "14"]) {
+      results.push(
+        await tool(
+          "create_callback_request",
+          { reason: "Not", phone: `0532 000 00 ${n}` },
+          { call_id: "cb_flood_2", from_number: null, call_type: "web_call" },
+        ),
+      );
+    }
+    expect(results.map((r) => r.body.ok)).toEqual([true, true, true, false]);
+    expect(results[3].body).toMatchObject({ error: "RATE_LIMITED" });
+  });
+
+  it("stops a runaway tool loop inside one call", async () => {
+    let last;
+    for (let i = 0; i < 61; i += 1) {
+      last = await tool(
+        "check_availability",
+        { serviceId: clinic.serviceId, date: "2026-10-05" },
+        // Distinct bodies: identical ones would be rejected as replays.
+        { call_id: "loop_1", start_timestamp: i },
+      );
+    }
+    expect(last!.body).toMatchObject({ ok: false, error: "RATE_LIMITED" });
+  });
+});
+
 // Every SMS a call triggers goes through the outbox and its locks.
 describe("SMS from voice tools", () => {
   const PHONE = "+905321110000";

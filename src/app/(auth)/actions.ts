@@ -20,6 +20,7 @@ import { auth } from "@/server/auth";
 import { acceptInvitationAsNewUser } from "@/server/auth/accounts";
 import { requireSession } from "@/server/auth/session";
 import { DomainError } from "@/server/domain/errors";
+import { allow, requestIp, TOO_MANY_ATTEMPTS } from "@/server/security/rate-limits";
 
 const TRY_AGAIN = "Bir sorun oluştu. Lütfen biraz sonra tekrar deneyin.";
 
@@ -46,6 +47,11 @@ export async function signIn(
       message: "Lütfen alanları kontrol edin.",
       fieldErrors: fieldErrors(parsed.error),
     };
+  }
+
+  const ip = await requestIp();
+  if (!(await allow("signInIp", [ip])) || !(await allow("signInEmail", [parsed.data.email]))) {
+    return { status: "error", message: TOO_MANY_ATTEMPTS };
   }
 
   try {
@@ -86,6 +92,12 @@ export async function requestPasswordLink(
       fieldErrors: fieldErrors(parsed.error),
     };
   }
+  if (
+    !(await allow("passwordResetIp", [await requestIp()])) ||
+    !(await allow("passwordResetEmail", [parsed.data.email]))
+  ) {
+    return { status: "error", message: TOO_MANY_ATTEMPTS };
+  }
   try {
     await auth().api.requestPasswordReset({ body: { email: parsed.data.email } });
   } catch (error) {
@@ -119,6 +131,9 @@ export async function setPassword(
       message: "Lütfen alanları kontrol edin.",
       fieldErrors: fieldErrors(parsed.error),
     };
+  }
+  if (!(await allow("setPasswordIp", [await requestIp()]))) {
+    return { status: "error", message: TOO_MANY_ATTEMPTS };
   }
   try {
     await auth().api.resetPassword({
@@ -156,6 +171,9 @@ export async function acceptInvitationWithNewAccount(
     };
   }
 
+  if (!(await allow("invitationIp", [await requestIp()]))) {
+    return { status: "error", message: TOO_MANY_ATTEMPTS };
+  }
   try {
     const { email } = await acceptInvitationAsNewUser(parsed.data);
     await auth().api.signInEmail({

@@ -22,6 +22,7 @@ import { requirePermission, type PanelContext } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { recordAudit } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
+import { allow } from "@/server/security/rate-limits";
 import { HOLIDAY_YEARS, turkishPublicHolidays } from "@/lib/holidays";
 import {
   addPublicHolidays,
@@ -217,6 +218,13 @@ export async function startTestCall(): Promise<
   ({ ok: true } & TestWebCall) | { ok: false; message: string }
 > {
   const { clinic, session } = await requirePermission({ assistantSettings: ["update"] });
+  // Each test call is billed by the voice platform.
+  if (
+    !(await allow("testCallUser", [session.user.id])) ||
+    !(await allow("testCallClinic", [clinic.id]))
+  ) {
+    return { ok: false, message: "Çok fazla test araması başlatıldı. Biraz sonra tekrar deneyin." };
+  }
   try {
     const result = await createTestWebCall(clinic.id);
     if (!result.ok) {

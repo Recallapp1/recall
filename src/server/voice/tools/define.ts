@@ -31,7 +31,7 @@ export interface ToolContext {
 }
 
 export type ToolErrorCode =
-  DomainErrorCode | "INVALID_ARGUMENTS" | "UNKNOWN_TOOL" | "INTERNAL_ERROR";
+  DomainErrorCode | "INVALID_ARGUMENTS" | "UNKNOWN_TOOL" | "INTERNAL_ERROR" | "DUPLICATE_REQUEST";
 
 export type ToolResult =
   ({ ok: true } & Record<string, unknown>) | { ok: false; error: ToolErrorCode; message: string };

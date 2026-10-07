@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "callback_requests_open_call_phone_key" ON "callback_requests" USING btree ("clinic_id","call_id","phone") WHERE "callback_requests"."call_id" is not null and "callback_requests"."status" = 'open';--> statement-breakpoint
+CREATE INDEX "callback_requests_created_at_index" ON "callback_requests" USING btree ("created_at");
