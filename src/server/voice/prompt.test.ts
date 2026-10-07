@@ -85,6 +85,14 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("check_availability sonucu gelmeden asla belirli bir saat önerme");
   });
 
+  it("ties appointment changes to caller ID, or to an ownership check without it", () => {
+    const prompt = buildSystemPrompt(promptInput());
+    expect(prompt).toContain("find_appointments'ı phone göndermeden çağır");
+    expect(prompt).toContain("Yalnızca arayan numaraya kayıtlı randevular yönetilebilir");
+    expect(prompt).toContain("phone ve verification olarak gönder");
+    expect(prompt).toContain("Bu bilgileri hastaya sen söyleme");
+  });
+
   it("does not guess gendered titles from names", () => {
     expect(buildSystemPrompt(promptInput())).toContain('"Bey" veya "Hanım" kullanma');
   });

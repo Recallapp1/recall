@@ -38,15 +38,29 @@ Uygun randevu saatlerini döner.
 
 O gün slot yoksa `slots: []` ve sonraki 3 uygun gün `nextAvailableDates` içinde döner. En fazla 6 slot döner; LLM bunlardan 2–3 tanesini sunar.
 
+## Arayan kimliği (find / cancel / reschedule), [ADR-011](../decisions/ADR-011-caller-identity.md)
+
+| Durum                                                              | Kimlik                                                                                     | Ne açıklanır / değiştirilir                                                    |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Arayan numara biliniyor (gerçek telefon araması)                   | Operatörün verdiği numara. Modelin gönderdiği `phone` **yok sayılır**                      | Yalnızca o numaraya kayıtlı randevular                                         |
+| Arayan numara gizli veya yok (gizli numara, tarayıcı test araması) | Söylenen numara + `verification` (ad soyad, randevu tarihi ve saati; hasta kendisi söyler) | Doğrulama geçmeden hiçbir şey; geçince yalnızca tarih, saat ve `appointmentId` |
+
+- Doğrulama sonucu her hatada aynıdır (`VERIFICATION_FAILED`); numara, ad veya tarihten hangisinin yanlış olduğu söylenmez.
+- Başarısız doğrulama sayılır: arama başına 3, numara başına günde 5 (Postgres `rate_limits`). Sonra doğru cevap da reddedilir (`TOO_MANY_ATTEMPTS`) ve geri arama önerilir.
+- Ad karşılaştırması büyük/küçük harf, Türkçe harf (ş→s, ı→i), noktalama ve kelime sırasından bağımsızdır; her kelime eşleşmelidir.
+
 ## `find_appointments`
 
 Hastanın gelecekteki aktif randevularını bulur.
 
-| Argüman | Tip    | Zorunlu | Not                                    |
-| ------- | ------ | ------- | -------------------------------------- |
-| phone   | string |         | Belirtilmezse arayan numara kullanılır |
+| Argüman      | Tip    | Zorunlu                  | Not                                                 |
+| ------------ | ------ | ------------------------ | --------------------------------------------------- |
+| phone        | string | Arayan numara gizliyse ✓ | Arayan numara biliniyorsa yok sayılır               |
+| verification | object | Arayan numara gizliyse ✓ | `{ patientName, appointmentDate, appointmentTime }` |
 
-Güvenlik: Dönüşte sadece randevu tarihi, saati, hizmet ve hekim bilgisi bulunur. Hasta adı, "Ayşe Hanım adına mı?" teyidi için ilk harf ve soyadı maskeli olarak verilir (`A*** Y***`).
+Arayan numara gizliyse ve `verification` yoksa yanıt her numara için aynıdır: `{ ok: true, verificationRequired: true }`. Randevu olup olmadığı söylenmez.
+
+Güvenlik: Arayan numara biliniyorsa dönüşte tarih, saat, hizmet, hekim ve maskeli ad (`A*** Y***`) bulunur. Doğrulamayla bulunan randevularda yalnızca tarih, saat ve `appointmentId` döner.
 
 ## `book_appointment`
 
@@ -64,27 +78,31 @@ Akış: hasta bul veya oluştur → slotun hâlâ uygun olduğunu doğrula → t
 
 Hatalar: `SLOT_UNAVAILABLE`, `INVALID_SERVICE`, `INVALID_PRACTITIONER`, `OUTSIDE_BOOKING_WINDOW`, `PHONE_REQUIRED`, `INVALID_PHONE`, `PATIENT_BUSY`.
 
+**Doğrulanmamış numara (2026-10-07):** `patientPhone` arayan numaradan farklıysa (başkası adına veya gizli numarayla randevu) asistan o numaranın mevcut randevuları hakkında hiçbir şey öğrenmez: `PATIENT_BUSY` yerine `SLOT_UNAVAILABLE` döner ve aynı saatteki mevcut randevu yalnızca ad soyad da eşleşirse "zaten var" olarak döndürülür.
+
 **`PATIENT_BUSY` (2026-10-06):** Sesli asistanla alınan randevu, aynı telefon numarasının çakışan aktif randevusuyla örtüşemez. Canlı testte yanlış duyulan ikinci bir hizmet ("sekiz Ekim" → "çekim") arayanın kendi saatine yazılmaya çalışıldı; bunu sunucu tarafında kapatır. Aynı randevunun tekrarlanan çağrısı (idempotency) ve panelden personel kayıtları etkilenmez.
 
 > **Bilinen sınırlama:** Hasta kimliği telefon numarasıdır. Aynı numaradan bir aile üyesi için **aynı saate** randevu istenirse de reddedilir; asistan başka saat önerir veya personel panelden kaydeder. Olası sonraki adım: "başkası adına randevu" akışı. Asistan randevunun kimin için olduğunu sorar ve ikinci kişiyi ayrı hasta olarak kaydeder. Bu, hasta kimliğinin yalnızca telefona bağlı olmamasını gerektirir (şema değişikliği).
 
 ## `cancel_appointment`
 
-| Argüman       | Tip  | Zorunlu |
-| ------------- | ---- | ------- |
-| appointmentId | uuid | ✓       |
+| Argüman             | Tip  | Zorunlu                  |
+| ------------------- | ---- | ------------------------ |
+| appointmentId       | uuid | ✓                        |
+| phone, verification |      | Arayan numara gizliyse ✓ |
 
-Randevu arayan hastaya ait olmalıdır (telefon eşleşmesi). Hatalar: `NOT_FOUND`, `TOO_LATE_TO_CANCEL`.
+Randevu arayan numaraya ait olmalıdır; arayan numara gizliyse `verification` da eşleşmelidir. Hatalar: `NOT_FOUND`, `TOO_LATE_TO_CANCEL`, `VERIFICATION_REQUIRED`, `VERIFICATION_FAILED`, `TOO_MANY_ATTEMPTS`.
 
 ## `reschedule_appointment`
 
-| Argüman        | Tip  | Zorunlu |
-| -------------- | ---- | ------- |
-| appointmentId  | uuid | ✓       |
-| date, time     |      | ✓       |
-| practitionerId | uuid |         | Belirtilmezse aynı hekim |
+| Argüman             | Tip  | Zorunlu                  |
+| ------------------- | ---- | ------------------------ |
+| appointmentId       | uuid | ✓                        |
+| date, time          |      | ✓                        |
+| practitionerId      | uuid |                          | Belirtilmezse aynı hekim |
+| phone, verification |      | Arayan numara gizliyse ✓ |
 
-Atomiktir: yeni slot ayrılamazsa eski randevu korunur.
+Kimlik kuralları `cancel_appointment` ile aynıdır. Atomiktir: yeni slot ayrılamazsa eski randevu korunur.
 
 ## `create_callback_request`
 

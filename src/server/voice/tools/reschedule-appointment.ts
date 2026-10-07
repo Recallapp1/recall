@@ -8,6 +8,7 @@ import { DomainError } from "../../domain/errors";
 import { spokenTitles } from "../../domain/speech";
 import { spokenDate, spokenTime } from "../../domain/speech";
 import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
+import { ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
 import { defineTool } from "./define";
 import { entityId, localDate, localTime, phone } from "./schemas";
 
@@ -22,18 +23,26 @@ export const rescheduleAppointmentTool = defineTool({
     time: localTime,
     practitionerId: entityId("Hekim").optional().describe("Hekim değişecekse"),
     phone: phone.optional(),
+    verification: ownershipCheck.optional(),
   }),
   async handler(ctx, input) {
     if (ctx.clinic.clinic.status === "paused") {
       throw new DomainError("CLINIC_PAUSED", "Klinik şu anda yeni randevu almıyor.");
     }
     const { clinic, settings } = ctx.clinic;
-    const { previous, appointment } = await rescheduleAppointment(ctx.db, ctx.clinic, {
-      ...input,
-      phone: input.phone ?? ctx.callerPhone,
-      callId: ctx.callId,
-      now: ctx.now,
-    });
+    const caller = resolveCaller(ctx, input.phone);
+    const { verification, ...change } = input;
+    const reschedule = (check?: Parameters<typeof rescheduleAppointment>[2]["check"]) =>
+      rescheduleAppointment(ctx.db, ctx.clinic, {
+        ...change,
+        phone: caller.phone,
+        check,
+        callId: ctx.callId,
+        now: ctx.now,
+      });
+    const { previous, appointment } = caller.trusted
+      ? await reschedule()
+      : await withOwnershipCheck(ctx, caller.phone, verification, reschedule);
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "rescheduled");
     if (settings.notifications.smsConfirmation) {

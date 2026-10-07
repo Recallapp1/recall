@@ -244,6 +244,217 @@ describe("custom functions", () => {
   });
 });
 
+// A stranger must not reach someone else's appointments by speaking their number.
+describe("caller identity (abuse cases)", () => {
+  const VICTIM = "+905559998877";
+  const VICTIM_SPOKEN = "0555 999 88 77";
+  let victimAppointmentId: string;
+
+  beforeAll(async () => {
+    const booking = await tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-07",
+        time: "10:00",
+        patientName: "Zeynep Şahin",
+      },
+      { from_number: VICTIM, call_id: "victim_book" },
+    );
+    expect(booking.body).toMatchObject({ ok: true });
+    victimAppointmentId = booking.body.appointmentId;
+  });
+
+  async function victimStatus() {
+    const [row] = await db
+      .select({ status: appointments.status })
+      .from(appointments)
+      .where(eq(appointments.id, victimAppointmentId));
+    return row.status;
+  }
+
+  it("ignores a spoken number when caller ID is known (lookup)", async () => {
+    const result = await tool("find_appointments", { phone: VICTIM_SPOKEN }, { call_id: "atk_1" });
+    expect(JSON.stringify(result.body)).not.toContain(victimAppointmentId);
+    expect(JSON.stringify(result.body)).not.toContain("2026-10-07");
+  });
+
+  it("ignores a spoken number when caller ID is known (cancel, reschedule)", async () => {
+    const cancel = await tool(
+      "cancel_appointment",
+      { appointmentId: victimAppointmentId, phone: VICTIM_SPOKEN },
+      { call_id: "atk_2" },
+    );
+    expect(cancel.body.ok).toBe(false);
+    const reschedule = await tool(
+      "reschedule_appointment",
+      {
+        appointmentId: victimAppointmentId,
+        phone: VICTIM_SPOKEN,
+        date: "2026-10-08",
+        time: "11:00",
+      },
+      { call_id: "atk_3" },
+    );
+    expect(reschedule.body.ok).toBe(false);
+    expect(await victimStatus()).toBe("scheduled");
+  });
+
+  it("reveals nothing about appointments found only through a spoken number", async () => {
+    const result = await tool(
+      "find_appointments",
+      { phone: VICTIM_SPOKEN },
+      { from_number: null, call_id: "web_atk_1", call_type: "web_call" },
+    );
+    expect(result.body).toMatchObject({ ok: true, verificationRequired: true });
+    const text = JSON.stringify(result.body);
+    expect(text).not.toContain(victimAppointmentId);
+    expect(text).not.toContain("2026-10-07");
+    expect(text).not.toContain("Ekim");
+  });
+
+  it("answers identically whether or not the spoken number has appointments", async () => {
+    const withData = await tool(
+      "find_appointments",
+      { phone: VICTIM_SPOKEN },
+      { from_number: null, call_id: "web_atk_2", call_type: "web_call" },
+    );
+    const without = await tool(
+      "find_appointments",
+      { phone: "0555 000 11 22" },
+      { from_number: null, call_id: "web_atk_3", call_type: "web_call" },
+    );
+    expect(withData.body).toEqual(without.body);
+  });
+
+  it("refuses cancel and reschedule without an ownership check when caller ID is hidden", async () => {
+    const web = { from_number: null, call_id: "web_atk_4", call_type: "web_call" };
+    const cancel = await tool(
+      "cancel_appointment",
+      { appointmentId: victimAppointmentId, phone: VICTIM_SPOKEN },
+      web,
+    );
+    expect(cancel.body).toMatchObject({ ok: false, error: "VERIFICATION_REQUIRED" });
+    const reschedule = await tool(
+      "reschedule_appointment",
+      {
+        appointmentId: victimAppointmentId,
+        phone: VICTIM_SPOKEN,
+        date: "2026-10-08",
+        time: "11:00",
+      },
+      web,
+    );
+    expect(reschedule.body).toMatchObject({ ok: false, error: "VERIFICATION_REQUIRED" });
+    expect(await victimStatus()).toBe("scheduled");
+  });
+
+  it("rejects a wrong name, date or time, and locks after repeated failures", async () => {
+    const web = { from_number: null, call_id: "web_atk_5", call_type: "web_call" };
+    const wrong = [
+      { patientName: "Ali Veli", appointmentDate: "2026-10-07", appointmentTime: "10:00" },
+      { patientName: "Zeynep Şahin", appointmentDate: "2026-10-08", appointmentTime: "10:00" },
+      { patientName: "Zeynep Şahin", appointmentDate: "2026-10-07", appointmentTime: "11:00" },
+    ];
+    for (const verification of wrong) {
+      const result = await tool("find_appointments", { phone: VICTIM_SPOKEN, verification }, web);
+      expect(result.body).toMatchObject({ ok: false, error: "VERIFICATION_FAILED" });
+      expect(JSON.stringify(result.body)).not.toContain(victimAppointmentId);
+    }
+    // Even the right answer is refused once the call has used up its attempts.
+    const locked = await tool(
+      "find_appointments",
+      {
+        phone: VICTIM_SPOKEN,
+        verification: {
+          patientName: "Zeynep Şahin",
+          appointmentDate: "2026-10-07",
+          appointmentTime: "10:00",
+        },
+      },
+      web,
+    );
+    expect(locked.body).toMatchObject({ ok: false, error: "TOO_MANY_ATTEMPTS" });
+  });
+
+  it("lets the real patient manage the appointment after name, date and time match", async () => {
+    const web = { from_number: null, call_id: "web_owner_1", call_type: "web_call" };
+    const verification = {
+      patientName: "zeynep sahin", // ASR casing and missing diacritics still match
+      appointmentDate: "2026-10-07",
+      appointmentTime: "10:00",
+    };
+    const found = await tool("find_appointments", { phone: VICTIM_SPOKEN, verification }, web);
+    expect(found.body).toMatchObject({ ok: true });
+    expect(found.body.appointments).toHaveLength(1);
+    expect(found.body.appointments[0].appointmentId).toBe(victimAppointmentId);
+    // Only what the caller already said: no service or practitioner details.
+    expect(found.body.appointments[0].service).toBeUndefined();
+    expect(found.body.appointments[0].practitioner).toBeUndefined();
+
+    const cancel = await tool(
+      "cancel_appointment",
+      { appointmentId: victimAppointmentId, phone: VICTIM_SPOKEN, verification },
+      web,
+    );
+    expect(cancel.body).toMatchObject({ ok: true });
+    expect(await victimStatus()).toBe("cancelled");
+  });
+
+  it("does not reveal through a booking attempt that a spoken number is busy", async () => {
+    await tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-09",
+        time: "10:00",
+        patientName: "Zeynep Şahin",
+      },
+      { from_number: VICTIM, call_id: "victim_book_2" },
+    );
+    const probe = await tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-09",
+        time: "10:00",
+        patientName: "Başka Biri",
+        patientPhone: VICTIM_SPOKEN,
+      },
+      { from_number: null, call_id: "web_atk_6", call_type: "web_call" },
+    );
+    expect(probe.body.ok).toBe(false);
+    expect(probe.body.error).not.toBe("PATIENT_BUSY");
+    expect(JSON.stringify(probe.body)).not.toContain("adınıza");
+  });
+
+  it("still lets a caller with caller ID manage their own appointments", async () => {
+    const booking = await tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-07",
+        time: "14:00",
+        patientName: "Ayşe Yılmaz",
+      },
+      { call_id: "own_1" },
+    );
+    const found = await tool("find_appointments", {}, { call_id: "own_2" });
+    const ids = found.body.appointments.map((a: { appointmentId: string }) => a.appointmentId);
+    expect(ids).toContain(booking.body.appointmentId);
+    const cancel = await tool(
+      "cancel_appointment",
+      { appointmentId: booking.body.appointmentId },
+      { call_id: "own_3" },
+    );
+    expect(cancel.body).toMatchObject({ ok: true });
+  });
+});
+
 describe("call events", () => {
   it("records ended and analyzed events without losing earlier data or the booking", async () => {
     const ended = {

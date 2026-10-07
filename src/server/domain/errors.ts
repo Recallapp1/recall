@@ -22,7 +22,11 @@ export type DomainErrorCode =
   | "INVALID_TRANSITION"
   | "LAST_OWNER"
   | "SLUG_TAKEN"
-  | "PHONE_TAKEN";
+  | "PHONE_TAKEN"
+  | "VERIFICATION_REQUIRED"
+  | "VERIFICATION_FAILED"
+  | "TOO_MANY_ATTEMPTS"
+  | "RATE_LIMITED";
 
 export class DomainError extends Error {
   constructor(

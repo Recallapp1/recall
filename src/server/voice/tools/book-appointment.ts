@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
+import { normalizePhone } from "@/lib/phone";
+
 import { bookAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
 import { DomainError } from "../../domain/errors";
@@ -30,9 +32,12 @@ export const bookAppointmentTool = defineTool({
       throw new DomainError("CLINIC_PAUSED", "Klinik şu anda yeni randevu almıyor.");
     }
     const { clinic, settings } = ctx.clinic;
+    const spokenPhone = normalizePhone(input.patientPhone);
     const { appointment, created } = await bookAppointment(ctx.db, ctx.clinic, {
       ...input,
       patientPhone: input.patientPhone ?? ctx.callerPhone,
+      // Booking for a family member's number is allowed; it just discloses nothing.
+      phoneUnverified: spokenPhone !== null && spokenPhone !== ctx.callerPhone,
       source: "voice",
       callId: ctx.callId,
       now: ctx.now,

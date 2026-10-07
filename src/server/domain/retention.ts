@@ -4,6 +4,7 @@ import { and, inArray, isNotNull, lt, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
 import { calls, followUpPlans, notifications } from "../db/schema";
+import { deleteExpiredRateLimits } from "./rate-limit";
 
 /** docs/05-compliance/DATA-RETENTION.md */
 export const RETENTION_DAYS = {
@@ -24,6 +25,7 @@ export interface RetentionResult {
   callerNumbersCleared: number;
   notificationsDeleted: number;
   followUpsDeleted: number;
+  rateLimitsDeleted: number;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -75,7 +77,10 @@ export async function applyRetention(exec: Executor, now: Date): Promise<Retenti
     )
     .returning({ id: followUpPlans.id });
 
+  const rateLimitsDeleted = await deleteExpiredRateLimits(exec, now);
+
   return {
+    rateLimitsDeleted,
     followUpsDeleted: closedPlans.length,
     notificationsDeleted: oldNotifications.length,
     recordingsCleared: recordings.length,

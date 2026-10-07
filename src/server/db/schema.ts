@@ -752,6 +752,21 @@ export const demoRequests = pgTable(
   (t) => [index().on(t.createdAt)],
 );
 
+/**
+ * Fixed-window counters shared by every serverless instance (in-memory
+ * limiters reset per instance). Keys never contain personal data in clear
+ * text: phone-based keys are hashed by the caller.
+ */
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    key: text().primaryKey(),
+    count: integer().notNull().default(0),
+    resetAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [index().on(t.resetAt)],
+);
+
 export type Clinic = typeof clinics.$inferSelect;
 export type Practitioner = typeof practitioners.$inferSelect;
 export type Service = typeof services.$inferSelect;

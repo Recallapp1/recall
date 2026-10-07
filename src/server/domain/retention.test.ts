@@ -66,6 +66,7 @@ describe("applyRetention", () => {
     const result = await applyRetention(db, NOW);
     expect(result).toEqual({
       followUpsDeleted: 0,
+      rateLimitsDeleted: 0,
       notificationsDeleted: 1,
       recordingsCleared: 3,
       transcriptsCleared: 2,
@@ -96,6 +97,7 @@ describe("applyRetention", () => {
   it("is idempotent", async () => {
     expect(await applyRetention(db, NOW)).toEqual({
       followUpsDeleted: 0,
+      rateLimitsDeleted: 0,
       notificationsDeleted: 0,
       recordingsCleared: 0,
       transcriptsCleared: 0,

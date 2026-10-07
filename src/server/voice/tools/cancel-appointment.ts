@@ -6,6 +6,7 @@ import { cancelAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
 import { spokenDate, spokenTime } from "../../domain/speech";
 import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
+import { ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
 import { defineTool } from "./define";
 import { entityId, phone } from "./schemas";
 
@@ -17,14 +18,21 @@ export const cancelAppointmentTool = defineTool({
   input: z.object({
     appointmentId: entityId("Randevu").describe("find_appointments sonucundaki appointmentId"),
     phone: phone.optional(),
+    verification: ownershipCheck.optional(),
   }),
   async handler(ctx, input) {
     const { clinic, settings } = ctx.clinic;
-    const appointment = await cancelAppointment(ctx.db, ctx.clinic, {
-      appointmentId: input.appointmentId,
-      phone: input.phone ?? ctx.callerPhone,
-      now: ctx.now,
-    });
+    const caller = resolveCaller(ctx, input.phone);
+    const cancel = (check?: Parameters<typeof cancelAppointment>[2]["check"]) =>
+      cancelAppointment(ctx.db, ctx.clinic, {
+        appointmentId: input.appointmentId,
+        phone: caller.phone,
+        check,
+        now: ctx.now,
+      });
+    const appointment = caller.trusted
+      ? await cancel()
+      : await withOwnershipCheck(ctx, caller.phone, input.verification, cancel);
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "cancelled");
     if (settings.notifications.smsConfirmation) {

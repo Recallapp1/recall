@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,7 +26,19 @@ afterEach(() => {
   resetSmsProviderForTests();
 });
 
-describe.each(["0008_notifications", "0009_follow_ups"])("migration %s", (file) => {
+// Every migration since production went live (0008 onward) must be additive.
+const liveMigrations = readdirSync("drizzle")
+  .filter((name) => /^\d{4}_.*\.sql$/.test(name) && Number(name.slice(0, 4)) >= 8)
+  .map((name) => name.replace(/\.sql$/, ""))
+  .sort();
+
+it("checks every migration since go-live", () => {
+  expect(liveMigrations).toEqual(
+    expect.arrayContaining(["0008_notifications", "0010_rate_limits"]),
+  );
+});
+
+describe.each(liveMigrations)("migration %s", (file) => {
   const sql = readFileSync(`drizzle/${file}.sql`, "utf8");
   const statements = sql
     .split("--> statement-breakpoint")

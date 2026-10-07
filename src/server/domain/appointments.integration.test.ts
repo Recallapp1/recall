@@ -9,6 +9,7 @@ import {
   cancelAppointment,
   findUpcomingAppointments,
   rescheduleAppointment,
+  sameFullName,
 } from "./appointments";
 import { DomainError } from "./errors";
 import { findAvailability } from "./scheduling";
@@ -47,6 +48,21 @@ async function expectDomainError(promise: Promise<unknown>, code: string) {
   await expect(promise).rejects.toBeInstanceOf(DomainError);
   await expect(promise).rejects.toMatchObject({ code });
 }
+
+describe("sameFullName", () => {
+  it("tolerates case, Turkish letters, punctuation and word order", () => {
+    expect(sameFullName("Zeynep Şahin", "zeynep sahin")).toBe(true);
+    expect(sameFullName("İsmail Işık", "ismail isik")).toBe(true);
+    expect(sameFullName("Ayşe Nur Öztürk", "Öztürk, Ayşe Nur")).toBe(true);
+  });
+
+  it("requires every word to match", () => {
+    expect(sameFullName("Zeynep Şahin", "Zeynep")).toBe(false);
+    expect(sameFullName("Zeynep Şahin", "Zeynep Şahin Kaya")).toBe(false);
+    expect(sameFullName("Zeynep Şahin", "Zehra Şahin")).toBe(false);
+    expect(sameFullName("", "")).toBe(false);
+  });
+});
 
 describe("bookAppointment", () => {
   it("creates the patient and appointment in clinic-local time", async () => {

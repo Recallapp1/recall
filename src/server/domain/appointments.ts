@@ -40,6 +40,11 @@ export interface BookAppointmentInput {
   patientPhone: string | null;
   notes?: string;
   source: Appointment["source"];
+  /**
+   * The phone was only spoken (no caller ID): never disclose that this number
+   * already has an appointment unless the caller also gave the patient's name.
+   */
+  phoneUnverified?: boolean;
   callId?: string | null;
   now: Date;
 }
@@ -72,7 +77,13 @@ export async function bookAppointment(
 
   // Idempotency: a retried tool call must not create a second appointment.
   const existing = await findActiveAppointmentAt(db, clinic, phone, input);
-  if (existing) return { appointment: await summarize(db, clinic, existing.id), created: false };
+  if (existing) {
+    const appointment = await summarize(db, clinic, existing.id);
+    if (input.phoneUnverified && !sameFullName(appointment.patientName, input.patientName)) {
+      throw new DomainError("SLOT_UNAVAILABLE", "Bu saat uygun değil.");
+    }
+    return { appointment, created: false };
+  }
 
   const availability = await findAvailability(db, ctx, {
     serviceId: input.serviceId,
@@ -104,6 +115,9 @@ export async function bookAppointment(
         ),
       )
       .limit(1);
+    if (busy && input.phoneUnverified) {
+      throw new DomainError("SLOT_UNAVAILABLE", "Bu saat uygun değil.");
+    }
     if (busy) {
       throw new DomainError(
         "PATIENT_BUSY",
@@ -155,6 +169,57 @@ export async function bookAppointment(
   }
 }
 
+/**
+ * What a caller without caller ID must know before an appointment found by a
+ * spoken number is disclosed or changed: details the real patient knows and a
+ * stranger who only has the number does not.
+ */
+export interface OwnershipCheck {
+  patientName: string;
+  appointmentDate: LocalDate;
+  appointmentTime: LocalTime;
+}
+
+/**
+ * Full-name match that tolerates speech recognition: case, Turkish letters
+ * (ş → s, ı → i …), punctuation and word order are ignored; every word must match.
+ */
+export function sameFullName(a: string, b: string): boolean {
+  const words = (name: string) =>
+    name
+      .toLocaleLowerCase("tr")
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .replace(/ı/g, "i")
+      .replace(/[^a-z\s]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean)
+      .sort()
+      .join(" ");
+  const left = words(a);
+  return left.length > 0 && left === words(b);
+}
+
+function matchesCheck(summary: AppointmentSummary, check: OwnershipCheck): boolean {
+  return (
+    summary.date === check.appointmentDate &&
+    summary.time === check.appointmentTime &&
+    sameFullName(summary.patientName, check.patientName)
+  );
+}
+
+/** Upcoming appointments for a spoken number, only those the caller has proven to know. */
+export async function findVerifiedAppointments(
+  db: Database,
+  ctx: ClinicContext,
+  phoneInput: string | null,
+  check: OwnershipCheck,
+  now: Date,
+): Promise<AppointmentSummary[]> {
+  const upcoming = await findUpcomingAppointments(db, ctx, phoneInput, now);
+  return upcoming.filter((summary) => matchesCheck(summary, check));
+}
+
 /** Upcoming active appointments for a caller, soonest first. */
 export async function findUpcomingAppointments(
   db: Database,
@@ -185,9 +250,9 @@ export async function findUpcomingAppointments(
 export async function cancelAppointment(
   db: Database,
   ctx: ClinicContext,
-  input: { appointmentId: string; phone: string | null; now: Date },
+  input: { appointmentId: string; phone: string | null; check?: OwnershipCheck; now: Date },
 ): Promise<AppointmentSummary> {
-  const owned = await getOwnedActiveAppointment(db, ctx, input.appointmentId, input.phone);
+  const owned = await getOwnedActiveAppointment(db, ctx, input);
   assertCancellable(ctx, owned.startsAt, input.now);
 
   await db
@@ -210,6 +275,7 @@ export async function rescheduleAppointment(
   input: {
     appointmentId: string;
     phone: string | null;
+    check?: OwnershipCheck;
     date: LocalDate;
     time: LocalTime;
     practitionerId?: string;
@@ -218,7 +284,7 @@ export async function rescheduleAppointment(
   },
 ): Promise<{ previous: AppointmentSummary; appointment: AppointmentSummary }> {
   const { clinic } = ctx;
-  const owned = await getOwnedActiveAppointment(db, ctx, input.appointmentId, input.phone);
+  const owned = await getOwnedActiveAppointment(db, ctx, input);
   assertCancellable(ctx, owned.startsAt, input.now);
 
   const [current] = await db
@@ -290,13 +356,17 @@ function assertCancellable({ settings }: ClinicContext, startsAt: Date, now: Dat
   }
 }
 
+/**
+ * The appointment, if it belongs to this phone (and, when given, passes the
+ * ownership check). Mismatches are indistinguishable from "not found".
+ */
 async function getOwnedActiveAppointment(
   db: Database,
   { clinic }: ClinicContext,
-  appointmentId: string,
-  phoneInput: string | null,
+  input: { appointmentId: string; phone: string | null; check?: OwnershipCheck },
 ): Promise<AppointmentSummary> {
-  const phone = requirePhone(phoneInput, "Bu işlem için telefon numaranız gerekiyor.");
+  const { appointmentId, check } = input;
+  const phone = requirePhone(input.phone, "Bu işlem için telefon numaranız gerekiyor.");
 
   const [row] = await summaryQuery(db).where(
     and(
@@ -306,10 +376,17 @@ async function getOwnedActiveAppointment(
       inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
     ),
   );
-  if (!row) {
+  const summary = row ? toSummary(row, clinic.timezone) : null;
+  if (!summary) {
     throw new DomainError("NOT_FOUND", "Bu numaraya kayıtlı böyle bir randevu bulamadım.");
   }
-  return toSummary(row, clinic.timezone);
+  if (check && !matchesCheck(summary, check)) {
+    throw new DomainError(
+      "VERIFICATION_FAILED",
+      "Söylediğiniz bilgilerle eşleşen bir randevu bulamadım.",
+    );
+  }
+  return summary;
 }
 
 async function findActiveAppointmentAt(

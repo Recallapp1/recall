@@ -1,0 +1,20 @@
+# Sağlamlaştırma çalışması (Ekim 2026): karar günlüğü
+
+Kaynak: iki bağımsız durum raporu ([STATUS-REPORT-2026-10-07.md](STATUS-REPORT-2026-10-07.md) ve dış inceleme, Manus). Ürün ekibi teknik kararları bize bıraktı; her karar burada gerekçesiyle kayıtlı. Her bulgu önce doğrulandı (mümkünse başarısız bir testle), sonra düzeltildi.
+
+## Bulguların doğrulanması
+
+| #   | Bulgu                                                                                                               | Kaynak                       | Doğrulama                                          | Sonuç                                                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1   | `find/cancel/reschedule` modelin söylediği numarayı arayan numaranın önüne koyuyor                                  | Manus                        | 9 kötüye kullanım testi, 7'si eski kodda başarısız | **Gerçek**, düzeltildi ([ADR-011](decisions/ADR-011-caller-identity.md)) |
+| 1b  | `book_appointment` söylenen bir numaranın o saatte randevusu olduğunu sızdırıyor (`alreadyExisted`, `PATIENT_BUSY`) | Biz (1. madde doğrulanırken) | Test eski kodda başarısız                          | **Gerçek**, düzeltildi                                                   |
+
+## Kararlar
+
+| #   | Tarih      | Karar                                                                                                                                                                                                          | Gerekçe                                                                                                       |
+| --- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1   | 2026-10-07 | Arayan numara biliniyorsa kimlik odur; söylenen numara yok sayılır. Gizliyse söylenen numara + ad soyad + randevu tarihi ve saati, deneme sınırıyla                                                            | ADR-011. SMS kodu henüz mümkün değil; istenen bilgiler hassas değil                                           |
+| 2   | 2026-10-07 | Hız sınırı için ortak depo: Postgres tablosu `rate_limits` (sabit pencere, tek atomik upsert)                                                                                                                  | Ücretsiz, ek servis yok, tüm sunucusuz örneklerde ortak. Upstash gibi bir servis ancak trafik büyürse gerekir |
+| 3   | 2026-10-07 | Hız sınırı anahtarlarında kişisel veri tutulmaz (telefon, e-posta, IP SHA-256 ile özetlenir); süresi dolan satırlar günlük saklama işiyle silinir                                                              | KVKK                                                                                                          |
+| 4   | 2026-10-07 | Production build'i (`vercel-build`) migration ve `next build`'den sonra mevcut ajanları senkronlar (`voice:sync --existing --soft`). Ajan oluşturmaz, değişmeyen spec'i hash ile atlar, hata build'i durdurmaz | Prompt ve tool düzeltmeleri kodla birlikte canlıya çıkar; "Şimdi güncelle" tıklaması gerekmez                 |
+| 5   | 2026-10-07 | Migration güvenlik testi artık 0008 ve sonrasındaki **tüm** migration'ları otomatik kapsar                                                                                                                     | Yeni bir migration'ın kontrol dışında kalmaması için                                                          |
