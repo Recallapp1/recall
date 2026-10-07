@@ -109,4 +109,4 @@ Vercel → Deployments → önceki deploy → **Promote to Production** (anında
 }
 ```
 
-Tanımlı işler: `/api/cron/retention` (03:30 UTC) ve `/api/cron/notifications` (07:00 UTC). Hobby planında her iş günde bir kez çalışır. İkisi de `Authorization: Bearer $CRON_SECRET` ister; secret yoksa 503 döner.
+Tanımlı işler: `/api/cron/retention` (03:30 UTC) ve `/api/cron/notifications` (07:00 UTC). Hobby planında her iş günde bir kez, **tanımlı saatin içindeki herhangi bir dakikada** çalışır (ör. 07:00–07:59 UTC; ilk çalışma 7 Ekim 07:44 UTC). Pro'da tam dakikasında çalışır. Runtime logları Hobby'de yaklaşık bir saat tutulur; çalışmayı doğrulamak için `notifications` tablosuna bakın. İkisi de `Authorization: Bearer $CRON_SECRET` ister; secret yoksa 503 döner.

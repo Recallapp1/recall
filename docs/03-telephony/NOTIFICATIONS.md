@@ -35,7 +35,7 @@ Randevu onayı ve hatırlatma, hasta ile klinik arasındaki hizmet ilişkisine d
 ## Uygulama (V0, 2026-10-06)
 
 - **Kayıt:** `notifications` tablosu. Her mesaj için bir satır: tür, konu (randevu), `dedupe_key`, şablon anahtarı, durum ve gönderilmeme sebebi. **Mesaj metni ve telefon saklanmaz.**
-- **İş:** `/api/cron/notifications`, her gün 07:00 UTC (10:00 İstanbul). Klinik klinik çalışır; önce planlar, sonra gönderir. Gönderim yalnızca kliniğin yerel 09:00–20:00 aralığında yapılır.
+- **İş:** `/api/cron/notifications`, her gün 07:00 UTC (10:00 İstanbul). Vercel Hobby'de bu saatin içinde herhangi bir dakikada başlar (10:00–10:59 İstanbul); Pro'da tam 10:00. Klinik klinik çalışır; önce planlar, sonra gönderir. Gönderim yalnızca kliniğin yerel 09:00–20:00 aralığında yapılır.
 - **Randevu hatırlatması** bir gün önce gönderilir. İşten sonra alınan yarın sabahki randevular `skipped(too_late)` olarak kaydedilir (saatlik iş Vercel Pro ile).
 - **Gerçek SMS kilitleri:** üçü de açık olmadan sağlayıcı çağrılmaz.
   1. `SMS_SENDING_ENABLED=true`: production'da tanımlı değil.

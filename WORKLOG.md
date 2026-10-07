@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-07 (Takip V1 production'da, tüm kliniklerde kapalı)_
+_Son güncelleme: 2026-10-07 (Takip V1 production'da; demo klinikte açık, SMS kapalı)_
 
 | Konu                    | Durum                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -76,6 +76,22 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-07 · İlk günlük bildirim çalışması doğrulandı · Takip V0
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `docs/cron-hobby-window` · **Commit'ler:** bu kayıt
+
+**Ne yapıldı**
+
+- `/api/cron/notifications` 07:44:27 UTC'de çalıştı, 200 döndü, klinik hatası yok.
+- `notifications`: yarınki 3 randevu için 3 satır planlandı ve `skipped(sending_disabled)` oldu; bugünkü 09:00 randevusu `skipped(too_late)`. Gönderilen yok (provider, sent_at, mesaj id boş). Takip hatırlatması yok (onay ve klinik ayarı kapalı).
+- Belgeler: Hobby'de cron tanımlı saatin içinde herhangi bir dakikada başlar (DEPLOYMENT, NOTIFICATIONS).
+- Ürün ekibi production'da demo klinikte Takip'i konsoldan açtı (denetim kaydında `platform.feature_changed`).
+
+**Açık kalanlar / dikkat**
+
+- Log'daki "error" seviyesi `pg` SSL-mode uyarısı; düzeltmek için production `DATABASE_URL`'e `sslmode=verify-full` (secret, ürün ekibi).
+- Yedek dal `backup-pre-0009-2026-10-07` silinebilir (ürün ekibi kararı).
 
 ### 2026-10-07 · Takip V1 production'a çıktı; belirsiz kelime gerçek aramayla doğrulandı · Takip V1, F1.8
 
