@@ -59,7 +59,7 @@ export const findAppointments = defineTool({
       return {
         ok: true,
         verificationRequired: true,
-        hint: "Arayan numara görünmüyor. Randevu olup olmadığını söyleme. Hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini iste; sonra find_appointments'ı phone ve verification ile tekrar çağır.",
+        hint: "Arayan numara görünmüyor; henüz hiçbir randevu bulunmadı. Randevu olup olmadığını söyleme. Hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini iste; sonra find_appointments'ı phone ve verification ile tekrar çağır. O çağrının sonucu gelmeden randevuyu bulduğunu söyleme.",
       };
     }
 

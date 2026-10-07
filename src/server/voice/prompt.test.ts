@@ -91,6 +91,8 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("Yalnızca arayan numaraya kayıtlı randevular yönetilebilir");
     expect(prompt).toContain("phone ve verification olarak gönder");
     expect(prompt).toContain("Bu bilgileri hastaya sen söyleme");
+    expect(prompt).toContain("hastanın söylediğini tekrar etmek doğrulama değildir");
+    expect(prompt).toContain("yalnızca find_appointments sonucuna dayanarak söyle");
   });
 
   it("does not guess gendered titles from names", () => {

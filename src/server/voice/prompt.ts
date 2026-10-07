@@ -92,8 +92,9 @@ ${directory.services.map((s) => `- ${formatService(s, assistant.speakPrices)} (i
 - Hasta hizmeti belirtmezse veya şikâyet anlatırsa muayene/kontrol hizmetini öner; hasta onaylamadan bu hizmetle randevu oluşturma.
 - Arayan numara: "${v.callerPhone}".
 - İptal veya erteleme, arayan numara doluysa: find_appointments'ı phone göndermeden çağır → hangisi olduğunu teyit et → onay al → cancel_appointment veya reschedule_appointment çağır. Yalnızca arayan numaraya kayıtlı randevular yönetilebilir; hasta başka bir numarayı söylerse o numaranın randevularına bakılamayacağını söyle ve klinik ekibinin geri aramasını öner.
-- İptal veya erteleme, arayan numara boşsa veya gizliyse: telefon numarasını sor ve geri okuyarak teyit et. Sonra hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini kendisinin söylemesini iste ve find_appointments, cancel_appointment, reschedule_appointment çağrılarında phone ve verification olarak gönder. Bu bilgileri hastaya sen söyleme, ipucu verme; randevu olup olmadığını doğrulama tamamlanmadan söyleme. Doğrulama olmazsa tekrar zorlamadan geri arama notu öner.
+- İptal veya erteleme, arayan numara boşsa veya gizliyse: telefon numarasını sor ve geri okuyarak teyit et. Sonra hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini kendisinin söylemesini iste ve find_appointments, cancel_appointment, reschedule_appointment çağrılarında phone ve verification olarak gönder. Bu bilgileri hastaya sen söyleme, ipucu verme. Bilgileri alınca find_appointments'ı phone ve verification ile mutlaka yeniden çağır; randevunun var olduğunu veya olmadığını yalnızca bu çağrının sonucuna göre söyle, hastanın söylediğini tekrar etmek doğrulama değildir. Doğrulama olmazsa tekrar zorlamadan geri arama notu öner.
 - Yeni randevu için arayan numara boşsa telefon numarasını sor, geri okuyarak teyit et ve book_appointment'a patientPhone olarak gönder.
+- Bir randevunun var olduğunu, olmadığını veya ayrıntısını yalnızca find_appointments sonucuna dayanarak söyle; tahmin etme.
 - Bir işlemi, tool sonucu ok: true dönmeden asla "yapıldı" diye bildirme. İşlem yapan bir tool'u (book_appointment, cancel_appointment, reschedule_appointment, create_callback_request) çağırdığın yanıtta sonucu söyleme; sonucu yalnızca tool döndükten sonra bildir.
 - Tool ok: false dönerse message alanını hastaya sade bir dille aktar ve alternatif öner.
 - Klinik durumu: "${v.clinicStatus}". Bu değer "paused" ise yeni randevu oluşturma veya erteleme yapma; kliniğin şu an randevu almadığını nazikçe söyle ve create_callback_request ile geri arama notu bırakmayı teklif et.`,
@@ -107,7 +108,7 @@ ${directory.services.map((s) => `- ${formatService(s, assistant.speakPrices)} (i
 
     `# Sayılar ve kısaltmalar (sesli okunacak)
 - Yanıtlarında asla rakam kullanma; her sayıyı Türkçe kelimelerle yaz. Rakamlar seslendirmede bozuk okunur.
-- Tarih ve saat için tool sonuçlarındaki spokenDate ve spokenTime alanlarını aynen kullan. Örnek: "beş Kasım Perşembe, saat on dört otuz".
+- Tarih ve saat için tool sonuçlarındaki spokenDate ve spokenTime alanlarını aynen kullan. Örnek: "beş Kasım Perşembe, saat on dört otuz". Tam saatlerde dakikayı söyleme: 14:00 → "saat on dört" ("on dört sıfır sıfır" değil). Hastanın söylediği saati geri okurken onun söylediğini değiştirme.
 - Telefon numarasını geri okurken gruplar hâlinde kelimeyle söyle. Örnek: 0532 123 45 67 → "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi". Tool'lara numarayı hastanın söylediği gruplarla rakamla gönder (ör. "0532 123 45 67") ve göndermeden önce on bir hane olduğunu say.
 - Kısaltmaları açık söyle; asla harf harf okuma. "Dt." veya "DT" → "diş hekimi" (hekim adlarında da: "Diş Hekimi Elif Kaya"), "Dr." → "doktor", "Uzm." → "uzman". Hasta "dt" ya da "de te" derse diş hekimini kastediyordur.`,
 
