@@ -77,6 +77,18 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-07 · Production DATABASE_URL `sslmode=verify-full` · F8
+
+**Agent/kişi:** Claude (Opus 5.5) + ürün ekibi · **Dal:** `docs/db-sslmode` · **Commit'ler:** bu kayıt
+
+**Ne yapıldı**
+
+- Önce test: pg sürücüsü `verify-full` ile aynı Neon proxy'sine (`c-5.eu-central-1.aws.neon.tech`) pooled ve direct bağlandı, sertifika ve ana makine doğrulandı; lokal uygulama sağlıklı.
+- Ürün ekibi Production `DATABASE_URL`'i Neon'dan alıp `sslmode=verify-full` ile Vercel'e yazdı ve yeniden deploy etti (`recall-6rzhihhas`).
+- Doğrulama: READY; `/api/health` ok; imzalı `check_availability` 200 (6 slot); cron sırsız 401, konsoldan elle çalıştırma 200 (`planned 0`, gönderim 0); SSL uyarısı kayboldu, hata yok.
+
+**Geri alma:** `recall-hhxcah0ry`'yi promote et, sonra `DATABASE_URL`'i `sslmode=require` ile geri yaz.
+
 ### 2026-10-07 · İlk günlük bildirim çalışması doğrulandı · Takip V0
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `docs/cron-hobby-window` · **Commit'ler:** bu kayıt
@@ -90,7 +102,7 @@ Kurallar:
 
 **Açık kalanlar / dikkat**
 
-- Log'daki "error" seviyesi `pg` SSL-mode uyarısı; düzeltmek için production `DATABASE_URL`'e `sslmode=verify-full` (secret, ürün ekibi).
+- ~~`pg` SSL-mode uyarısı~~ giderildi (aşağıdaki kayıt).
 - Yedek dal `backup-pre-0009-2026-10-07` silinebilir (ürün ekibi kararı).
 
 ### 2026-10-07 · Takip V1 production'a çıktı; belirsiz kelime gerçek aramayla doğrulandı · Takip V1, F1.8
