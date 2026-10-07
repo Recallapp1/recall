@@ -26,6 +26,8 @@ export interface RetellHandlerDeps {
   now: () => Date;
   defer: (task: () => Promise<void>) => void;
   smsDelivers: boolean;
+  /** Dispatches one clinic's queued messages (locks, opt-out, window, caps). */
+  dispatchClinic: (clinicId: string) => Promise<void>;
   /** Removes the call (audio included) from the provider. */
   deleteProviderCall: (providerCallId: string) => Promise<void>;
 }
@@ -119,6 +121,7 @@ export async function handleFunctionCall(request: Request, deps: RetellHandlerDe
     now: deps.now(),
     defer: deps.defer,
     smsDelivers: deps.smsDelivers,
+    sendQueuedMessages: () => deps.defer(() => deps.dispatchClinic(ctx.clinic.id)),
   });
   return Response.json(result);
 }

@@ -2,7 +2,6 @@ import "server-only";
 
 import { env } from "@/lib/env";
 import { maskPhone } from "@/lib/phone";
-import { safeError } from "@/lib/safe-error";
 
 import { displayDate } from "../domain/time";
 import type { AppointmentSummary } from "../domain/appointments";
@@ -120,13 +119,7 @@ export const smsTemplates = {
 export const SMS_TEMPLATE_KEYS = {
   appointmentReminder: "appointment_reminder.v1",
   followUpReminder: "follow_up_reminder.v1",
+  appointmentConfirmation: "appointment_confirmation.v1",
+  appointmentCancellation: "appointment_cancellation.v1",
+  appointmentRescheduled: "appointment_rescheduled.v1",
 } as const;
-
-/** Sends without throwing: an SMS failure must never undo or fail a booking. */
-export async function sendSmsSafely(to: string, body: string, context: Record<string, unknown>) {
-  try {
-    await smsProvider().send(to, body);
-  } catch (error) {
-    console.error(JSON.stringify({ msg: "sms.failed", ...context, error: safeError(error) }));
-  }
-}

@@ -47,3 +47,14 @@ Randevu onayı ve hatırlatma, hasta ile klinik arasındaki hizmet ilişkisine d
   - klinik başına günde 100, hasta başına günde 1 SMS.
 - **Şablonlar genel:** hasta adı, hizmet veya tedavi yok (onay, iptal, erteleme ve hatırlatma).
 - **Hasta "SMS istemiyor":** `patients.sms_opt_out_at`. Dolu olunca tüm mesajlar `skipped(opted_out)` olur.
+
+## Tek gönderim yolu (2026-10-07)
+
+Hastaya giden **her** SMS bildirim kaydından (`notifications`) geçer; hiçbir kod sağlayıcıyı doğrudan çağırmaz.
+
+- Sesli asistanın onay, iptal ve erteleme SMS'leri artık birer kayıttır (`appointment_confirmation`, `appointment_cancellation`, `appointment_rescheduled`; migration `0011`). Tool kaydı açar, yanıttan sonra kliniğin bekleyen mesajları hemen gönderilir (`dispatchClinicNotifications`). Gönderilemeyen her şeyi günlük iş tamamlar.
+- Bu mesajlar da üç kilitten (ana anahtar, sağlayıcı `delivers`, kliniğin "SMS onayı" ayarı), "SMS istemiyor"dan, 09:00–20:00 penceresinden ve sınırlardan geçer; her biri kayıtta durur (gönderildi veya atlanma sebebi).
+- Hasta başına günlük sınır kategoriye göre: hatırlatmalar 1, arayanın tetiklediği mesajlar 5 (döngü koruması). Klinik başına günde 100 tümü için ortak.
+- Gönderim anında konu hâlâ geçerli olmalı: onay ve erteleme mesajı randevu aktifken, iptal mesajı randevu hâlâ iptalken gider; aksi hâlde `subject_changed`.
+- Asistan "SMS gönderdik" demeden önce: kayıt açıldı, hasta "SMS istemiyor" değil ve sağlayıcı gerçekten teslim ediyor olmalı.
+- Testli: `production-safety.test.ts` → "single SMS path" (kaynak taraması: sağlayıcının `send`'ini yalnızca dağıtıcı çağırır), `handlers.integration.test.ts` → "SMS from voice tools" (ana anahtar, opt-out, gece, klinik ayarı).

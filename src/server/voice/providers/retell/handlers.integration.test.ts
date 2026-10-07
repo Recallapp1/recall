@@ -5,7 +5,15 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
 import type { Database } from "../../../db";
-import { appointments, callbackRequests, calls, clinics } from "../../../db/schema";
+import {
+  appointments,
+  callbackRequests,
+  calls,
+  clinics,
+  notifications,
+  patients,
+} from "../../../db/schema";
+import { dispatchClinicNotifications } from "../../../domain/notifications";
 import {
   handleCallEvent,
   handleFunctionCall,
@@ -24,6 +32,10 @@ let clinic: TestClinic;
 let other: TestClinic;
 let deferred: Array<() => Promise<void>>;
 let deletedCalls: string[] = [];
+/** What a real SMS provider would have been asked to send. */
+let sentSms: Array<{ to: string; body: string }> = [];
+/** The dispatcher's switches for the next request (production default: off). */
+let sms = { enabled: true, delivers: true };
 
 beforeAll(async () => {
   ({ db, close } = await createTestDb());
@@ -46,7 +58,20 @@ function deps(overrides: Partial<RetellHandlerDeps> = {}): RetellHandlerDeps {
     apiKey: API_KEY,
     now: () => NOW,
     defer: (task) => deferred.push(task),
-    smsDelivers: true,
+    smsDelivers: sms.enabled && sms.delivers,
+    dispatchClinic: async (clinicId) => {
+      await dispatchClinicNotifications(db, clinicId, {
+        now: NOW,
+        sendingEnabled: sms.enabled,
+        provider: {
+          delivers: sms.delivers,
+          send: async (to, body) => {
+            sentSms.push({ to, body });
+          },
+        },
+        providerName: "test",
+      });
+    },
     deleteProviderCall: async (id) => {
       deletedCalls.push(id);
     },
@@ -164,6 +189,17 @@ describe("custom functions", () => {
     });
     expect(booking.body).toMatchObject({ ok: true, alreadyExisted: false, smsSent: true });
     expect(deferred).toHaveLength(1);
+    sentSms = [];
+    await Promise.all(deferred.map((task) => task()));
+    // Sent through the outbox: logged, and only the date and time in the text.
+    expect(sentSms).toHaveLength(1);
+    expect(sentSms[0].to).toBe(CALLER);
+    expect(sentSms[0].body).not.toContain("Ayşe");
+    const [logged] = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.subjectId, booking.body.appointmentId));
+    expect(logged).toMatchObject({ kind: "appointment_confirmation", status: "sent" });
 
     const [appointment] = await db
       .select()
@@ -178,20 +214,31 @@ describe("custom functions", () => {
       date: "2026-10-05",
     });
     const slot = availability.body.slots.at(-1);
-    const booking = await tool(
-      "book_appointment",
-      {
-        serviceId: clinic.serviceId,
-        practitionerId: slot.practitionerId,
-        date: "2026-10-05",
-        time: slot.time,
-        patientName: "Can Öz",
-      },
-      { call_id: "nosms_1" },
-      { smsDelivers: false },
-    );
-    expect(booking.body).toMatchObject({ ok: true, smsSent: false });
-    expect(deferred).toHaveLength(0);
+    sms = { enabled: true, delivers: false };
+    try {
+      const booking = await tool(
+        "book_appointment",
+        {
+          serviceId: clinic.serviceId,
+          practitionerId: slot.practitionerId,
+          date: "2026-10-05",
+          time: slot.time,
+          patientName: "Can Öz",
+        },
+        { call_id: "nosms_1", from_number: "+905320000001" },
+      );
+      expect(booking.body).toMatchObject({ ok: true, smsSent: false });
+      sentSms = [];
+      await Promise.all(deferred.map((task) => task()));
+      expect(sentSms).toEqual([]);
+      const [logged] = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.subjectId, booking.body.appointmentId));
+      expect(logged).toMatchObject({ status: "skipped", skipReason: "provider_disabled" });
+    } finally {
+      sms = { enabled: true, delivers: true };
+    }
   });
 
   it("asks for a phone number on web calls without caller id", async () => {
@@ -452,6 +499,127 @@ describe("caller identity (abuse cases)", () => {
       { call_id: "own_3" },
     );
     expect(cancel.body).toMatchObject({ ok: true });
+  });
+});
+
+// Every SMS a call triggers goes through the outbox and its locks.
+describe("SMS from voice tools", () => {
+  const PHONE = "+905321110000";
+  const book = (time: string, callId: string) =>
+    tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-12",
+        time,
+        patientName: "Deniz Ak",
+      },
+      { from_number: PHONE, call_id: callId },
+    );
+  const runDeferred = async () => {
+    sentSms = [];
+    await Promise.all(deferred.map((task) => task()));
+  };
+  const logFor = async (appointmentId: string) =>
+    db.select().from(notifications).where(eq(notifications.subjectId, appointmentId));
+
+  it("sends nothing while the master switch is off, and logs why", async () => {
+    sms = { enabled: false, delivers: true };
+    try {
+      const booking = await book("09:00", "sms_off_1");
+      expect(booking.body).toMatchObject({ ok: true, smsSent: false });
+      await runDeferred();
+      expect(sentSms).toEqual([]);
+      expect(await logFor(booking.body.appointmentId)).toMatchObject([
+        { status: "skipped", skipReason: "sending_disabled" },
+      ]);
+    } finally {
+      sms = { enabled: true, delivers: true };
+    }
+  });
+
+  it("respects the patient's SMS opt-out for confirmation, cancellation and reschedule", async () => {
+    await db.update(patients).set({ smsOptOutAt: NOW }).where(eq(patients.phone, PHONE));
+    try {
+      const booking = await book("10:00", "sms_optout_1");
+      expect(booking.body).toMatchObject({ ok: true, smsSent: false });
+      await runDeferred();
+      const moved = await tool(
+        "reschedule_appointment",
+        { appointmentId: booking.body.appointmentId, date: "2026-10-12", time: "11:00" },
+        { from_number: PHONE, call_id: "sms_optout_2" },
+      );
+      expect(moved.body.ok).toBe(true);
+      await runDeferred();
+      const cancelled = await tool(
+        "cancel_appointment",
+        { appointmentId: moved.body.appointment.appointmentId },
+        { from_number: PHONE, call_id: "sms_optout_3" },
+      );
+      expect(cancelled.body.ok).toBe(true);
+      await runDeferred();
+      expect(sentSms).toEqual([]);
+      const rows = [
+        ...(await logFor(booking.body.appointmentId)),
+        ...(await logFor(moved.body.appointment.appointmentId)),
+      ];
+      expect(rows.map((r) => [r.kind, r.status, r.skipReason]).sort()).toEqual(
+        [
+          ["appointment_cancellation", "skipped", "opted_out"],
+          ["appointment_confirmation", "skipped", "opted_out"],
+          ["appointment_rescheduled", "skipped", "opted_out"],
+        ].sort(),
+      );
+    } finally {
+      await db.update(patients).set({ smsOptOutAt: null }).where(eq(patients.phone, PHONE));
+    }
+  });
+
+  it("waits for the send window instead of texting at night", async () => {
+    const night = new Date("2026-10-04T19:30:00Z"); // 22:30 in Istanbul
+    const booking = await tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-12",
+        time: "14:00",
+        patientName: "Deniz Ak",
+      },
+      { from_number: PHONE, call_id: "sms_night_1" },
+      { now: () => night },
+    );
+    expect(booking.body.ok).toBe(true);
+    // The dispatcher runs with its own clock; at night nothing goes out.
+    await dispatchClinicNotifications(db, clinic.ctx.clinic.id, {
+      now: night,
+      sendingEnabled: true,
+      provider: { delivers: true, send: async () => expect.fail("sent at night") },
+      providerName: "test",
+    });
+    expect(await logFor(booking.body.appointmentId)).toMatchObject([{ status: "pending" }]);
+  });
+
+  it("does not text the clinic's patients when the clinic turned confirmations off", async () => {
+    await db
+      .update(clinics)
+      .set({
+        settings: { ...clinic.ctx.clinic.settings, notifications: { smsConfirmation: false } },
+      })
+      .where(eq(clinics.id, clinic.ctx.clinic.id));
+    try {
+      const booking = await book("15:00", "sms_clinic_off_1");
+      expect(booking.body).toMatchObject({ ok: true, smsSent: false });
+      await runDeferred();
+      expect(sentSms).toEqual([]);
+      expect(await logFor(booking.body.appointmentId)).toEqual([]);
+    } finally {
+      await db
+        .update(clinics)
+        .set({ settings: clinic.ctx.clinic.settings })
+        .where(eq(clinics.id, clinic.ctx.clinic.id));
+    }
   });
 });
 

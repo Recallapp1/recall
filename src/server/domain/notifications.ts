@@ -1,6 +1,18 @@
 import "server-only";
 
-import { and, asc, count, eq, gte, inArray, isNotNull, lt, lte, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  lt,
+  lte,
+  notInArray,
+  sql,
+} from "drizzle-orm";
 
 import { ACTIVE_APPOINTMENT_STATUSES } from "@/lib/contracts/appointment";
 import type { SkipReason } from "@/lib/contracts/notification";
@@ -37,12 +49,34 @@ export const STALE_SENDING_MS = 15 * 60 * 1000;
 export const SEND_WINDOW = { from: 9 * 60, until: 20 * 60 } as const;
 /** Cost guard until per-clinic limits exist (V1). */
 export const DAILY_SMS_CAP_PER_CLINIC = 100;
+/** Reminders: one per patient per day. Messages the caller triggered: a loop guard. */
+export const DAILY_REMINDERS_PER_PATIENT = 1;
+export const DAILY_TRANSACTIONAL_PER_PATIENT = 5;
+
+export type AppointmentMessageKind = Extract<
+  Notification["kind"],
+  "appointment_confirmation" | "appointment_cancellation" | "appointment_rescheduled"
+>;
+
+const TRANSACTIONAL_KINDS: readonly Notification["kind"][] = [
+  "appointment_confirmation",
+  "appointment_cancellation",
+  "appointment_rescheduled",
+];
+
+const TRANSACTIONAL_TEMPLATE: Record<AppointmentMessageKind, string> = {
+  appointment_confirmation: SMS_TEMPLATE_KEYS.appointmentConfirmation,
+  appointment_cancellation: SMS_TEMPLATE_KEYS.appointmentCancellation,
+  appointment_rescheduled: SMS_TEMPLATE_KEYS.appointmentRescheduled,
+};
 const DISPATCH_BATCH = 200;
 
 interface ClinicRow {
   id: string;
   name: string;
   timezone: string;
+  /** Shown in the booking confirmation. */
+  address?: string | null;
   settings: ClinicSettings;
 }
 
@@ -133,6 +167,62 @@ export async function planAppointmentReminders(
     : [];
 
   return { planned: planned.length, tooLate: tooLate.length };
+}
+
+/**
+ * Records a message about an appointment the caller just booked, cancelled or
+ * moved. Nothing is sent here: the dispatcher sends it with every lock, the
+ * opt-out, the send window and the caps, like any other message.
+ * Returns whether it can reach the patient as things stand (not opted out).
+ */
+export async function enqueueAppointmentMessage(
+  exec: Executor,
+  input: {
+    clinicId: string;
+    kind: AppointmentMessageKind;
+    appointmentId: string;
+    patientId: string;
+    now: Date;
+  },
+): Promise<{ queued: boolean; optedOut: boolean }> {
+  const [patient] = await exec
+    .select({ smsOptOutAt: patients.smsOptOutAt })
+    .from(patients)
+    .where(and(eq(patients.clinicId, input.clinicId), eq(patients.id, input.patientId)));
+  const inserted = await exec
+    .insert(notifications)
+    .values({
+      clinicId: input.clinicId,
+      patientId: input.patientId,
+      kind: input.kind,
+      subjectId: input.appointmentId,
+      dedupeKey: `${input.kind}:${input.appointmentId}`,
+      templateKey: TRANSACTIONAL_TEMPLATE[input.kind],
+      scheduledFor: input.now,
+    })
+    .onConflictDoNothing({ target: notifications.dedupeKey })
+    .returning({ id: notifications.id });
+  return { queued: inserted.length > 0, optedOut: Boolean(patient?.smsOptOutAt) };
+}
+
+/** Sends one clinic's due messages right away (after a call's tool runs). */
+export async function dispatchClinicNotifications(
+  db: Database,
+  clinicId: string,
+  deps: DispatchDeps,
+): Promise<DispatchResult | null> {
+  const [row] = await db
+    .select({
+      id: clinics.id,
+      name: clinics.name,
+      timezone: clinics.timezone,
+      address: clinics.address,
+      settings: clinics.settings,
+    })
+    .from(clinics)
+    .where(eq(clinics.id, clinicId));
+  if (!row) return null;
+  return dispatchNotifications(db, { ...row, settings: parseClinicSettings(row.settings) }, deps);
 }
 
 export function followUpReminderKey(planId: string, dueOn: string, n: number): string {
@@ -291,7 +381,18 @@ async function sendOne(
 
   let phone: string;
   let body: string;
-  if (notification.kind === "follow_up_reminder") {
+  if (isTransactional(notification.kind)) {
+    const target = await resolveTransactionalTarget(db, notification);
+    if ("skip" in target) return skip(target.skip);
+    phone = target.phone;
+    const when = utcToLocal(target.startsAt, clinic.timezone);
+    body =
+      notification.kind === "appointment_confirmation"
+        ? smsTemplates.confirmation(clinic.name, when, clinic.address)
+        : notification.kind === "appointment_cancellation"
+          ? smsTemplates.cancellation(clinic.name, when)
+          : smsTemplates.rescheduled(clinic.name, when);
+  } else if (notification.kind === "follow_up_reminder") {
     const target = await resolveFollowUpTarget(db, notification, deps.now);
     if ("skip" in target) return skip(target.skip);
     phone = target.phone;
@@ -357,7 +458,40 @@ async function resolveAppointmentTarget(
   return { phone, startsAt: appointment.startsAt };
 }
 
+function isTransactional(kind: Notification["kind"]): kind is AppointmentMessageKind {
+  return TRANSACTIONAL_KINDS.includes(kind);
+}
+
+/**
+ * A booking or reschedule message goes only while the appointment is still
+ * active; a cancellation message only while it is still cancelled.
+ */
+async function resolveTransactionalTarget(
+  db: Database,
+  notification: Notification,
+): Promise<{ phone: string; startsAt: Date } | { skip: SkipReason }> {
+  const patient = await resolvePatientPhone(db, notification);
+  if ("skip" in patient) return patient;
+  const [appointment] = await db
+    .select({ startsAt: appointments.startsAt, status: appointments.status })
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.clinicId, notification.clinicId),
+        eq(appointments.id, notification.subjectId),
+        eq(appointments.patientId, notification.patientId!),
+      ),
+    );
+  if (!appointment) return { skip: "subject_changed" };
+  const active = (ACTIVE_APPOINTMENT_STATUSES as readonly string[]).includes(appointment.status);
+  const stillTrue =
+    notification.kind === "appointment_cancellation" ? appointment.status === "cancelled" : active;
+  if (!stillTrue) return { skip: "subject_changed" };
+  return { phone: patient.phone, startsAt: appointment.startsAt };
+}
+
 function featureOn(clinic: ClinicRow, kind: Notification["kind"]): boolean {
+  if (isTransactional(kind)) return clinic.settings.notifications.smsConfirmation;
   if (kind === "follow_up_reminder") {
     return clinic.settings.features.followUp && clinic.settings.followUp.smsReminders;
   }
@@ -430,7 +564,10 @@ async function resolveFollowUpTarget(
   return resolvePatientPhone(db, notification);
 }
 
-/** Per clinic per day, and one message per patient per day. */
+/**
+ * Per clinic per day across every kind; per patient per day by category, so
+ * a booking confirmation does not use up the patient's reminder.
+ */
 async function capReached(
   db: Database,
   clinic: ClinicRow,
@@ -445,11 +582,21 @@ async function capReached(
   );
   const [clinicTotal] = await db.select({ value: count() }).from(notifications).where(sentToday);
   if ((clinicTotal?.value ?? 0) >= DAILY_SMS_CAP_PER_CLINIC) return true;
+  const transactional = isTransactional(notification.kind);
   const [patientTotal] = await db
     .select({ value: count() })
     .from(notifications)
-    .where(and(sentToday, eq(notifications.patientId, notification.patientId!)));
-  return (patientTotal?.value ?? 0) >= 1;
+    .where(
+      and(
+        sentToday,
+        eq(notifications.patientId, notification.patientId!),
+        transactional
+          ? inArray(notifications.kind, [...TRANSACTIONAL_KINDS])
+          : notInArray(notifications.kind, [...TRANSACTIONAL_KINDS]),
+      ),
+    );
+  const limit = transactional ? DAILY_TRANSACTIONAL_PER_PATIENT : DAILY_REMINDERS_PER_PATIENT;
+  return (patientTotal?.value ?? 0) >= limit;
 }
 
 async function finish(
@@ -494,6 +641,7 @@ export async function runNotificationJob(
       id: clinics.id,
       name: clinics.name,
       timezone: clinics.timezone,
+      address: clinics.address,
       settings: clinics.settings,
     })
     .from(clinics)

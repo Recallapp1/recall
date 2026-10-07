@@ -9,7 +9,7 @@ import { markCallOutcome } from "../../domain/calls";
 import { DomainError } from "../../domain/errors";
 import { spokenTitles } from "../../domain/speech";
 import { spokenDate, spokenTime } from "../../domain/speech";
-import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
+import { enqueueAppointmentMessage } from "../../domain/notifications";
 import { defineTool } from "./define";
 import { entityId, localDate, localTime, phone } from "./schemas";
 
@@ -45,18 +45,18 @@ export const bookAppointmentTool = defineTool({
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "booked");
 
-    const smsSent = created && settings.notifications.smsConfirmation && ctx.smsDelivers;
-    if (smsSent) {
-      ctx.defer(() =>
-        sendSmsSafely(
-          appointment.patientPhone,
-          smsTemplates.confirmation(clinic.name, appointment, clinic.address),
-          {
-            clinicId: clinic.id,
-            appointmentId: appointment.id,
-          },
-        ),
-      );
+    let smsSent = false;
+    if (created && settings.notifications.smsConfirmation) {
+      const queued = await enqueueAppointmentMessage(ctx.db, {
+        clinicId: clinic.id,
+        kind: "appointment_confirmation",
+        appointmentId: appointment.id,
+        patientId: appointment.patientId,
+        now: ctx.now,
+      });
+      ctx.sendQueuedMessages();
+      // Only claimed when a message can really reach the patient.
+      smsSent = queued.queued && !queued.optedOut && ctx.smsDelivers;
     }
 
     return {

@@ -18,10 +18,16 @@ export interface ToolContext {
   /** Caller ID in E.164, or null when withheld. */
   callerPhone: string | null;
   now: Date;
-  /** Runs work after the response is sent (SMS etc.) to keep tool latency low. */
+  /** Runs work after the response is sent to keep tool latency low. */
   defer: (task: () => Promise<void>) => void;
   /** Whether an SMS actually reaches the patient (false until a real provider is set). */
   smsDelivers: boolean;
+  /**
+   * Sends the clinic's queued messages after the response. Tools never send
+   * SMS themselves: they queue a notification and the dispatcher applies the
+   * locks, opt-out, send window and caps.
+   */
+  sendQueuedMessages: () => void;
 }
 
 export type ToolErrorCode =

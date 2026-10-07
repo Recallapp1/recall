@@ -2,7 +2,14 @@
  * Notification vocabulary shared by the database enums (src/server/db/schema.ts)
  * and the code that plans and sends messages (docs/proposals/TAKIP.md, V0).
  */
-export const NOTIFICATION_KINDS = ["appointment_reminder", "follow_up_reminder"] as const;
+export const NOTIFICATION_KINDS = [
+  "appointment_reminder",
+  "follow_up_reminder",
+  /** Transactional messages after a voice booking, cancellation or reschedule. */
+  "appointment_confirmation",
+  "appointment_cancellation",
+  "appointment_rescheduled",
+] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 export const NOTIFICATION_CHANNELS = ["sms"] as const;

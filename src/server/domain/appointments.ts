@@ -22,6 +22,7 @@ import { isLocalTime, utcToLocal, type LocalDate, type LocalTime } from "./time"
 
 export interface AppointmentSummary {
   id: string;
+  patientId: string;
   date: LocalDate;
   time: LocalTime;
   serviceName: string;
@@ -482,6 +483,7 @@ function summaryQuery(db: Database) {
   return db
     .select({
       id: appointments.id,
+      patientId: appointments.patientId,
       startsAt: appointments.startsAt,
       serviceName: services.name,
       practitionerName: practitioners.name,
@@ -502,6 +504,7 @@ function toSummary(row: SummaryRow, timeZone: string): AppointmentSummary {
   const local = utcToLocal(row.startsAt, timeZone);
   return {
     id: row.id,
+    patientId: row.patientId,
     date: local.date,
     time: local.time,
     serviceName: row.serviceName,

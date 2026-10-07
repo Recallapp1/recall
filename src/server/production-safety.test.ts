@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -52,7 +53,9 @@ describe.each(liveMigrations)("migration %s", (file) => {
 
   it("only creates or adds; nothing is dropped, renamed, rewritten or deleted", () => {
     for (const statement of statements) {
-      expect(statement).toMatch(/^(CREATE (TYPE|TABLE|INDEX|UNIQUE INDEX)|ALTER TABLE "\w+" ADD )/);
+      expect(statement).toMatch(
+        /^(CREATE (TYPE|TABLE|INDEX|UNIQUE INDEX)|ALTER TABLE "\w+" ADD |ALTER TYPE "public"\."\w+" ADD VALUE )/,
+      );
       // Foreign-key actions ("ON DELETE …", "ON UPDATE …") are not statements.
       const body = statement.replace(
         /\bON (DELETE|UPDATE) (SET NULL( \([^)]*\))?|CASCADE|NO ACTION|RESTRICT)/gi,
@@ -167,5 +170,43 @@ describe("cron authorization", () => {
       "/api/cron/notifications",
       "/api/cron/retention",
     ]);
+  });
+});
+
+// No code path may text a patient except the dispatcher, which applies the
+// master switch, the provider check, the clinic setting, opt-out, the send
+// window and the caps, and logs every message.
+describe("single SMS path", () => {
+  const sources = (dir: string): string[] =>
+    readdirSync(dir).flatMap((name) => {
+      const path = join(dir, name);
+      if (statSync(path).isDirectory()) return sources(path);
+      return /\.(ts|tsx)$/.test(name) && !/\.test\.tsx?$/.test(name) ? [path] : [];
+    });
+  const files = sources("src").map((path) => ({
+    path: path.replaceAll("\\", "/"),
+    text: readFileSync(path, "utf8"),
+  }));
+
+  it("only the dispatcher calls an SMS provider's send", () => {
+    const callers = files
+      .filter((f) => /provider\.send\(|smsProvider\(\)\.send/.test(f.text))
+      .map((f) => f.path);
+    expect(callers).toEqual(["src/server/domain/notifications.ts"]);
+  });
+
+  it("the provider is only obtained by the dispatcher's callers", () => {
+    const users = files.filter((f) => f.text.includes("smsProvider()")).map((f) => f.path);
+    expect(users.sort()).toEqual(
+      [
+        "src/app/api/cron/notifications/route.ts",
+        "src/server/notifications/sms.ts",
+        "src/server/voice/providers/retell/deps.ts",
+      ].sort(),
+    );
+  });
+
+  it("no direct-send helper exists any more", () => {
+    expect(files.filter((f) => f.text.includes("sendSmsSafely"))).toEqual([]);
   });
 });

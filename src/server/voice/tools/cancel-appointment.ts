@@ -5,7 +5,7 @@ import { z } from "zod";
 import { cancelAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
 import { spokenDate, spokenTime } from "../../domain/speech";
-import { sendSmsSafely, smsTemplates } from "../../notifications/sms";
+import { enqueueAppointmentMessage } from "../../domain/notifications";
 import { ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
 import { defineTool } from "./define";
 import { entityId, phone } from "./schemas";
@@ -36,16 +36,14 @@ export const cancelAppointmentTool = defineTool({
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "cancelled");
     if (settings.notifications.smsConfirmation) {
-      ctx.defer(() =>
-        sendSmsSafely(
-          appointment.patientPhone,
-          smsTemplates.cancellation(clinic.name, appointment),
-          {
-            clinicId: clinic.id,
-            appointmentId: appointment.id,
-          },
-        ),
-      );
+      await enqueueAppointmentMessage(ctx.db, {
+        clinicId: clinic.id,
+        kind: "appointment_cancellation",
+        appointmentId: appointment.id,
+        patientId: appointment.patientId,
+        now: ctx.now,
+      });
+      ctx.sendQueuedMessages();
     }
 
     return {

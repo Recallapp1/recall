@@ -4,7 +4,10 @@ import { after } from "next/server";
 
 import { env } from "@/lib/env";
 
+import { safeError } from "@/lib/safe-error";
+
 import { db } from "../../../db";
+import { dispatchClinicNotifications } from "../../../domain/notifications";
 import { smsProvider } from "../../../notifications/sms";
 import { deleteProviderCall } from "./recordings";
 import type { RetellHandlerDeps } from "./handlers";
@@ -31,6 +34,26 @@ export function withRetell(handler: Handler) {
       now: () => new Date(),
       defer: (task) => after(task),
       smsDelivers: smsProvider().delivers,
+      dispatchClinic: async (clinicId) => {
+        const config = env();
+        try {
+          await dispatchClinicNotifications(db(), clinicId, {
+            now: new Date(),
+            sendingEnabled: config.SMS_SENDING_ENABLED,
+            provider: smsProvider(),
+            providerName: config.SMS_SENDING_ENABLED ? config.SMS_PROVIDER : "console",
+          });
+        } catch (error) {
+          // The daily job sends anything left pending.
+          console.error(
+            JSON.stringify({
+              msg: "notifications.dispatch_failed",
+              clinicId,
+              error: safeError(error),
+            }),
+          );
+        }
+      },
       deleteProviderCall,
     });
   };
