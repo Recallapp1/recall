@@ -39,6 +39,25 @@ it("checks every migration since go-live", () => {
   );
 });
 
+/** New columns on existing tables, per migration. */
+const ADDED_COLUMNS: Record<string, string[]> = {
+  "0008_notifications": [
+    'ALTER TABLE "patients" ADD COLUMN "sms_opt_out_at" timestamp with time zone;',
+  ],
+  "0013_tenant_foreign_keys": ['ALTER TABLE "practitioner_services" ADD COLUMN "clinic_id" uuid;'],
+};
+
+/**
+ * Statements outside "create or add" that were reviewed one by one: they only
+ * fill or tighten a column added in the same migration (never existing data).
+ */
+const REVIEWED_EXCEPTIONS: Record<string, string[]> = {
+  "0013_tenant_foreign_keys": [
+    'UPDATE "practitioner_services" SET "clinic_id" = p."clinic_id" FROM "practitioners" p WHERE p."id" = "practitioner_services"."practitioner_id";',
+    'ALTER TABLE "practitioner_services" ALTER COLUMN "clinic_id" SET NOT NULL;',
+  ],
+};
+
 describe.each(liveMigrations)("migration %s", (file) => {
   const sql = readFileSync(`drizzle/${file}.sql`, "utf8");
   const statements = sql
@@ -51,28 +70,29 @@ describe.each(liveMigrations)("migration %s", (file) => {
     )
     .filter(Boolean);
 
+  const reviewed = REVIEWED_EXCEPTIONS[file] ?? [];
+
   it("only creates or adds; nothing is dropped, renamed, rewritten or deleted", () => {
-    for (const statement of statements) {
+    for (const statement of statements.filter((s) => !reviewed.includes(s))) {
       expect(statement).toMatch(
-        /^(CREATE (TYPE|TABLE|INDEX|UNIQUE INDEX)|ALTER TABLE "\w+" ADD |ALTER TYPE "public"\."\w+" ADD VALUE )/,
+        /^(CREATE (TYPE|TABLE|INDEX|UNIQUE INDEX|FUNCTION|TRIGGER)|ALTER TABLE "\w+" ADD |ALTER TYPE "public"\."\w+" ADD VALUE )/,
       );
-      // Foreign-key actions ("ON DELETE …", "ON UPDATE …") are not statements.
-      const body = statement.replace(
-        /\bON (DELETE|UPDATE) (SET NULL( \([^)]*\))?|CASCADE|NO ACTION|RESTRICT)/gi,
-        "",
-      );
+      // Foreign-key actions ("ON DELETE …") and trigger events ("UPDATE OF …") are not statements.
+      const body = statement
+        .replace(/\bON (DELETE|UPDATE) (SET NULL( \([^)]*\))?|CASCADE|NO ACTION|RESTRICT)/gi, "")
+        .replace(/\bINSERT OR UPDATE OF\b/gi, "");
       expect(body).not.toMatch(/\b(DROP|TRUNCATE|DELETE|RENAME|UPDATE|ALTER COLUMN)\b/i);
     }
   });
 
-  it("adds only nullable columns to existing tables", () => {
+  it("adds only nullable columns to existing tables (backfills are reviewed)", () => {
     const added = statements.filter((s) => /ADD COLUMN/.test(s));
-    expect(added).toEqual(
-      file === "0008_notifications"
-        ? ['ALTER TABLE "patients" ADD COLUMN "sms_opt_out_at" timestamp with time zone;']
-        : [],
-    );
+    expect(added).toEqual(ADDED_COLUMNS[file] ?? []);
     for (const statement of added) expect(statement).not.toMatch(/NOT NULL/);
+  });
+
+  it("contains every reviewed exception verbatim (none silently changed)", () => {
+    for (const exception of reviewed) expect(statements).toContain(exception);
   });
 });
 

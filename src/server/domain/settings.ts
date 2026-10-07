@@ -292,11 +292,13 @@ export async function savePractitioner(
 
     await tx.delete(practitionerServices).where(eq(practitionerServices.practitionerId, id));
     if (input.serviceIds.length > 0) {
-      await tx
-        .insert(practitionerServices)
-        .values(
-          [...new Set(input.serviceIds)].map((serviceId) => ({ practitionerId: id!, serviceId })),
-        );
+      await tx.insert(practitionerServices).values(
+        [...new Set(input.serviceIds)].map((serviceId) => ({
+          clinicId,
+          practitionerId: id!,
+          serviceId,
+        })),
+      );
     }
     await replaceHours(tx, clinicId, id, input.hours);
     return id;

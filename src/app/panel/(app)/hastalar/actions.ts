@@ -9,7 +9,7 @@ import type { FormState } from "@/lib/contracts/form-state";
 import { safeError } from "@/lib/safe-error";
 import { requirePermission } from "@/server/auth/session";
 import { db } from "@/server/db";
-import { recordAudit } from "@/server/domain/audit";
+import { recordAudit, withAudit } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
 import { anonymizePatient, setPatientSmsOptOut, updatePatientNotes } from "@/server/domain/panel";
 import { deleteProviderCalls } from "@/server/voice/sync";
@@ -57,7 +57,18 @@ export async function anonymizePatientAction(
   const { clinic, session } = await requirePermission({ patients: ["anonymize"] });
   if (!z.uuid().safeParse(patientId).success) return { ok: false, message: "Hasta bulunamadı." };
   try {
-    const providerCalls = await anonymizePatient(db(), clinic.id, patientId);
+    // Erasure and its audit record commit together or not at all.
+    const providerCalls = await withAudit(
+      db(),
+      {
+        clinicId: clinic.id,
+        actorUserId: session.user.id,
+        action: "patient.anonymized",
+        targetType: "patient",
+        targetId: patientId,
+      },
+      (tx) => anonymizePatient(tx, clinic.id, patientId),
+    );
     // The voice platform still holds the audio of those calls; erase it too.
     after(async () => {
       try {
@@ -70,13 +81,6 @@ export async function anonymizePatientAction(
           }),
         );
       }
-    });
-    await recordAudit(db(), {
-      clinicId: clinic.id,
-      actorUserId: session.user.id,
-      action: "patient.anonymized",
-      targetType: "patient",
-      targetId: patientId,
     });
   } catch (error) {
     if (error instanceof DomainError) return { ok: false, message: error.userMessage };

@@ -16,7 +16,7 @@ import { safeError } from "@/lib/safe-error";
 import { addClinicMember } from "@/server/auth/accounts";
 import { requirePlatformAdmin } from "@/server/auth/session";
 import { db } from "@/server/db";
-import { recordAudit, type AuditInput } from "@/server/domain/audit";
+import { recordAudit, withAudit, type AuditInput } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
 import { setClinicFeature } from "@/server/domain/settings";
 import {
@@ -91,14 +91,18 @@ export async function setClinicStatusAction(
   const session = await requirePlatformAdmin();
   if (!z.uuid().safeParse(clinicId).success) return { ok: false, message: "Klinik bulunamadı." };
   try {
-    await setClinicStatus(db(), clinicId, status);
-    await audit(session.user.id, {
-      clinicId,
-      action: "platform.clinic_status_changed",
-      targetType: "clinic",
-      targetId: clinicId,
-      metadata: { status },
-    });
+    await withAudit(
+      db(),
+      {
+        actorUserId: session.user.id,
+        clinicId,
+        action: "platform.clinic_status_changed",
+        targetType: "clinic",
+        targetId: clinicId,
+        metadata: { status },
+      },
+      (tx) => setClinicStatus(tx, clinicId, status),
+    );
   } catch (error) {
     return failure("platform.clinic_status.failed", error);
   }
@@ -122,14 +126,18 @@ export async function setClinicFeatureAction(
   if (!z.uuid().safeParse(clinicId).success) return { ok: false, message: "Klinik bulunamadı." };
   if (feature !== "followUp") return { ok: false, message: "Modül bulunamadı." };
   try {
-    await setClinicFeature(db(), clinicId, feature, enabled);
-    await audit(session.user.id, {
-      clinicId,
-      action: "platform.feature_changed",
-      targetType: "clinic",
-      targetId: clinicId,
-      metadata: { feature, enabled },
-    });
+    await withAudit(
+      db(),
+      {
+        actorUserId: session.user.id,
+        clinicId,
+        action: "platform.feature_changed",
+        targetType: "clinic",
+        targetId: clinicId,
+        metadata: { feature, enabled },
+      },
+      (tx) => setClinicFeature(tx, clinicId, feature, enabled),
+    );
   } catch (error) {
     return failure("platform.feature.failed", error);
   }
@@ -147,12 +155,16 @@ export async function addPhoneNumberAction(input: unknown): Promise<SettingsResu
   const parsed = phoneNumberSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]!.message };
   try {
-    await addPhoneNumber(db(), parsed.data);
-    await audit(session.user.id, {
-      clinicId: parsed.data.clinicId,
-      action: "platform.phone_number_added",
-      targetType: "phone_number",
-    });
+    await withAudit(
+      db(),
+      {
+        actorUserId: session.user.id,
+        clinicId: parsed.data.clinicId,
+        action: "platform.phone_number_added",
+        targetType: "phone_number",
+      },
+      (tx) => addPhoneNumber(tx, parsed.data),
+    );
   } catch (error) {
     return failure("platform.phone_add.failed", error);
   }
@@ -169,13 +181,17 @@ export async function removePhoneNumberAction(
     return { ok: false, message: "Numara bulunamadı." };
   }
   try {
-    await removePhoneNumber(db(), { clinicId, phoneNumberId });
-    await audit(session.user.id, {
-      clinicId,
-      action: "platform.phone_number_removed",
-      targetType: "phone_number",
-      targetId: phoneNumberId,
-    });
+    await withAudit(
+      db(),
+      {
+        actorUserId: session.user.id,
+        clinicId,
+        action: "platform.phone_number_removed",
+        targetType: "phone_number",
+        targetId: phoneNumberId,
+      },
+      (tx) => removePhoneNumber(tx, { clinicId, phoneNumberId }),
+    );
   } catch (error) {
     return failure("platform.phone_remove.failed", error);
   }

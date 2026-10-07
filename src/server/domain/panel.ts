@@ -25,7 +25,7 @@ import {
   type AppointmentStatus,
 } from "@/lib/contracts/appointment";
 
-import type { Database, Executor } from "../db";
+import type { Executor } from "../db";
 import {
   appointments,
   callbackRequests,
@@ -692,7 +692,7 @@ export async function updatePatientNotes(
  * the provider's copy (audio) as well.
  */
 export async function anonymizePatient(
-  db: Database,
+  db: Executor,
   clinicId: string,
   patientId: string,
 ): Promise<{ provider: string; providerCallId: string }[]> {

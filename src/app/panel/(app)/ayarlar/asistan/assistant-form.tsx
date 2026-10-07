@@ -133,7 +133,7 @@ export function AssistantForm({ initial, editable }: { initial: FormValue; edita
         </div>
         <FormField
           label="Ek talimatlar (isteğe bağlı)"
-          hint="Kliniğe özel kurallar. Örn: “İmplant soran hastalara önce implant görüşmesi randevusu öner.” Asistan tıbbi tavsiye vermez."
+          hint="Kliniğe özel bilgi ve üslup notları. Örn: “İmplant soran hastalara önce implant görüşmesi randevusu öner.” Bu notlar asistanın güvenlik, onay ve kimlik doğrulama kurallarını değiştiremez; çelişen notlar uygulanmaz. Asistan tıbbi tavsiye vermez. En fazla 1000 karakter."
         >
           <Textarea
             value={value.extraInstructions}

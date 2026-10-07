@@ -18,7 +18,7 @@ import {
   setMemberPractitioner,
 } from "@/server/auth/team";
 import { db } from "@/server/db";
-import { recordAudit, type AuditInput } from "@/server/domain/audit";
+import { AuditWriteError, recordAudit, type AuditInput } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
 
 /**
@@ -70,6 +70,14 @@ const AUTH_ERRORS: Record<string, string> = {
 
 function failure(event: string, error: unknown): SettingsResult {
   if (error instanceof DomainError) return { ok: false, message: error.userMessage };
+  // Better Auth applied the change; only its trace is missing (alarm raised).
+  if (error instanceof AuditWriteError) {
+    return {
+      ok: false,
+      message:
+        "Değişiklik yapıldı ancak denetim kaydına yazılamadı. Recall ekibi bilgilendirildi; lütfen ekip listesini kontrol edin.",
+    };
+  }
   if (error instanceof APIError) {
     const code = (error.body as { code?: string } | undefined)?.code;
     if (code && AUTH_ERRORS[code]) return { ok: false, message: AUTH_ERRORS[code] };

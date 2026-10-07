@@ -292,7 +292,11 @@ export const practitioners = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index().on(t.clinicId)],
+  (t) => [
+    index().on(t.clinicId),
+    // Target of composite foreign keys (clinic_id, practitioner_id).
+    uniqueIndex("practitioners_clinic_id_id_key").on(t.clinicId, t.id),
+  ],
 );
 
 export const services = pgTable(
@@ -323,9 +327,14 @@ export const services = pgTable(
   ],
 );
 
+/**
+ * A practitioner and a service of the same clinic: both references carry the
+ * clinic (migration 0013), so a link across clinics is impossible.
+ */
 export const practitionerServices = pgTable(
   "practitioner_services",
   {
+    clinicId: clinicRef(),
     practitionerId: uuid()
       .notNull()
       .references(() => practitioners.id, { onDelete: "cascade" }),
@@ -333,7 +342,19 @@ export const practitionerServices = pgTable(
       .notNull()
       .references(() => services.id, { onDelete: "cascade" }),
   },
-  (t) => [primaryKey({ columns: [t.practitionerId, t.serviceId] })],
+  (t) => [
+    primaryKey({ columns: [t.practitionerId, t.serviceId] }),
+    foreignKey({
+      name: "practitioner_services_practitioner_fk",
+      columns: [t.clinicId, t.practitionerId],
+      foreignColumns: [practitioners.clinicId, practitioners.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "practitioner_services_service_fk",
+      columns: [t.clinicId, t.serviceId],
+      foreignColumns: [services.clinicId, services.id],
+    }).onDelete("cascade"),
+  ],
 );
 
 // ─── Schedule ────────────────────────────────────────────────────────────────
@@ -353,6 +374,11 @@ export const workingHours = pgTable(
   },
   (t) => [
     index().on(t.clinicId, t.weekday),
+    foreignKey({
+      name: "working_hours_practitioner_fk",
+      columns: [t.clinicId, t.practitionerId],
+      foreignColumns: [practitioners.clinicId, practitioners.id],
+    }).onDelete("cascade"),
     check("working_hours_weekday_range", sql`${t.weekday} between 1 and 7`),
     check("working_hours_range_valid", sql`${t.startTime} < ${t.endTime}`),
   ],
@@ -372,6 +398,11 @@ export const timeOff = pgTable(
   },
   (t) => [
     index().on(t.clinicId, t.startsAt),
+    foreignKey({
+      name: "time_off_practitioner_fk",
+      columns: [t.clinicId, t.practitionerId],
+      foreignColumns: [practitioners.clinicId, practitioners.id],
+    }).onDelete("cascade"),
     check("time_off_range_valid", sql`${t.startsAt} < ${t.endsAt}`),
   ],
 );
@@ -423,7 +454,12 @@ export const calls = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [uniqueIndex().on(t.provider, t.providerCallId), index().on(t.clinicId, t.createdAt)],
+  (t) => [
+    uniqueIndex().on(t.provider, t.providerCallId),
+    index().on(t.clinicId, t.createdAt),
+    // Target of composite foreign keys (clinic_id, call_id).
+    uniqueIndex("calls_clinic_id_id_key").on(t.clinicId, t.id),
+  ],
 );
 
 export const appointments = pgTable(
@@ -456,6 +492,27 @@ export const appointments = pgTable(
     index().on(t.patientId),
     // Target of composite foreign keys (clinic_id, appointment_id).
     uniqueIndex("appointments_clinic_id_id_key").on(t.clinicId, t.id),
+    foreignKey({
+      name: "appointments_patient_fk",
+      columns: [t.clinicId, t.patientId],
+      foreignColumns: [patients.clinicId, patients.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "appointments_practitioner_fk",
+      columns: [t.clinicId, t.practitionerId],
+      foreignColumns: [practitioners.clinicId, practitioners.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "appointments_service_fk",
+      columns: [t.clinicId, t.serviceId],
+      foreignColumns: [services.clinicId, services.id],
+    }).onDelete("restrict"),
+    // ON DELETE SET NULL (call_id) only: written by hand in migration 0013.
+    foreignKey({
+      name: "appointments_call_fk",
+      columns: [t.clinicId, t.callId],
+      foreignColumns: [calls.clinicId, calls.id],
+    }).onDelete("set null"),
     check("appointments_range_valid", sql`${t.startsAt} < ${t.endsAt}`),
     // Overlap prevention lives in a custom migration (EXCLUDE USING gist).
   ],
@@ -481,6 +538,12 @@ export const callbackRequests = pgTable(
       .on(t.clinicId, t.callId, t.phone)
       .where(sql`${t.callId} is not null and ${t.status} = 'open'`),
     index().on(t.createdAt),
+    // ON DELETE SET NULL (call_id) only: written by hand in migration 0013.
+    foreignKey({
+      name: "callback_requests_call_fk",
+      columns: [t.clinicId, t.callId],
+      foreignColumns: [calls.clinicId, calls.id],
+    }).onDelete("set null"),
   ],
 );
 

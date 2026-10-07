@@ -32,12 +32,17 @@ export async function getRecordingUrl(
   }
   if (!url) return { ok: false, message: "Bu kaydın saklama süresi doldu." };
 
-  await recordAudit(db(), {
-    clinicId: context.clinic.id,
-    actorUserId: context.session.user.id,
-    action: "call.recording_played",
-    targetType: "call",
-    targetId: callId,
-  });
+  // No playback without its trace: a failed audit write keeps the link back.
+  try {
+    await recordAudit(db(), {
+      clinicId: context.clinic.id,
+      actorUserId: context.session.user.id,
+      action: "call.recording_played",
+      targetType: "call",
+      targetId: callId,
+    });
+  } catch {
+    return { ok: false, message: "Kayıt şu anda açılamıyor. Recall ekibi bilgilendirildi." };
+  }
   return { ok: true, url };
 }

@@ -15,13 +15,21 @@ export async function GET(
   const data = z.uuid().safeParse(id).success ? await exportPatientData(db(), scope, id) : null;
   if (!data) return Response.json({ error: "Hasta bulunamadı." }, { status: 404 });
 
-  await recordAudit(db(), {
-    clinicId: context.clinic.id,
-    actorUserId: context.session.user.id,
-    action: "patient.exported",
-    targetType: "patient",
-    targetId: id,
-  });
+  // No download without its trace: a failed audit write refuses the export.
+  try {
+    await recordAudit(db(), {
+      clinicId: context.clinic.id,
+      actorUserId: context.session.user.id,
+      action: "patient.exported",
+      targetType: "patient",
+      targetId: id,
+    });
+  } catch {
+    return Response.json(
+      { error: "Dışa aktarma şu anda yapılamıyor. Recall ekibi bilgilendirildi." },
+      { status: 503 },
+    );
+  }
   const body = JSON.stringify(
     { klinik: context.clinic.name, disaAktarim: new Date(), ...data },
     null,

@@ -167,7 +167,9 @@ async function main() {
       );
       await tx
         .insert(schema.practitionerServices)
-        .values(canOnly.map((s) => ({ practitionerId: can.id, serviceId: s.id })));
+        .values(
+          canOnly.map((s) => ({ clinicId: clinic.id, practitionerId: can.id, serviceId: s.id })),
+        );
 
       // Clinic hours: weekdays with a lunch break, Saturday mornings.
       const clinicHours = [1, 2, 3, 4, 5].flatMap((weekday) => [
