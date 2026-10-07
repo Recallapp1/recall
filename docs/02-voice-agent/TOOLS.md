@@ -47,7 +47,7 @@ O gün slot yoksa `slots: []` ve sonraki 3 uygun gün `nextAvailableDates` için
 
 - Doğrulama sonucu her hatada aynıdır (`VERIFICATION_FAILED`); numara, ad veya tarihten hangisinin yanlış olduğu söylenmez.
 - Başarısız doğrulama sayılır: arama başına 3, numara başına günde 5 (Postgres `rate_limits`). Sonra doğru cevap da reddedilir (`TOO_MANY_ATTEMPTS`) ve geri arama önerilir.
-- Ad karşılaştırması büyük/küçük harf, Türkçe harf (ş→s, ı→i), noktalama ve kelime sırasından bağımsızdır; her kelime eşleşmelidir.
+- Ad karşılaştırması büyük/küçük harf, Türkçe harf (ş→s, ı→i), noktalama ve kelime sırasından bağımsızdır; sık karışan sesler (s/z, t/d, p/b, c/j, k/g, f/v) birleştirilir ve dört harf ve üzeri kelimede tek harf farkına izin verilir. Kelime sayısı aynı olmalı; tarih ve saat tam eşleşmeli.
 
 ## `find_appointments`
 

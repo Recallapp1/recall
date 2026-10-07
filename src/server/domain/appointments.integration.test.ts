@@ -56,10 +56,18 @@ describe("sameFullName", () => {
     expect(sameFullName("Ayşe Nur Öztürk", "Öztürk, Ayşe Nur")).toBe(true);
   });
 
+  it("tolerates typical Turkish speech-recognition slips in a word", () => {
+    expect(sameFullName("Deneme Test", "Deneme Tez")).toBe(true);
+    expect(sameFullName("Mehmet Doğan", "Mehmet Toğan")).toBe(true);
+    expect(sameFullName("Hatice Çelik", "Hatice Celil")).toBe(true);
+  });
+
   it("requires every word to match", () => {
     expect(sameFullName("Zeynep Şahin", "Zeynep")).toBe(false);
     expect(sameFullName("Zeynep Şahin", "Zeynep Şahin Kaya")).toBe(false);
     expect(sameFullName("Zeynep Şahin", "Zehra Şahin")).toBe(false);
+    expect(sameFullName("Deneme Test", "De Mehmet Öz")).toBe(false);
+    expect(sameFullName("Can Ak", "Cem Ak")).toBe(false);
     expect(sameFullName("", "")).toBe(false);
   });
 });

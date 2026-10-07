@@ -36,5 +36,5 @@ Seçenek 3.
 
 - Gerçek telefon aramalarında (caller ID var) hasta yalnızca kendi numarasına kayıtlı randevuları yönetebilir; iş telefonundan arayıp cep numarasındaki randevuyu iptal etmek isteyen hasta geri arama ile yönlendirilir.
 - Gizli numarayla arayan hasta randevusunu ad, tarih ve saatle yönetebilir. Biri bilerek 5 yanlış denemeyle bir numarayı 24 saat kilitleyebilir; bu durumda o numara yalnızca gizli numarayla aramada etkilenir (caller ID ile arama kilitlenmez) ve geri arama yolu açıktır. Kabul edilebilir.
-- Ad eşleştirmesi ASR hatalarına toleranslıdır ama tam kelime eşleşmesi ister; adı farklı duyulan hasta geri arama yoluna düşer.
+- Ad eşleştirmesi ASR hatalarına toleranslıdır: büyük/küçük harf, Türkçe harfler, kelime sırası, sık karışan sesler (s/z, t/d, p/b, c/j, k/g, f/v) ve dört harf ve üzeri kelimede tek harf farkı ("Test" → "Tez", production aramasında görüldü). Kelime sayısı aynı olmalı; tarih ve saat tam eşleşmeli. Adı bundan fazla farklı duyulan hasta geri arama yoluna düşer.
 - SMS açıldığında (F2) gizli numaralı aramalar için tek kullanımlık SMS kodu ek bir seçenek olarak yeniden değerlendirilebilir.

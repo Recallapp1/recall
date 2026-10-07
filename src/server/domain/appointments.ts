@@ -182,22 +182,75 @@ export interface OwnershipCheck {
 
 /**
  * Full-name match that tolerates speech recognition: case, Turkish letters
- * (ş → s, ı → i …), punctuation and word order are ignored; every word must match.
+ * (ş → s, ı → i …), punctuation and word order are ignored, sounds that Turkish
+ * ASR confuses are folded (s/z, t/d, p/b, c/j, k/g, f/v), and a word of four or
+ * more letters may differ by one letter ("Test" heard as "Tez"). Every word must
+ * still match, and the date and time beside it must match exactly.
  */
 export function sameFullName(a: string, b: string): boolean {
-  const words = (name: string) =>
-    name
-      .toLocaleLowerCase("tr")
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .replace(/ı/g, "i")
-      .replace(/[^a-z\s]/g, " ")
-      .split(/\s+/)
-      .filter(Boolean)
-      .sort()
-      .join(" ");
-  const left = words(a);
-  return left.length > 0 && left === words(b);
+  const left = nameWords(a);
+  const right = nameWords(b);
+  if (left.length === 0 || left.length !== right.length) return false;
+  return matchWords(left, right);
+}
+
+function nameWords(name: string): string[] {
+  return name
+    .toLocaleLowerCase("tr")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/ı/g, "i")
+    .replace(/[^a-z\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) =>
+      word
+        .replace(/z/g, "s")
+        .replace(/d/g, "t")
+        .replace(/b/g, "p")
+        .replace(/j/g, "c")
+        .replace(/g/g, "k")
+        .replace(/v/g, "f"),
+    );
+}
+
+/** Pairs every word with a distinct close word (names have a handful of words). */
+function matchWords(left: string[], right: string[]): boolean {
+  if (left.length === 0) return true;
+  const [word, ...rest] = left;
+  return right.some(
+    (candidate, i) =>
+      wordsClose(word, candidate) &&
+      matchWords(rest, [...right.slice(0, i), ...right.slice(i + 1)]),
+  );
+}
+
+function wordsClose(a: string, b: string): boolean {
+  if (a === b) return true;
+  return Math.max(a.length, b.length) >= 4 && editDistanceAtMostOne(a, b);
+}
+
+function editDistanceAtMostOne(a: string, b: string): boolean {
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  let j = 0;
+  let edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      i += 1;
+      j += 1;
+      continue;
+    }
+    edits += 1;
+    if (edits > 1) return false;
+    if (a.length > b.length) i += 1;
+    else if (b.length > a.length) j += 1;
+    else {
+      i += 1;
+      j += 1;
+    }
+  }
+  return edits + (a.length - i) + (b.length - j) <= 1;
 }
 
 function matchesCheck(summary: AppointmentSummary, check: OwnershipCheck): boolean {
