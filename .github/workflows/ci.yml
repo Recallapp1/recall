@@ -25,3 +25,11 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm format:check
       - run: pnpm test
+      # Same build Vercel runs, against placeholder settings: no database or
+      # provider is contacted (pages that read data render per request).
+      - run: pnpm build
+        env:
+          APP_URL: https://ci.recall.invalid
+          DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/ci
+          BETTER_AUTH_SECRET: ci-only-secret-not-used-anywhere-0123456789
+          NEXT_TELEMETRY_DISABLED: "1"
