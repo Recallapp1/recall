@@ -75,6 +75,16 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-08 · Yayın öncesi denetim ve düzeltme partileri · F7, F8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** parti başına ayrı dal · **Commit'ler:** bu kayıt ve sonrakiler
+
+**Ne yapıldı**
+
+- Salt okunur yayın öncesi denetim: [PRELAUNCH-AUDIT-2026-10-08.md](docs/reviews/PRELAUNCH-AUDIT-2026-10-08.md) (Manus bulgularının doğrulanması, bağımsız bulgular, canlı yapılandırma, proje durumu).
+- Ürün ekibi repoyu özel yaptı; `pnpm ci:wait` artık kimlikli istek atar (`GITHUB_TOKEN` veya git'in kayıtlı kimliği).
+- Onaylanan düzeltme sırası: Better Auth uç noktaları (P-04) → iptal/erteleme tekrar güvenliği (P-11) → kötüye kullanım sınırları (P-08) → silme bütünlüğü ve sağlayıcı silme kuyruğu (P-09, P-10). Gizli değer rotasyonu planı hazırlanır, "başla" onayı beklenir.
+
 ### 2026-10-08 · Dış inceleme paketi temizliği · F8
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `chore/review-package-cleanup` · **Commit'ler:** bu kayıt

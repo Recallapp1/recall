@@ -5,8 +5,9 @@
  *   pnpm ci:wait <sha|ref>
  *
  * `main` is protected: a commit reaches it only after these checks pass on
- * the feature branch. The repo is public, so no token is needed (60 API
- * calls per hour, hence the one-minute interval).
+ * the feature branch. The repo is private: the token comes from GITHUB_TOKEN
+ * or, failing that, from the credential git already uses to push (Git
+ * Credential Manager). It is only sent to api.github.com, never printed.
  */
 import { execFileSync } from "node:child_process";
 
@@ -25,6 +26,24 @@ function git(...args: string[]) {
   return execFileSync("git", args, { encoding: "utf8" }).trim();
 }
 
+/** A token for the GitHub API; never logged. */
+function githubToken(): string | null {
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+  try {
+    const output = execFileSync("git", ["credential", "fill"], {
+      input: "protocol=https\nhost=github.com\n\n",
+      encoding: "utf8",
+      env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" },
+      stdio: ["pipe", "pipe", "ignore"],
+    });
+    return /^password=(.+)$/m.exec(output)?.[1]?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+const token = githubToken();
+
 const repo = git("remote", "get-url", "origin")
   .replace(/^.*github\.com[:/]/, "")
   .replace(/\.git$/, "");
@@ -33,7 +52,12 @@ const sha = git("rev-parse", process.argv[2] ?? "HEAD");
 async function checkRuns(): Promise<CheckRun[]> {
   const res = await fetch(
     `https://api.github.com/repos/${repo}/commits/${sha}/check-runs?per_page=100`,
-    { headers: { accept: "application/vnd.github+json" } },
+    {
+      headers: {
+        accept: "application/vnd.github+json",
+        ...(token && { authorization: `Bearer ${token}` }),
+      },
+    },
   );
   if (!res.ok) throw new Error(`GitHub API ${res.status}`);
   const body = (await res.json()) as { check_runs: CheckRun[] };
