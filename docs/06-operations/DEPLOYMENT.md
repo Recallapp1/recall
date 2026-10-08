@@ -1,25 +1,32 @@
 # Deploy
 
-## Ortamlar
+## Ortamlar ve veritabanı dalları
 
-| Ortam      | Tetikleyici         | URL                           | Veritabanı           |
-| ---------- | ------------------- | ----------------------------- | -------------------- |
-| Preview    | Her PR / dal push'u | `recall-git-<dal>.vercel.app` | Neon dalı (otomatik) |
-| Production | `main` dalına merge | Özel alan adı                 | Neon `main`          |
+Neon projesi `falling-mud-37269187` (AWS eu-central-1). **Neon'da `main` adlı bir dal yoktur**; `main` yalnızca Git dalının adıdır. Production veritabanı Neon'un **`production`** dalıdır.
+
+| Ortam            | Tetikleyici             | URL                               | Neon dalı                               | Dal id                      | Uç nokta (host'un başı)   |
+| ---------------- | ----------------------- | --------------------------------- | --------------------------------------- | --------------------------- | ------------------------- |
+| Production       | Git `main`'e push       | `https://recalltr.company`        | **`production`** (varsayılan dal)       | `br-frosty-union-b1y9qd14`  | `ep-small-bar-b1c058o0`   |
+| Lokal geliştirme | `pnpm dev`              | `http://localhost:3000` (+ tünel) | **`dev`**                               | `br-dawn-mountain-b1yqptr1` | `ep-empty-smoke-b163qx6v` |
+| Testler, CI, E2E | `pnpm test`, `pnpm e2e` | —                                 | Yok: bellekte PGlite                    | —                           | —                         |
+| Preview (Vercel) | —                       | Kullanılmıyor                     | Ortam değişkeni bilerek yok             | —                           | —                         |
+| Yedekler         | Migration'dan önce elle | —                                 | `backup-pre-00NN-<tarih>` (compute'suz) | —                           | —                         |
+
+**Yanlış veritabanına bağlanmamak için:** bir bağlantı dizesinin hangi dala gittiğini host'un başı söyler (`ep-small-bar…` = production). `voice:eval` gibi veri yazan yerel araçlar production uç noktasını görünce çalışmayı reddeder. Production dizesi yalnızca Vercel'de (sensitive) durur; lokale yazılmaz.
 
 ## Production (canlı) durumu
 
 _Kurulum: 2026-10-05/06_
 
-| Konu       | Değer                                                                                                                                                                                          |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel     | Takım `RECALL` (`recall25`), proje `recall`, plan **Hobby** (ilk ücretli klinikten önce **Pro**'ya geçilecek: Hobby ticari kullanıma izin vermez)                                              |
-| Git        | `recallapp0/recall` bağlı; `main`'e her push production deploy'u başlatır                                                                                                                      |
-| Alan adı   | `recalltr.company` (Vercel'den alındı, DNS Vercel'de). `www` → ana alan 308 yönlendirme (`next.config.ts`). **Otomatik yenileme açık olmalı**                                                  |
-| Veritabanı | Neon `falling-mud-37269187`, **`production` dalı** (Frankfurt, ücretsiz plan; canlıya geçmeden ücretli plana ve auto-suspend kapatmaya)                                                        |
-| E-posta    | Resend, alan `recalltr.company`, bölge **eu-west-1** (İrlanda). DNS: `resend._domainkey` TXT (DKIM), `send` MX ve SPF TXT, `_dmarc` TXT (`p=none`)                                             |
-| SMS        | `console` (Netgsm F2'de). Bu modda asistan "SMS gönderdim" demez, log'a mesaj gövdesi yazılmaz                                                                                                 |
-| Preview    | Ortam değişkeni yok: dal push'u yapılmıyor (dallar lokalde `main`'e ff-merge). Preview gerekirse `DATABASE_URL` **dev** dalına verilmeli, asla production'a değil (build migration çalıştırır) |
+| Konu       | Değer                                                                                                                                                                                                                                              |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel     | Takım `RECALL` (`recall25`), proje `recall`, plan **Hobby** (ilk ücretli klinikten önce **Pro**'ya geçilecek: Hobby ticari kullanıma izin vermez)                                                                                                  |
+| Git        | `recallapp0/recall` bağlı; `main`'e her push production deploy'u başlatır                                                                                                                                                                          |
+| Alan adı   | `recalltr.company` (Vercel'den alındı, DNS Vercel'de). `www` → ana alan 308 yönlendirme (`next.config.ts`). Otomatik yenileme ürün ekibince bilerek kapalı: ilk klinikten önce yeni alana taşınılacak ([DOMAIN-MIGRATION.md](DOMAIN-MIGRATION.md)) |
+| Veritabanı | Neon `falling-mud-37269187`, **`production` dalı** (`br-frosty-union-b1y9qd14`; Frankfurt, ücretsiz plan; canlıya geçmeden ücretli plana ve auto-suspend kapatmaya). Bağlantı `sslmode=verify-full`                                                |
+| E-posta    | Resend, alan `recalltr.company`, bölge **eu-west-1** (İrlanda). DNS: `resend._domainkey` TXT (DKIM), `send` MX ve SPF TXT, `_dmarc` TXT (`p=none`)                                                                                                 |
+| SMS        | `console` (Netgsm F2'de). Bu modda asistan "SMS gönderdim" demez, log'a mesaj gövdesi yazılmaz                                                                                                                                                     |
+| Preview    | Ortam değişkeni yok: dal push'u yapılmıyor (dallar lokalde `main`'e ff-merge). Preview gerekirse `DATABASE_URL` **dev** dalına verilmeli, asla production'a değil (build migration çalıştırır)                                                     |
 
 Gizli değerler (`DATABASE_URL`, `RETELL_API_KEY`, `RESEND_API_KEY`, `BETTER_AUTH_SECRET`) Vercel'de **sensitive** olarak durur ve kimse tarafından okunamaz. Oturum anahtarı Vercel'e doğrudan üretilerek yazıldı.
 
@@ -83,13 +90,13 @@ Kaynak gerçek: [`.env.example`](../../.env.example) ve [`src/lib/env.ts`](../..
 
 Vercel, `vercel-build` script'i varsa onu çalıştırır. Migration'lar **geriye dönük uyumlu** yazılır (önce kolon ekle, kodu deploy et, sonra eski kolonu kaldır), çünkü deploy sırasında eski sürüm hâlâ trafik alıyor olabilir.
 
-## Yayın süreci
+## Yayın süreci (2026-10-07'den beri)
 
-1. Dal aç → PR → Vercel Preview otomatik oluşur.
-2. CI: lint, typecheck, test (GitHub Actions, `.github/workflows/ci.yml`).
-3. Preview'da kontrol (gerekirse test numarasını preview URL'ine yönlendir).
-4. `main`'e squash merge → Production deploy.
-5. `CHANGELOG.md` güncellenir.
+1. İş dalı aç (`fix/…`, `feat/…`); lokalde `pnpm lint && pnpm lint:tokens && pnpm typecheck && pnpm test` (çıkış kodlarıyla, boru yok).
+2. Yeni migration varsa önce Neon'da production'dan compute'suz yedek dal: `backup-pre-00NN-<tarih>`.
+3. `main`'e fast-forward merge ve push → Vercel production build: `drizzle-kit migrate` → `next build` → `voice:sync --existing --soft` (mevcut ajanlar prompt ve tool değişikliklerini deploy ile alır; ajan oluşturmaz, hata build'i durdurmaz).
+4. CI (GitHub Actions): `pnpm audit --prod`, lint, tokens, typecheck, format, test, production build; ardından Playwright E2E. `main` koruması açıldığında yeşil CI zorunlu olur.
+5. Deploy sonrası: build READY, `/api/health`, gerekiyorsa `/api/health/jobs` ve migration sayısı kontrol edilir.
 
 ## Geri alma
 

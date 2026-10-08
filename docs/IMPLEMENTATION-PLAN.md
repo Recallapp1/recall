@@ -4,7 +4,7 @@
 > **Her agent ve geliştirici işe başlamadan önce bu belgeyi ve [WORKLOG.md](../WORKLOG.md) dosyasını okur.**
 > Görev kimlikleri (ör. `F1.4`) commit mesajlarında, dal adlarında ve WORKLOG kayıtlarında kullanılır.
 
-Son güncelleme: 2026-10-04 · Sahip: Ürün + Mühendislik
+Son güncelleme: 2026-10-08 · Sahip: Ürün + Mühendislik. **Güncel durumun tek kaynağı:** [WORKLOG.md → Güncel durum](../WORKLOG.md#güncel-durum); aşağıdaki faz tablosu tarihli bir özettir.
 
 ---
 
@@ -35,21 +35,21 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 
 ---
 
-## Faz durum özeti
+## Faz durum özeti (2026-10-08)
 
-| Faz | Başlık                                                      | Durum                                                                      | Bağımlılık                            |
-| --- | ----------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------- |
-| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                              | —                                     |
-| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8 Retell anahtarı bekliyor                            | F0                                    |
-| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                         | F1                                    |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ✅ F3.1–F3.5 (özel rol arayüzü 2026-10-06)                                 | F0                                    |
-| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor) | F0                                    |
-| F5  | Klinik paneli                                               | 🟡 F5.1–F5.4 ✅, ses seçimi ve özel roller ✅ (açık: E2E testleri)         | F3, F4 (F1 ile paralel ilerleyebilir) |
-| F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                          | F3, F1                                |
-| F7  | KVKK, güvenlik, veri saklama                                | ⏳                                                                         | F5                                    |
-| F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı                                                                   | F1, F3 (F2 gerçek numara için)        |
-| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                         | F1–F8                                 |
-| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                         | F9                                    |
+| Faz | Başlık                                                      | Durum                                                                                                                                                     | Bağımlılık |
+| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                                                                                                             | —          |
+| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8: 24 senaryoluk ses değerlendirmesi depoda (`pnpm voice:eval`), gecikme ölçüldü ([VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md))     | F0         |
+| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                                                                                                        | F1         |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ✅ (testler: rol × eylem, kiracı izolasyonu, davet)                                                                                                       | F0         |
+| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor)                                                                                | F0         |
+| F5  | Klinik paneli                                               | ✅ ekranlar, sıralama, action testleri, E2E · açık: logo/görsel, 375/1440 görsel kontrol                                                                  | F3, F4     |
+| F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                                                                                                         | F3, F1     |
+| F7  | KVKK, güvenlik, veri saklama                                | 🟡 saklama, anonimleştirme, dışa aktarma, hız sınırı, CSP, denetim, güvenlik incelemesi ✅ · açık: yasal metinler, avukat, alan şifreleme değerlendirmesi | F5         |
+| F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı, CI yeşil, iş kalp atışı · açık: Sentry/uptime hesapları, `main` koruması, Pro/ücretli Neon                                                      | F1, F3     |
+| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                                                                                                        | F1–F8      |
+| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                                                                                                        | F9         |
 
 **Önerilen sıra (2026-10-04 güncel):** F1 → F4 (tasarım temeli) → F3 (hesaplar) → F5 ve F6 (panel, konsol) → F7 → F8 (production) → **F2 (Netgsm: ürün ekibiyle birlikte, en son)** → F9. F1.8 ürün ekibinin Retell anahtarını girmesiyle paralel yürür.
 
@@ -123,7 +123,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] CLI: `pnpm voice:sync --clinic <slug> | --all [--force]`, `pnpm voice:voices`
 - [x] Not (sürümleme): Ajanın taslak sürümü yerinde güncelleniyor ve sürüm numarası `agent_version` olarak kaydedilip inbound webhook'ta `override_agent_version` ile açıkça gönderiliyor. Retell'in `publish` akışı canlı API'de doğrulanmadan kullanılmadı → **F1.8'de doğrulanacak**
 - [ ] Hız sınırına karşı yeniden deneme: SDK'nın varsayılan yeniden denemesine bırakıldı; toplu senkron (`--all`) büyüdüğünde F6'da ele alınacak
-- [ ] Panelden otomatik tetikleme (F5.3)
+- [x] Panelden otomatik tetikleme (F5.3) — Ayar kaydında `after()` ile; ayrıca production build'i mevcut ajanları senkronlar (2026-10-07)
 
 ### F1.7 Vapi kodunun kaldırılması ✅
 
@@ -162,10 +162,10 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 ### F2.3 SMS: Netgsm
 
 - [ ] Netgsm SMS API'sinin güncel dokümana göre doğrulanması (mevcut adaptör varsayıma dayanıyor)
-- [ ] `notifications` tablosu: `id, clinic_id, appointment_id, type, channel, to (maskeli değil, şifreleme F7), status, provider_message_id, error, sent_at`. Tekil kısıt `(appointment_id, type)` ile idempotency
+- [x] `notifications` tablosu: `id, clinic_id, appointment_id, type, channel, to (maskeli değil, şifreleme F7), status, provider_message_id, error, sent_at`. Tekil kısıt `(appointment_id, type)` ile idempotency — Bildirim kaydı olarak yapıldı (0008, 0011): tüm SMS'ler buradan geçer, tekillik `dedupe_key` ile (2026-10-07)
 - [ ] Türkçe karakter ve uzunluk ölçümü; şablonlar [NOTIFICATIONS.md](03-telephony/NOTIFICATIONS.md) ile uyumlu
 - [ ] Klinik başına gönderici başlığı (varsayılan: Recall başlığı)
-- [ ] Hatırlatma cron'u: `GET /api/cron/reminders` (saatlik, `CRON_SECRET`), idempotent
+- [x] Hatırlatma cron'u: `GET /api/cron/reminders` (saatlik, `CRON_SECRET`), idempotent — Günlük `/api/cron/notifications` (Hobby); devam ettirilebilir iş kaydı ve kalp atışı (2026-10-07). Saatlik iş Vercel Pro ile
 - [ ] İYS ve ticari ileti ayrımı için hukuki teyit (ürün ekibi)
 
 **F2 çıkış kriterleri:** En az bir Türk numarası Retell'e bağlı ve 20 test aramasında sorunsuz; SMS onay ve hatırlatma gönderiliyor; değerlendirme belgesi en az iki sağlayıcıyla dolu.
@@ -221,9 +221,9 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F3.6 Testler
 
-- [ ] Yetki matrisi testleri: her rol × her eylem
-- [ ] Kiracı izolasyonu: A kliniğinin üyesi B kliniğinin verisine hiçbir Server Action ile erişemez
-- [ ] Davet akışı entegrasyon testi
+- [x] Yetki matrisi testleri: her rol × her eylem — `permissions.test.ts` + tüm action dosyaları rol × eylem (`server-actions.integration.test.ts`, 2026-10-08)
+- [x] Kiracı izolasyonu: A kliniğinin üyesi B kliniğinin verisine hiçbir Server Action ile erişemez — Action testleri (B'nin satırları bayt bayt aynı kalır) ve bileşik FK'ler (0013), 2026-10-08
+- [x] Davet akışı entegrasyon testi — `accounts.test.ts`
 
 **F3 çıkış kriterleri:** Klinik oluşturma, owner daveti, üye ekleme ve rol atama çalışıyor; tüm panel rotaları korumalı; yetki matrisi testli.
 
@@ -249,7 +249,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] shadcn/ui kurulumu (Radix, `radix-nova`), DESIGN.md token'larıyla yeniden temalanması; takma ad katmanı yok, `lint:tokens` shadcn tema adlarını yakalar ([ADR-008](decisions/ADR-008-shadcn-theming.md))
 - [x] DESIGN.md özel bileşenleri: `ActionButton`, `GlassCard`, `GlassStatCard`, `Eyebrow` (etiket tipografisi), `StatusTag`, `SectionShell` (F4.1'de yapılmıştı)
 - [x] Panel bileşenleri: `Button` varyantları, `Input`, `Select`, `Textarea`, `Switch`, `Checkbox`, `Dialog`, `Sheet`, `Tabs`, `Table`, `Badge`, durum/kaynak rozetleri, `Toaster`, `Skeleton`, `EmptyState`, `Avatar`, `DropdownMenu`, `Tooltip`, `Popover` + `Calendar` (tarih seçici), `FormField`, `ScheduleGrid` (gün/hafta, hekim kolonları, çakışma şeritleri; düzen fonksiyonu testli)
-- [ ] `Table` sıralama ve sayfalama: veri katmanıyla birlikte F5'te (sunucu tarafı, URL parametreleri)
+- [x] `Table` sıralama ve sayfalama: veri katmanıyla birlikte F5'te (sunucu tarafı, URL parametreleri) — Randevular ve Hastalar sütun sıralaması, URL'de, JS'siz (2026-10-08)
 - [x] Yaşayan stil rehberi: `/dev/tasarim` → "Panel bileşenleri" bölümü (yalnızca development)
 - [ ] **Ürün ekibi onayı:** panel türetmeleri, durum rozetleri ve `danger` token'ı (F5 öncesi)
 
@@ -314,8 +314,8 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F5.5 Testler
 
-- [ ] Server Action entegrasyon testleri (PGlite): yetki, doğrulama, kiracı izolasyonu
-- [ ] Playwright: giriş → takvimde randevu oluştur → iptal; ayar değiştir → senkron tetiklendi; yetkisiz rol menüyü görmüyor
+- [x] Server Action entegrasyon testleri (PGlite): yetki, doğrulama, kiracı izolasyonu — 2026-10-08
+- [x] Playwright: giriş → takvimde randevu oluştur → iptal; ayar değiştir → senkron tetiklendi; yetkisiz rol menüyü görmüyor — `e2e/` (13 senaryo, CI'da), 2026-10-08
 - [ ] Görsel kontrol: her ekran 375 px ve 1440 px
 
 **F5 çıkış kriterleri:** Bir sekreter, panelden bir günü baştan sona yönetebiliyor; ayar değişiklikleri asistana yansıyor; iki farklı klinik farklı ayarlarla aynı anda sorunsuz çalışıyor.
@@ -345,11 +345,11 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] Hasta anonimleştirme ve dışa aktarma ([DATA-RETENTION.md](05-compliance/DATA-RETENTION.md)); anonimleştirme Retell'deki sesi de siler
 - [x] Saklama cron'u: `GET /api/cron/retention` (kayıt 30 gün, döküm 90 gün, numara 2 yıl); Retell tarafında 30 gün otomatik silme
 - [x] Retell veri saklama ayarlarının klinik tercihine göre ayarlanması (imzalı kayıt bağlantıları; kayıt kapalıysa arama analizden sonra Retell'den silinir)
-- [ ] Hassas alanların uygulama seviyesinde şifrelenmesinin değerlendirilmesi (transkript, telefon)
-- [ ] Güvenlik başlıkları ve CSP, hız sınırlama (giriş, webhook), Retell IP izin listesi (opsiyonel ek katman)
+- [ ] Hassas alanların uygulama seviyesinde şifrelenmesinin değerlendirilmesi (transkript, telefon) — Hukuki görüşle birlikte değerlendirilecek
+- [x] Güvenlik başlıkları ve CSP, hız sınırlama (giriş, webhook), Retell IP izin listesi (opsiyonel ek katman) — Başlıklar + CSP + Postgres tabanlı hız sınırları (2026-10-07). Retell IP izin listesi gerekmedi: imza + tekrar koruması
 - [ ] Aydınlatma metni şablonu, DPA şablonu, alt işleyenler listesi (Retell, Neon, Vercel, Netgsm, Resend)
 - [ ] Avukat incelemesi (ürün ekibi)
-- [ ] Güvenlik incelemesi (`/security-review`) ve bağımlılık taraması
+- [x] Güvenlik incelemesi (`/security-review`) ve bağımlılık taraması — [SECURITY-REVIEW-2026-10.md](05-compliance/SECURITY-REVIEW-2026-10.md); CI'da `pnpm audit --prod`, Dependabot
 
 ---
 
@@ -358,7 +358,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 Tasarım ve karar günlüğü: [proposals/TAKIP.md](proposals/TAKIP.md).
 
 - [x] V0: bildirim kaydı (0008), günlük iş, randevu hatırlatması (stub), SMS kilitleri, genel SMS metinleri. Production'da (2026-10-06)
-- [x] V1: kurallar, planlar, ziyaretler (0009), eşleştirme, Takip sekmesi, plan detayı, kural editörü, SMS izni, "SMS istemiyor", konsol anahtarı, KVKK. Yerel dalda; production için ürün ekibi onayı bekleniyor
+- [x] V1: kurallar, planlar, ziyaretler (0009), eşleştirme, Takip sekmesi, plan detayı, kural editörü, SMS izni, "SMS istemiyor", konsol anahtarı, KVKK. Production'da (2026-10-07), demo klinikte açık
 - [ ] V1.1: otomatik plan başlatma, kural değişikliğini mevcut planlara uygulama, kliniğe SMS kullanım görünürlüğü, saatlik iş (Vercel Pro)
 - [ ] V2: kademeli protokoller, sesli asistan önerisi, hekim erişimi
 
@@ -372,8 +372,8 @@ Tasarım ve karar günlüğü: [proposals/TAKIP.md](proposals/TAKIP.md).
 - [x] Production env değişkenleri (gizliler sensitive). Preview: ⏳ (bilerek boş, bkz. DEPLOYMENT.md)
 - [x] Production ajanları `recalltr.company`'ye bağlı (konsoldan oluşturulan demo klinik; gerçek arama → randevu → DB doğrulandı). Inbound URL numara gelince (F2). Preview test ajanları: ⏳
 - [x] Alan adı `recalltr.company` (+ `www` yönlendirme), Resend alanı doğrulandı (eu-west-1), güvenlik başlıkları, robots/sitemap/OG
-- [ ] Sentry, uptime izleme (`/api/health`), Vercel Cron
-- [ ] CI: entegrasyon testleri (PGlite) ve build; `main` koruması
+- [ ] Sentry, uptime izleme (`/api/health`), Vercel Cron — Vercel Cron ve kod hazır (Sentry, `/api/health/jobs`); hesaplar ürün ekibinde ([MONITORING.md](06-operations/MONITORING.md))
+- [x] CI: entegrasyon testleri (PGlite) ve build; `main` koruması — CI yeşil (testler, build, E2E). `main` koruması ürün ekibinde (GitHub ayarı)
 
 ---
 

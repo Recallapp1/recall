@@ -135,8 +135,10 @@ Tool uç noktası bu bütçenin bir parçasıdır: Vercel `fra1` ve Neon `eu-cen
 
 ## Ortamlar
 
-| Ortam      | Uygulama                | Veritabanı               | Ses                                                                                |
-| ---------- | ----------------------- | ------------------------ | ---------------------------------------------------------------------------------- |
-| Lokal      | `pnpm dev`              | `pnpm db:local` (PGlite) | Retell + cloudflared tüneli ([RETELL-SETUP.md](../02-voice-agent/RETELL-SETUP.md)) |
-| Preview    | Vercel Preview (her PR) | Neon dalı (PR başına)    | Ayrı test ajanları (F8)                                                            |
-| Production | Vercel Production       | Neon main                | Gerçek klinik numaraları (F2)                                                      |
+| Ortam        | Uygulama           | Veritabanı                                          | Ses                                                                                |
+| ------------ | ------------------ | --------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Lokal        | `pnpm dev`         | Neon **`dev`** dalı (yedek: `pnpm db:local` PGlite) | Retell + cloudflared tüneli ([RETELL-SETUP.md](../02-voice-agent/RETELL-SETUP.md)) |
+| Testler, E2E | Vitest, Playwright | Bellekte PGlite                                     | Sahte Retell                                                                       |
+| Production   | Vercel Production  | Neon **`production`** dalı                          | Demo klinik web araması; gerçek numaralar F2                                       |
+
+Dal kimlikleri ve uç noktalar: [DEPLOYMENT.md](../06-operations/DEPLOYMENT.md#ortamlar-ve-veritabanı-dalları). Neon'da `main` adlı dal yoktur.
