@@ -50,9 +50,22 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm e2e
+      - name: pnpm e2e
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 600 pnpm e2e 2>&1 | tee e2e.log
         env:
           CI: "true"
+          DEBUG: pw:webserver
+      # Job logs need admin rights; annotations are public, so the tail of a
+      # failed run is readable from the API by anyone working on the repo.
+      - name: report e2e failure
+        if: failure()
+        shell: bash
+        run: |
+          tail -n 80 e2e.log | cut -c1-200 | tr -d '\r' | awk '{ gsub(/%/, "%25"); printf "%s%%0A", $0 }' > tail.txt
+          echo "::error title=e2e log tail::$(cat tail.txt)"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
