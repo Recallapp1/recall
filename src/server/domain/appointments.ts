@@ -306,8 +306,10 @@ export async function cancelAppointment(
   db: Database,
   ctx: ClinicContext,
   input: { appointmentId: string; phone: string | null; check?: OwnershipCheck; now: Date },
-): Promise<AppointmentSummary> {
-  const owned = await getOwnedActiveAppointment(db, ctx, input);
+): Promise<AppointmentSummary & { alreadyCancelled?: boolean }> {
+  const { summary: owned, status } = await getOwnedAppointment(db, ctx, input, CHANGEABLE);
+  // A repeated request (provider retry) reports the cancellation it already made.
+  if (status === "cancelled") return { ...owned, alreadyCancelled: true };
   assertCancellable(ctx, owned.startsAt, input.now);
 
   await db
@@ -337,9 +339,19 @@ export async function rescheduleAppointment(
     callId?: string | null;
     now: Date;
   },
-): Promise<{ previous: AppointmentSummary; appointment: AppointmentSummary }> {
+): Promise<{
+  previous: AppointmentSummary;
+  appointment: AppointmentSummary;
+  alreadyRescheduled?: boolean;
+}> {
   const { clinic } = ctx;
-  const owned = await getOwnedActiveAppointment(db, ctx, input);
+  const { summary: owned, status } = await getOwnedAppointment(db, ctx, input, CHANGEABLE);
+  if (status === "cancelled") {
+    // The same move repeated (provider retry): return the appointment it created.
+    const moved = await findMovedAppointment(db, ctx, owned.id, input);
+    if (!moved) throw notFound();
+    return { previous: owned, appointment: moved, alreadyRescheduled: true };
+  }
   assertCancellable(ctx, owned.startsAt, input.now);
 
   const [current] = await db
@@ -411,15 +423,23 @@ function assertCancellable({ settings }: ClinicContext, startsAt: Date, now: Dat
   }
 }
 
+/** Statuses a caller's change request can find: active ones, and cancelled for repeats. */
+const CHANGEABLE: Appointment["status"][] = [...ACTIVE_APPOINTMENT_STATUSES, "cancelled"];
+
+function notFound() {
+  return new DomainError("NOT_FOUND", "Bu numaraya kayıtlı böyle bir randevu bulamadım.");
+}
+
 /**
  * The appointment, if it belongs to this phone (and, when given, passes the
  * ownership check). Mismatches are indistinguishable from "not found".
  */
-async function getOwnedActiveAppointment(
+async function getOwnedAppointment(
   db: Database,
   { clinic }: ClinicContext,
   input: { appointmentId: string; phone: string | null; check?: OwnershipCheck },
-): Promise<AppointmentSummary> {
+  statuses: readonly Appointment["status"][],
+): Promise<{ summary: AppointmentSummary; status: Appointment["status"] }> {
   const { appointmentId, check } = input;
   const phone = requirePhone(input.phone, "Bu işlem için telefon numaranız gerekiyor.");
 
@@ -428,20 +448,49 @@ async function getOwnedActiveAppointment(
       eq(appointments.id, appointmentId),
       eq(appointments.clinicId, clinic.id),
       eq(patients.phone, phone),
-      inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
+      inArray(appointments.status, [...statuses]),
     ),
   );
   const summary = row ? toSummary(row, clinic.timezone) : null;
-  if (!summary) {
-    throw new DomainError("NOT_FOUND", "Bu numaraya kayıtlı böyle bir randevu bulamadım.");
-  }
+  if (!row || !summary) throw notFound();
   if (check && !matchesCheck(summary, check)) {
     throw new DomainError(
       "VERIFICATION_FAILED",
       "Söylediğiniz bilgilerle eşleşen bir randevu bulamadım.",
     );
   }
-  return summary;
+  return { summary, status: row.status };
+}
+
+/**
+ * After a reschedule the old appointment is cancelled and a new one holds the
+ * requested slot: same patient and service, at that local date and time.
+ */
+async function findMovedAppointment(
+  db: Database,
+  { clinic }: ClinicContext,
+  previousId: string,
+  target: { date: LocalDate; time: LocalTime; practitionerId?: string },
+): Promise<AppointmentSummary | null> {
+  const [previous] = await db
+    .select({ patientId: appointments.patientId, serviceId: appointments.serviceId })
+    .from(appointments)
+    .where(and(eq(appointments.id, previousId), eq(appointments.clinicId, clinic.id)));
+  if (!previous) return null;
+
+  const rows = await summaryQuery(db).where(
+    and(
+      eq(appointments.clinicId, clinic.id),
+      eq(appointments.patientId, previous.patientId),
+      eq(appointments.serviceId, previous.serviceId),
+      inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
+      ...(target.practitionerId ? [eq(appointments.practitionerId, target.practitionerId)] : []),
+    ),
+  );
+  const match = rows
+    .map((row) => toSummary(row, clinic.timezone))
+    .find((summary) => summary.date === target.date && summary.time === target.time);
+  return match ?? null;
 }
 
 async function findActiveAppointmentAt(
@@ -491,6 +540,7 @@ function summaryQuery(db: Database) {
       practitionerTitle: practitioners.title,
       patientName: patients.fullName,
       patientPhone: patients.phone,
+      status: appointments.status,
     })
     .from(appointments)
     .innerJoin(patients, eq(patients.id, appointments.patientId))

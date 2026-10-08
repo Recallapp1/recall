@@ -35,7 +35,8 @@ export const cancelAppointmentTool = defineTool({
       : await withOwnershipCheck(ctx, caller.phone, input.verification, cancel);
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "cancelled");
-    if (settings.notifications.smsConfirmation) {
+    // A repeated request reports the earlier cancellation and sends nothing new.
+    if (!appointment.alreadyCancelled && settings.notifications.smsConfirmation) {
       await enqueueAppointmentMessage(ctx.db, {
         clinicId: clinic.id,
         kind: "appointment_cancellation",
@@ -55,6 +56,7 @@ export const cancelAppointmentTool = defineTool({
         spokenTime: spokenTime(appointment.time),
         service: appointment.serviceName,
       },
+      alreadyCancelled: Boolean(appointment.alreadyCancelled),
       hint: "Hastaya yeni bir randevu almak isteyip istemediğini sor.",
     };
   },

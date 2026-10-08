@@ -91,7 +91,7 @@ Hatalar: `SLOT_UNAVAILABLE`, `INVALID_SERVICE`, `INVALID_PRACTITIONER`, `OUTSIDE
 | appointmentId       | uuid | ✓                        |
 | phone, verification |      | Arayan numara gizliyse ✓ |
 
-Randevu arayan numaraya ait olmalıdır; arayan numara gizliyse `verification` da eşleşmelidir. Hatalar: `NOT_FOUND`, `TOO_LATE_TO_CANCEL`, `VERIFICATION_REQUIRED`, `VERIFICATION_FAILED`, `TOO_MANY_ATTEMPTS`.
+Randevu arayan numaraya ait olmalıdır; arayan numara gizliyse `verification` da eşleşmelidir. Hatalar: `NOT_FOUND`, `TOO_LATE_TO_CANCEL`, `VERIFICATION_REQUIRED`, `VERIFICATION_FAILED`, `TOO_MANY_ATTEMPTS`. Zaten iptal edilmiş bir randevu için aynı istek tekrar gelirse (sağlayıcı yeniden denemesi) `ok: true, alreadyCancelled: true` döner; yeni SMS kuyruğa alınmaz.
 
 ## `reschedule_appointment`
 
@@ -102,7 +102,7 @@ Randevu arayan numaraya ait olmalıdır; arayan numara gizliyse `verification` d
 | practitionerId      | uuid |                          | Belirtilmezse aynı hekim |
 | phone, verification |      | Arayan numara gizliyse ✓ |
 
-Kimlik kuralları `cancel_appointment` ile aynıdır. Atomiktir: yeni slot ayrılamazsa eski randevu korunur.
+Kimlik kuralları `cancel_appointment` ile aynıdır. Atomiktir: yeni slot ayrılamazsa eski randevu korunur. Aynı taşıma tekrar gelirse (eski randevu iptal, aynı hasta ve hizmet için istenen saatte etkin randevu var) `ok: true, alreadyRescheduled: true` ile o randevu döner; farklı bir saate ikinci taşıma `NOT_FOUND` olur.
 
 ## `create_callback_request`
 

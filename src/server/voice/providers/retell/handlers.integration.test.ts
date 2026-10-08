@@ -798,3 +798,43 @@ describe("call events", () => {
     expect(await db.select().from(calls).where(eq(calls.providerCallId, "x"))).toEqual([]);
   });
 });
+
+describe("repeated change requests", () => {
+  // A re-signed retry of a request that already succeeded (audit P-11).
+  const caller = { from_number: "+905320000026", call_id: "call_retry_1" };
+  const again = () => new Promise((resolve) => setTimeout(resolve, 5));
+
+  it("reports a repeated cancellation and a repeated move as done", async () => {
+    const booked = await tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-08",
+        time: "14:00",
+        patientName: "Deneme Hasta",
+      },
+      caller,
+    );
+    expect(booked.body).toMatchObject({ ok: true });
+
+    const move = {
+      appointmentId: booked.body.appointmentId,
+      date: "2026-10-08",
+      time: "15:00",
+    };
+    const moved = await tool("reschedule_appointment", move, caller);
+    await again();
+    const movedAgain = await tool("reschedule_appointment", move, caller);
+    expect(moved.body).toMatchObject({ ok: true, alreadyRescheduled: false });
+    expect(movedAgain.body).toMatchObject({ ok: true, alreadyRescheduled: true });
+    expect(movedAgain.body.appointment.appointmentId).toBe(moved.body.appointment.appointmentId);
+
+    const cancel = { appointmentId: moved.body.appointment.appointmentId };
+    const cancelled = await tool("cancel_appointment", cancel, caller);
+    await again();
+    const cancelledAgain = await tool("cancel_appointment", cancel, caller);
+    expect(cancelled.body).toMatchObject({ ok: true, alreadyCancelled: false });
+    expect(cancelledAgain.body).toMatchObject({ ok: true, alreadyCancelled: true });
+  });
+});

@@ -40,12 +40,13 @@ export const rescheduleAppointmentTool = defineTool({
         callId: ctx.callId,
         now: ctx.now,
       });
-    const { previous, appointment } = caller.trusted
+    const { previous, appointment, alreadyRescheduled } = caller.trusted
       ? await reschedule()
       : await withOwnershipCheck(ctx, caller.phone, verification, reschedule);
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "rescheduled");
-    if (settings.notifications.smsConfirmation) {
+    // A repeated request reports the earlier move and sends nothing new.
+    if (!alreadyRescheduled && settings.notifications.smsConfirmation) {
       await enqueueAppointmentMessage(ctx.db, {
         clinicId: clinic.id,
         kind: "appointment_rescheduled",
@@ -68,6 +69,7 @@ export const rescheduleAppointmentTool = defineTool({
         service: appointment.serviceName,
         practitioner: spokenTitles(appointment.practitionerName),
       },
+      alreadyRescheduled: Boolean(alreadyRescheduled),
     };
   },
 });

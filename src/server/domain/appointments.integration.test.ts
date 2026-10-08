@@ -310,3 +310,79 @@ describe("cancel and reschedule", () => {
     expect(upcoming.map((a) => a.time)).toEqual(["10:00"]);
   });
 });
+
+// A tool request repeated after it succeeded (provider retry, timeout) must
+// report the change it already made, not "not found" (audit P-11).
+describe("repeated cancel and reschedule", () => {
+  it("reports an already cancelled appointment as cancelled", async () => {
+    const clinic = await createTestClinic(db);
+    const { appointment } = await book(clinic);
+    const input = { appointmentId: appointment.id, phone: CALLER, now: NOW };
+
+    const first = await cancelAppointment(db, clinic.ctx, input);
+    const again = await cancelAppointment(db, clinic.ctx, input);
+    expect(first.alreadyCancelled).toBeFalsy();
+    expect(again).toMatchObject({ id: appointment.id, alreadyCancelled: true });
+  });
+
+  it("still hides another number's cancelled appointment", async () => {
+    const clinic = await createTestClinic(db);
+    const { appointment } = await book(clinic);
+    await cancelAppointment(db, clinic.ctx, {
+      appointmentId: appointment.id,
+      phone: CALLER,
+      now: NOW,
+    });
+    await expectDomainError(
+      cancelAppointment(db, clinic.ctx, {
+        appointmentId: appointment.id,
+        phone: "+905320000021",
+        now: NOW,
+      }),
+      "NOT_FOUND",
+    );
+  });
+
+  it("returns the moved appointment when the same reschedule arrives again", async () => {
+    const clinic = await createTestClinic(db);
+    const { appointment } = await book(clinic);
+    const input = {
+      appointmentId: appointment.id,
+      phone: CALLER,
+      date: MONDAY,
+      time: "10:30",
+      now: NOW,
+    };
+
+    const first = await rescheduleAppointment(db, clinic.ctx, input);
+    const again = await rescheduleAppointment(db, clinic.ctx, input);
+    expect(again.alreadyRescheduled).toBe(true);
+    expect(again.appointment.id).toBe(first.appointment.id);
+    expect(again.previous.time).toBe("10:00");
+
+    const upcoming = await findUpcomingAppointments(db, clinic.ctx, CALLER, NOW);
+    expect(upcoming.map((a) => a.time)).toEqual(["10:30"]);
+  });
+
+  it("does not move a cancelled appointment to a different time", async () => {
+    const clinic = await createTestClinic(db);
+    const { appointment } = await book(clinic);
+    await rescheduleAppointment(db, clinic.ctx, {
+      appointmentId: appointment.id,
+      phone: CALLER,
+      date: MONDAY,
+      time: "10:30",
+      now: NOW,
+    });
+    await expectDomainError(
+      rescheduleAppointment(db, clinic.ctx, {
+        appointmentId: appointment.id,
+        phone: CALLER,
+        date: MONDAY,
+        time: "11:30",
+        now: NOW,
+      }),
+      "NOT_FOUND",
+    );
+  });
+});
