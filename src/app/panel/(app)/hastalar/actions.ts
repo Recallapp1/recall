@@ -12,7 +12,8 @@ import { db } from "@/server/db";
 import { recordAudit, withAudit } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
 import { anonymizePatient, setPatientSmsOptOut, updatePatientNotes } from "@/server/domain/panel";
-import { deleteProviderCalls } from "@/server/voice/sync";
+import { processProviderDeletions } from "@/server/domain/provider-deletions";
+import { deleteVoiceProviderCall } from "@/server/voice/sync";
 
 const notesSchema = z.object({
   patientId: z.uuid(),
@@ -69,10 +70,13 @@ export async function anonymizePatientAction(
       },
       (tx) => anonymizePatient(tx, clinic.id, patientId),
     );
-    // The voice platform still holds the audio of those calls; erase it too.
+    // The provider's copies are queued in the same transaction; try them now,
+    // and the daily job retries whatever fails (alarm after repeated failures).
     after(async () => {
       try {
-        await deleteProviderCalls(providerCalls);
+        await processProviderDeletions(db(), deleteVoiceProviderCall, new Date(), {
+          providerCallIds: providerCalls.map((call) => call.providerCallId),
+        });
       } catch (error) {
         console.error(
           JSON.stringify({

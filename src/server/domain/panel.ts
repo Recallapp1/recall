@@ -11,6 +11,7 @@ import {
   gte,
   ilike,
   inArray,
+  isNotNull,
   lt,
   lte,
   notLike,
@@ -32,6 +33,7 @@ import type { Executor } from "../db";
 import {
   appointments,
   callbackRequests,
+  callPatients,
   calls,
   followUpPlans,
   followUpVisits,
@@ -45,6 +47,7 @@ import { practitionerDisplayName, type ClinicContext } from "./clinics";
 import { DomainError } from "./errors";
 import { recomputePlansForAppointment } from "./follow-ups";
 import { detachPatientNotifications } from "./notifications";
+import { enqueueProviderDeletions } from "./provider-deletions";
 import { addLocalDays, localToUtc, localToday, utcToLocal, type LocalDate } from "./time";
 
 /*
@@ -736,19 +739,28 @@ export async function updatePatientNotes(
   if (updated.length === 0) throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
 }
 
+/** Replaces a callback note's free text, which may describe a complaint. */
+export const ANONYMIZED_CALLBACK_REASON = "(anonimleştirildi)";
+
 /**
  * KVKK erasure request: removes the patient's identity from the clinic's
- * records while keeping appointment history for statistics. Calls from the
- * patient's number lose the number, transcript, summary and recording link;
- * callback requests lose name and number. Not reversible.
+ * records while keeping appointment history for statistics. Not reversible.
  *
- * Returns the voice provider's ids for those calls, so the caller can delete
- * the provider's copy (audio) as well.
+ * Calls about the patient lose the number, transcript, summary and recording
+ * link, whatever number they came from (audit P-09): calls from the patient's
+ * number, calls linked to the patient (`call_patients`: booked, found,
+ * cancelled or moved its appointments, including withheld numbers) and calls
+ * that created its appointments. Callback notes from those calls or that
+ * number lose name, number and text. The provider's copies (audio) are queued
+ * for deletion in the same transaction (audit P-10).
+ *
+ * Returns the provider ids of the erased calls.
  */
 export async function anonymizePatient(
   db: Executor,
   clinicId: string,
   patientId: string,
+  now: Date = new Date(),
 ): Promise<{ provider: string; providerCallId: string }[]> {
   return db.transaction(async (tx) => {
     const [patient] = await tx
@@ -760,17 +772,57 @@ export async function anonymizePatient(
       throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
     }
 
-    const providerCalls = await tx
+    const [linked, creating] = await Promise.all([
+      tx
+        .select({ callId: callPatients.callId })
+        .from(callPatients)
+        .where(and(eq(callPatients.clinicId, clinicId), eq(callPatients.patientId, patientId))),
+      tx
+        .select({ callId: appointments.callId })
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.clinicId, clinicId),
+            eq(appointments.patientId, patientId),
+            isNotNull(appointments.callId),
+          ),
+        ),
+    ]);
+    const linkedCallIds = [
+      ...new Set([...linked, ...creating].flatMap((row) => (row.callId ? [row.callId] : []))),
+    ];
+
+    const erasedCalls = await tx
       .update(calls)
       .set({ fromNumber: null, transcript: null, summary: null, recordingUrl: null })
-      .where(and(eq(calls.clinicId, clinicId), eq(calls.fromNumber, patient.phone)))
-      .returning({ provider: calls.provider, providerCallId: calls.providerCallId });
+      .where(
+        and(
+          eq(calls.clinicId, clinicId),
+          or(
+            eq(calls.fromNumber, patient.phone),
+            linkedCallIds.length > 0 ? inArray(calls.id, linkedCallIds) : undefined,
+          ),
+        ),
+      )
+      .returning({ id: calls.id, provider: calls.provider, providerCallId: calls.providerCallId });
+    const erasedCallIds = erasedCalls.map((call) => call.id);
     await tx
       .update(callbackRequests)
-      .set({ patientName: null, phone: null })
+      .set({ patientName: null, phone: null, reason: ANONYMIZED_CALLBACK_REASON })
       .where(
-        and(eq(callbackRequests.clinicId, clinicId), eq(callbackRequests.phone, patient.phone)),
+        and(
+          eq(callbackRequests.clinicId, clinicId),
+          or(
+            eq(callbackRequests.phone, patient.phone),
+            erasedCallIds.length > 0 ? inArray(callbackRequests.callId, erasedCallIds) : undefined,
+          ),
+        ),
       );
+    const providerCalls = erasedCalls.map(({ provider, providerCallId }) => ({
+      provider,
+      providerCallId,
+    }));
+    await enqueueProviderDeletions(tx, clinicId, providerCalls, "patient_anonymized", now);
     await tx
       .update(appointments)
       .set({ notes: null })

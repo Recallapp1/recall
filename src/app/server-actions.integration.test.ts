@@ -59,7 +59,7 @@ vi.mock("@/server/voice/sync", async (importOriginal) => ({
   ensureAssistant: async () => ({ status: "unchanged" }),
   createTestWebCall: async () => ({ ok: false, reason: "not_configured" }),
   listAssistantVoices: async () => [],
-  deleteProviderCalls: async () => {},
+  deleteVoiceProviderCall: async () => {},
   freshRecordingUrl: async () => "https://rec.test/recording.wav",
 }));
 

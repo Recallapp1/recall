@@ -2,8 +2,10 @@ import { env } from "@/lib/env";
 import { rejectUnauthorizedCron } from "@/server/cron-auth";
 import { db } from "@/server/db";
 import { beginRun, endRun } from "@/server/domain/job-runs";
+import { processProviderDeletions } from "@/server/domain/provider-deletions";
 import { applyRetention } from "@/server/domain/retention";
 import { raiseAlarm } from "@/server/observability/alarm";
+import { deleteVoiceProviderCall } from "@/server/voice/sync";
 
 export const maxDuration = 60;
 
@@ -15,7 +17,16 @@ export async function GET(request: Request) {
   const now = new Date();
   const run = await beginRun(db(), "retention", now).catch(() => null);
   try {
-    const result = await applyRetention(db(), now);
+    const retention = await applyRetention(db(), now);
+    // Provider-side deletions that failed earlier (audit P-10).
+    const deletions = await processProviderDeletions(db(), deleteVoiceProviderCall, now, {
+      limit: 50,
+    });
+    const result = {
+      ...retention,
+      providerDeletionsDone: deletions.deleted,
+      providerDeletionsFailed: deletions.failed,
+    };
     console.info(JSON.stringify({ msg: "cron.retention", ...result }));
     if (run) await endRun(db(), run.id, "succeeded", { ...result }, new Date());
     return Response.json(result);

@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { cancelAppointment } from "../../domain/appointments";
+import { linkCallToPatients } from "../../domain/call-patients";
 import { markCallOutcome } from "../../domain/calls";
 import { spokenDate, spokenTime } from "../../domain/speech";
 import { enqueueAppointmentMessage } from "../../domain/notifications";
@@ -35,6 +36,7 @@ export const cancelAppointmentTool = defineTool({
       : await withOwnershipCheck(ctx, caller.phone, input.verification, cancel);
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "cancelled");
+    await linkCallToPatients(ctx.db, clinic.id, ctx.callId, [appointment.patientId]);
     // A repeated request reports the earlier cancellation and sends nothing new.
     if (!appointment.alreadyCancelled && settings.notifications.smsConfirmation) {
       await enqueueAppointmentMessage(ctx.db, {

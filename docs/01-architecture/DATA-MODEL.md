@@ -137,6 +137,14 @@ Bir güne birden fazla satır girilebilir (öğle arası = iki blok). Bir hekimi
 
 `clinic_id, call_id, patient_name, phone, reason, status (open/done), resolved_at`
 
+### `call_patients`: aramanın hangi hastalarla ilgili olduğu (2026-10-08)
+
+`clinic_id, call_id, patient_id` (birincil anahtar `call_id, patient_id`; bileşik kiracı FK'leri). Asistan bir aramada hastanın randevusunu oluşturduğunda, bulduğunda, iptal ettiğinde veya taşıdığında yazılır. KVKK silmesi bu bağları izler (gizli numara ve başkasının numarası dahil). Migration 0015, mevcut randevuların `call_id` alanından doldurur.
+
+### `provider_deletions`: sağlayıcı tarafı silme kuyruğu (2026-10-08)
+
+`clinic_id, provider, provider_call_id (benzersiz), reason (patient_anonymized/recording_off), attempts, last_error, next_attempt_at, done_at`. Kişisel veri içermez; `done_at` silmenin kaydıdır.
+
 ## Kurallar
 
 - Her tabloda (clinics hariç) `clinic_id NOT NULL` ve `ON DELETE CASCADE` var.

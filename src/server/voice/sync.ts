@@ -13,7 +13,7 @@ export {
 } from "./providers/retell/schedule-sync";
 export {
   deleteProviderCall,
-  deleteProviderCalls,
+  deleteVoiceProviderCall,
   freshRecordingUrl,
 } from "./providers/retell/recordings";
 export {

@@ -24,7 +24,8 @@
   - Özet ve arama satırı istatistik için kalır. Yalnızca sayılar loglanır (`cron.retention`).
 - **Retell tarafı:** her ajan `data_storage_retention_days: 30` ile kurulur; Retell ses, döküm ve logları 30 günde kendisi siler. Kayıt bağlantıları **imzalı ve 24 saat geçerli** (`opt_in_signed_url`). Panel her dinlemede yeni bağlantı ister; dinleme denetim kaydına yazılır.
 - **"Aramaları kaydet" kapalıysa:** Retell'de yalnızca sesi kapatan bir ayar yok. `basic_attributes_only` webhook'tan da döküm ve özeti siliyor (2026-10-05'te gerçek aramayla doğrulandı), bu yüzden kullanılmadı. Bunun yerine arama analizi bize ulaşınca (`call_analyzed`) arama Retell'den silinir. Döküm ve özet yalnızca bizde kalır ve 90 günlük kurala tabidir.
-- **Anonimleştirme** bu numaradan gelen aramaları Retell'den de siler (ses dahil).
+- **Anonimleştirme** hastayla ilgili aramaları (hangi numaradan gelirse gelsin) Retell'den de siler (ses dahil).
+- **Sağlayıcı silme kuyruğu (2026-10-08, denetim P-10):** Retell'den silinecek her arama önce `provider_deletions` tablosuna yazılır (anonimleştirmede aynı transaction içinde), hemen denenir; başarısız olursa 15 dk'dan başlayıp 24 saate kadar artan aralıklarla günlük retention işi yeniden dener. Üçüncü başarısızlıktan itibaren `voice.provider_deletion_failing` alarmı. Satırın `done_at` alanı silmenin kaydıdır; Retell'in 30 günlük kendi silmesi son güvencedir.
 - **Dışa aktarma (m.11 bilgi talebi):** Panel → Hastalar → hasta → "Verileri indir" (JSON: hasta, randevular, aramalar, geri arama talepleri). Yetki `patients.export` (sahip ve yönetici); her indirme denetim kaydına yazılır.
 
 ## Anonimleştirme
@@ -32,6 +33,6 @@
 `anonymizePatient(clinicId, patientId)`:
 
 1. `full_name` → `"Anonim Hasta"`, `phone` → `anon:<uuid>`, `notes` → null
-2. İlgili `calls`: `from_number` maskelenir, `transcript`, `summary`, `recording_url` → null
-3. `callback_requests`: `patient_name`, `phone` → null
+2. Hastayla ilgili `calls` (2026-10-08, denetim P-09): hastanın numarasından gelenler, `call_patients` ile hastaya bağlananlar (asistan bu aramada hastanın randevusunu oluşturdu, buldu, iptal etti veya taşıdı; gizli numara veya başka birinin numarası olabilir) ve hastanın randevularını oluşturan aramalar. `from_number`, `transcript`, `summary`, `recording_url` → null; Retell kopyaları silme kuyruğuna yazılır
+3. `callback_requests`: hastanın numarasıyla veya silinen bu aramalarda bırakılanlar: `patient_name`, `phone` → null, `reason` → `(anonimleştirildi)`
 4. Randevular kalır (istatistik için), kimlik bağı kopmuş olur.

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { maskName } from "@/lib/phone";
 
 import { findUpcomingAppointments, findVerifiedAppointments } from "../../domain/appointments";
+import { linkCallToPatients } from "../../domain/call-patients";
 import { DomainError } from "../../domain/errors";
 import { spokenDate, spokenTime, spokenTitles } from "../../domain/speech";
 import { ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
@@ -26,6 +27,12 @@ export const findAppointments = defineTool({
         ctx.clinic,
         caller.phone,
         ctx.now,
+      );
+      await linkCallToPatients(
+        ctx.db,
+        ctx.clinic.clinic.id,
+        ctx.callId,
+        appointments.map((a) => a.patientId),
       );
       return {
         ok: true,
@@ -76,6 +83,12 @@ export const findAppointments = defineTool({
           ctx.now,
         );
         if (matches.length === 0) throw new DomainError("VERIFICATION_FAILED", "Eşleşme yok.");
+        await linkCallToPatients(
+          ctx.db,
+          ctx.clinic.clinic.id,
+          ctx.callId,
+          matches.map((a) => a.patientId),
+        );
         return matches;
       },
     );

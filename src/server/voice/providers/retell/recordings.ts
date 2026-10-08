@@ -26,13 +26,13 @@ export async function deleteProviderCall(providerCallId: string): Promise<void> 
   }
 }
 
-/** Deletes the provider's copy of calls it handled; others are skipped. */
-export async function deleteProviderCalls(
-  items: { provider: string; providerCallId: string }[],
+/** Deletes a call on the provider that handled it (the deletion queue's worker). */
+export async function deleteVoiceProviderCall(
+  provider: string,
+  providerCallId: string,
 ): Promise<void> {
-  for (const item of items) {
-    if (item.provider === RETELL_PROVIDER) await deleteProviderCall(item.providerCallId);
-  }
+  if (provider !== RETELL_PROVIDER) throw new Error(`Unsupported voice provider: ${provider}`);
+  await deleteProviderCall(providerCallId);
 }
 
 function isNotFound(error: unknown): boolean {

@@ -6,6 +6,7 @@ import { normalizePhone } from "@/lib/phone";
 
 import { bookAppointment } from "../../domain/appointments";
 import { markCallOutcome } from "../../domain/calls";
+import { linkCallToPatients } from "../../domain/call-patients";
 import { DomainError } from "../../domain/errors";
 import { spokenTitles } from "../../domain/speech";
 import { spokenDate, spokenTime } from "../../domain/speech";
@@ -44,6 +45,7 @@ export const bookAppointmentTool = defineTool({
     });
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "booked");
+    await linkCallToPatients(ctx.db, clinic.id, ctx.callId, [appointment.patientId]);
 
     let smsSent = false;
     if (created && settings.notifications.smsConfirmation) {

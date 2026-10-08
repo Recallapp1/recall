@@ -56,6 +56,10 @@ const REVIEWED_EXCEPTIONS: Record<string, string[]> = {
     'UPDATE "practitioner_services" SET "clinic_id" = p."clinic_id" FROM "practitioners" p WHERE p."id" = "practitioner_services"."practitioner_id";',
     'ALTER TABLE "practitioner_services" ALTER COLUMN "clinic_id" SET NOT NULL;',
   ],
+  // Fills the new link table only; existing rows are read, never changed.
+  "0015_call_patients_provider_deletions": [
+    'INSERT INTO "call_patients" ("clinic_id", "call_id", "patient_id") SELECT DISTINCT "clinic_id", "call_id", "patient_id" FROM "appointments" WHERE "call_id" IS NOT NULL ON CONFLICT DO NOTHING;',
+  ],
 };
 
 describe.each(liveMigrations)("migration %s", (file) => {

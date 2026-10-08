@@ -17,6 +17,10 @@ import {
 } from "../../../domain/clinics";
 import { consumeRateLimit, hashKey } from "../../../domain/rate-limit";
 import { admitInboundCall } from "../../../domain/voice-limits";
+import {
+  enqueueProviderDeletions,
+  processProviderDeletions,
+} from "../../../domain/provider-deletions";
 import { allow } from "../../../security/rate-limits";
 import { buildCallVariables } from "../../prompt";
 import { runTool } from "../../tools";
@@ -199,10 +203,20 @@ export async function handleCallEvent(request: Request, deps: RetellHandlerDeps)
   // Recording off: Retell has no audio-only switch, and storing nothing also
   // strips the webhook (no transcript or summary). So the call is deleted on
   // Retell once its last event (the analysis) has reached us.
+  // Queued first, so a failed or skipped attempt is retried by the daily job.
   if (event === "call_analyzed" && !ctx.settings.assistant.recordCalls) {
+    const target = [{ provider: RETELL_PROVIDER, providerCallId: call.call_id }];
+    await enqueueProviderDeletions(deps.db, ctx.clinic.id, target, "recording_off", deps.now());
     deps.defer(async () => {
       try {
-        await deps.deleteProviderCall(call.call_id);
+        await processProviderDeletions(
+          deps.db,
+          (_, id) => deps.deleteProviderCall(id),
+          deps.now(),
+          {
+            providerCallIds: [call.call_id],
+          },
+        );
       } catch (error) {
         log("error", "retell.call_delete_failed", {
           clinicId: ctx.clinic.id,

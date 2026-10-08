@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { rescheduleAppointment } from "../../domain/appointments";
+import { linkCallToPatients } from "../../domain/call-patients";
 import { markCallOutcome } from "../../domain/calls";
 import { DomainError } from "../../domain/errors";
 import { spokenTitles } from "../../domain/speech";
@@ -45,6 +46,7 @@ export const rescheduleAppointmentTool = defineTool({
       : await withOwnershipCheck(ctx, caller.phone, verification, reschedule);
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "rescheduled");
+    await linkCallToPatients(ctx.db, clinic.id, ctx.callId, [appointment.patientId]);
     // A repeated request reports the earlier move and sends nothing new.
     if (!alreadyRescheduled && settings.notifications.smsConfirmation) {
       await enqueueAppointmentMessage(ctx.db, {

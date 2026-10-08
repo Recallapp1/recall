@@ -877,6 +877,65 @@ export const jobRunClinics = pgTable(
   (t) => [primaryKey({ columns: [t.runId, t.clinicId] })],
 );
 
+/**
+ * Which patients a call was about (audit P-09): written whenever the assistant
+ * books, finds, cancels or moves a patient's appointment, whatever number the
+ * call came from. KVKK erasure follows these links, so calls from a withheld
+ * or another person's number are erased with the patient.
+ */
+export const callPatients = pgTable(
+  "call_patients",
+  {
+    clinicId: clinicRef(),
+    callId: uuid().notNull(),
+    patientId: uuid().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.callId, t.patientId] }),
+    index().on(t.clinicId, t.patientId),
+    foreignKey({
+      name: "call_patients_call_fk",
+      columns: [t.clinicId, t.callId],
+      foreignColumns: [calls.clinicId, calls.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "call_patients_patient_fk",
+      columns: [t.clinicId, t.patientId],
+      foreignColumns: [patients.clinicId, patients.id],
+    }).onDelete("cascade"),
+  ],
+);
+
+/**
+ * Calls to delete on the voice provider (audio, transcript, logs), kept until
+ * the provider confirms (audit P-10). Written in the same transaction as the
+ * erasure, retried with backoff and alarmed; the row is the proof of deletion.
+ */
+export const providerDeletions = pgTable(
+  "provider_deletions",
+  {
+    id: id(),
+    clinicId: clinicRef(),
+    provider: text().notNull(),
+    providerCallId: text().notNull(),
+    /** patient_anonymized | recording_off */
+    reason: text().notNull(),
+    attempts: integer().notNull().default(0),
+    /** Error class and status only, never payloads. */
+    lastError: text(),
+    nextAttemptAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    doneAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex().on(t.provider, t.providerCallId),
+    index("provider_deletions_due_idx")
+      .on(t.nextAttemptAt)
+      .where(sql`${t.doneAt} is null`),
+  ],
+);
+
 export type Clinic = typeof clinics.$inferSelect;
 export type Practitioner = typeof practitioners.$inferSelect;
 export type Service = typeof services.$inferSelect;

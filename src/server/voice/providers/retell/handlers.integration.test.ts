@@ -8,10 +8,12 @@ import type { Database } from "../../../db";
 import {
   appointments,
   callbackRequests,
+  callPatients,
   calls,
   clinics,
   notifications,
   patients,
+  providerDeletions,
 } from "../../../db/schema";
 import { dispatchClinicNotifications } from "../../../domain/notifications";
 import {
@@ -489,6 +491,18 @@ describe("caller identity (abuse cases)", () => {
     );
     expect(cancel.body).toMatchObject({ ok: true });
     expect(await victimStatus()).toBe("cancelled");
+
+    // The withheld-number call is now linked to the patient, so erasure finds it (P-09).
+    const [webCall] = await db.select().from(calls).where(eq(calls.providerCallId, "web_owner_1"));
+    const links = await db
+      .select({ patientId: callPatients.patientId })
+      .from(callPatients)
+      .where(eq(callPatients.callId, webCall!.id));
+    const [victim] = await db
+      .select({ patientId: appointments.patientId })
+      .from(appointments)
+      .where(eq(appointments.id, victimAppointmentId));
+    expect(links).toEqual([{ patientId: victim!.patientId }]);
   });
 
   it("does not reveal through a booking attempt that a spoken number is busy", async () => {
@@ -793,6 +807,12 @@ describe("call events", () => {
     );
     await Promise.all(deferred.map((task) => task()));
     expect(deletedCalls).toEqual(["call_quiet_1"]);
+    const [queued] = await db
+      .select()
+      .from(providerDeletions)
+      .where(eq(providerDeletions.providerCallId, "call_quiet_1"));
+    expect(queued).toMatchObject({ reason: "recording_off", attempts: 1 });
+    expect(queued?.doneAt).not.toBeNull();
 
     const [row] = await db.select().from(calls).where(eq(calls.providerCallId, "call_quiet_1"));
     // Transcript and summary stay with us; no recording link is kept.
@@ -853,5 +873,33 @@ describe("repeated change requests", () => {
     const cancelledAgain = await tool("cancel_appointment", cancel, caller);
     expect(cancelled.body).toMatchObject({ ok: true, alreadyCancelled: false });
     expect(cancelledAgain.body).toMatchObject({ ok: true, alreadyCancelled: true });
+  });
+});
+
+describe("provider deletion queue", () => {
+  it("keeps a failed deletion queued for the daily retry (P-10)", async () => {
+    const quiet = await createTestClinic(db, {
+      settings: { assistant: { recordCalls: false } },
+    });
+    const failing = deps({
+      deleteProviderCall: async () => {
+        throw Object.assign(new Error("Service unavailable"), { status: 503 });
+      },
+    });
+    await handleCallEvent(
+      await signedRequest({
+        event: "call_analyzed",
+        call: { call_id: "call_quiet_fail", agent_id: quiet.agentId, call_type: "web_call" },
+      }),
+      failing,
+    );
+    await Promise.all(deferred.map((task) => task()));
+
+    const [queued] = await db
+      .select()
+      .from(providerDeletions)
+      .where(eq(providerDeletions.providerCallId, "call_quiet_fail"));
+    expect(queued).toMatchObject({ attempts: 1, doneAt: null, lastError: "Error 503" });
+    expect(queued!.nextAttemptAt.getTime()).toBeGreaterThan(NOW.getTime());
   });
 });
