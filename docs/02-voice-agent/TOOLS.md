@@ -76,7 +76,7 @@ Güvenlik: Arayan numara biliniyorsa dönüşte tarih, saat, hizmet, hekim ve ma
 
 Akış: hasta bul veya oluştur → slotun hâlâ uygun olduğunu doğrula → transaction içinde ekle (exclusion constraint son savunma hattı) → SMS kuyruğa al.
 
-Hatalar: `SLOT_UNAVAILABLE`, `INVALID_SERVICE`, `INVALID_PRACTITIONER`, `OUTSIDE_BOOKING_WINDOW`, `PHONE_REQUIRED`, `INVALID_PHONE`, `PATIENT_BUSY`.
+Hatalar: `SLOT_UNAVAILABLE`, `INVALID_SERVICE`, `INVALID_PRACTITIONER`, `OUTSIDE_BOOKING_WINDOW`, `PHONE_REQUIRED`, `INVALID_PHONE`, `PATIENT_BUSY`, `BOOKING_LIMIT` (aramada veya numara başına günlük randevu sınırı; [CLINIC-CONFIG-SCHEMA.md](CLINIC-CONFIG-SCHEMA.md) `limits`).
 
 **Doğrulanmamış numara (2026-10-07):** `patientPhone` arayan numaradan farklıysa (başkası adına veya gizli numarayla randevu) asistan o numaranın mevcut randevuları hakkında hiçbir şey öğrenmez: `PATIENT_BUSY` yerine `SLOT_UNAVAILABLE` döner ve aynı saatteki mevcut randevu yalnızca ad soyad da eşleşirse "zaten var" olarak döndürülür.
 

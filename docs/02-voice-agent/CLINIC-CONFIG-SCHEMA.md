@@ -28,9 +28,23 @@ Bir kliniğin asistanı iki kaynaktan beslenir:
   notifications: {
     smsConfirmation: boolean        // varsayılan true
     smsReminderHoursBefore: number | null // varsayılan 24, null = kapalı
+  },
+  // Kötüye kullanım ve maliyet sınırları (2026-10-08, denetim P-08). Yalnızca Recall
+  // ekibi değiştirir (konsol veya veritabanı); panel formları bu bölüme yazamaz.
+  limits: {
+    callsPerNumberPerHour: number   // Bir numaradan kliniğe saatlik arama (varsayılan 5)
+    callsPerNumberPerDay: number    // Bir numaradan günlük arama (varsayılan 15)
+    hiddenCallsPerHour: number      // Gizli numaralı aramaların ortak saatlik bütçesi (varsayılan 10)
+    callsPerHour: number            // Kliniğe gelen tüm aramalar, saatlik (varsayılan 60)
+    dailyVoiceMinutes: number       // Klinik yerel gününde toplam ses dakikası; aşılınca aramalar reddedilir, alarm (varsayılan 300)
+    maxCallMinutes: number          // Tek aramanın üst sınırı; Retell keser (varsayılan 15)
+    bookingsPerCall: number         // Bir aramada oluşturulabilecek etkin randevu (varsayılan 2)
+    bookingsPerNumberPerDay: number // Bir numaraya 24 saatte sesli asistanla etkin randevu (varsayılan 3)
   }
 }
 ```
+
+Sınırı aşan arama `call_inbound` aşamasında reddedilir (Retell aramayı açmaz, kayıt oluşmaz). Günlük dakika sınırına ulaşan klinik için günde bir kez `voice.daily_minutes_reached` alarmı yazılır. Randevu sınırları `BOOKING_LIMIT` hatası döner; asistan hastaya klinik ekibinin geri arayacağını söyler. Panelden personelin oluşturduğu randevular bu sınırlara tabi değildir.
 
 Tüm alanların varsayılanı vardır; boş `{}` geçerli bir config'tir.
 

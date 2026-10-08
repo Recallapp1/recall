@@ -187,7 +187,7 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
       webhook_events: ["call_started", "call_ended", "call_analyzed"],
       boosted_keywords: boostedKeywords(directory),
       end_call_after_silence_ms: 20_000,
-      max_call_duration_ms: 15 * 60_000,
+      max_call_duration_ms: settings.limits.maxCallMinutes * 60_000,
       data_storage_retention_days: PROVIDER_RETENTION_DAYS,
       // Recording links expire (24 h); the panel asks for a fresh one per playback.
       opt_in_signed_url: true,

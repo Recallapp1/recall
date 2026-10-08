@@ -16,6 +16,7 @@ import {
   type ClinicContext,
 } from "../../../domain/clinics";
 import { consumeRateLimit, hashKey } from "../../../domain/rate-limit";
+import { admitInboundCall } from "../../../domain/voice-limits";
 import { allow } from "../../../security/rate-limits";
 import { buildCallVariables } from "../../prompt";
 import { runTool } from "../../tools";
@@ -66,7 +67,15 @@ export async function handleInbound(request: Request, deps: RetellHandlerDeps) {
     return Response.json({ call_inbound: { reject: true } });
   }
 
+  // Every minute is billed: callers and the clinic's day have limits (audit P-08).
   const now = deps.now();
+  const callerPhone = normalizePhone(inbound.from_number);
+  const admission = await admitInboundCall(deps.db, ctx, callerPhone, now);
+  if (!admission.admitted) {
+    log("warn", "retell.inbound.limited", { clinicId: ctx.clinic.id, reason: admission.reason });
+    return Response.json({ call_inbound: { reject: true } });
+  }
+
   const [directory] = await Promise.all([
     loadClinicDirectory(deps.db, ctx.clinic.id),
     inbound.call_id
@@ -85,12 +94,7 @@ export async function handleInbound(request: Request, deps: RetellHandlerDeps) {
     call_inbound: {
       override_agent_id: agent.externalAgentId,
       ...(agent.agentVersion != null && { override_agent_version: agent.agentVersion }),
-      dynamic_variables: buildCallVariables(
-        ctx.clinic,
-        directory.clinicHours,
-        now,
-        normalizePhone(inbound.from_number),
-      ),
+      dynamic_variables: buildCallVariables(ctx.clinic, directory.clinicHours, now, callerPhone),
       metadata: { clinic_id: ctx.clinic.id },
     },
   });

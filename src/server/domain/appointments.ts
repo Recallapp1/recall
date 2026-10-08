@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, gt, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, count, eq, gt, gte, inArray, lt, sql } from "drizzle-orm";
 
 import { personName } from "@/lib/names";
 import { normalizePhone } from "@/lib/phone";
@@ -19,6 +19,7 @@ import { practitionerDisplayName } from "./clinics";
 import { DomainError, isOverlapViolation } from "./errors";
 import { autoLinkAppointment, moveFollowUpLink, recomputePlansForAppointment } from "./follow-ups";
 import { findAvailability } from "./scheduling";
+import { numberToWords } from "./speech";
 import { isLocalTime, utcToLocal, type LocalDate, type LocalTime } from "./time";
 
 export interface AppointmentSummary {
@@ -85,6 +86,9 @@ export async function bookAppointment(
       throw new DomainError("SLOT_UNAVAILABLE", "Bu saat uygun değil.");
     }
     return { appointment, created: false };
+  }
+  if (input.source === "voice") {
+    await assertVoiceBookingAllowed(db, ctx, phone, input.callId ?? null, input.now);
   }
 
   const availability = await findAvailability(db, ctx, {
@@ -168,6 +172,53 @@ export async function bookAppointment(
       throw new DomainError("SLOT_UNAVAILABLE", "Bu saat az önce doldu.");
     }
     throw error;
+  }
+}
+
+/**
+ * Caps on what the assistant may book (audit P-08): a caller, a script or a
+ * manipulated model cannot fill the calendar. Counts active appointments, so a
+ * reschedule (cancel + new) or a cancelled booking does not use up the budget.
+ */
+async function assertVoiceBookingAllowed(
+  db: Database,
+  { clinic, settings }: ClinicContext,
+  phone: string,
+  callId: string | null,
+  now: Date,
+) {
+  const { limits } = settings;
+  const active = inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]);
+  if (callId) {
+    const [inCall] = await db
+      .select({ value: count() })
+      .from(appointments)
+      .where(and(eq(appointments.clinicId, clinic.id), eq(appointments.callId, callId), active));
+    if ((inCall?.value ?? 0) >= limits.bookingsPerCall) {
+      throw new DomainError(
+        "BOOKING_LIMIT",
+        `Bir görüşmede en fazla ${numberToWords(limits.bookingsPerCall)} randevu oluşturabiliyorum. Diğerleri için klinik ekibimiz sizi geri arayabilir.`,
+      );
+    }
+  }
+  const [forNumber] = await db
+    .select({ value: count() })
+    .from(appointments)
+    .innerJoin(patients, eq(patients.id, appointments.patientId))
+    .where(
+      and(
+        eq(appointments.clinicId, clinic.id),
+        eq(patients.phone, phone),
+        eq(appointments.source, "voice"),
+        gte(appointments.createdAt, new Date(now.getTime() - 24 * 60 * 60 * 1000)),
+        active,
+      ),
+    );
+  if ((forNumber?.value ?? 0) >= limits.bookingsPerNumberPerDay) {
+    throw new DomainError(
+      "BOOKING_LIMIT",
+      "Bu numara için bugün daha fazla randevu oluşturamıyorum. Klinik ekibimiz sizi geri arayabilir.",
+    );
   }
 }
 

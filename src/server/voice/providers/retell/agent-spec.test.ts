@@ -165,6 +165,12 @@ describe("voice and analysis settings", () => {
     expect(specHash(tuned)).not.toBe(specHash(full));
   });
 
+  it("ends calls at the clinic's maximum duration (default 15 minutes)", () => {
+    expect(buildRetellAgentSpec(input()).agent.max_call_duration_ms).toBe(15 * 60_000);
+    const settings = parseClinicSettings({ limits: { maxCallMinutes: 8 } });
+    expect(buildRetellAgentSpec(input({ settings })).agent.max_call_duration_ms).toBe(8 * 60_000);
+  });
+
   it("asks for a minimal Turkish call summary", () => {
     const [summary] = buildRetellAgentSpec(input()).agent.post_call_analysis_data ?? [];
     expect(summary).toMatchObject({ type: "system-presets", name: "call_summary" });

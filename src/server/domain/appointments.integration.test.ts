@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
 import type { Database } from "../db";
-import { appointments, patients, practitioners, services } from "../db/schema";
+import { appointments, calls, patients, practitioners, services } from "../db/schema";
 import {
   bookAppointment,
   cancelAppointment,
@@ -384,5 +384,52 @@ describe("repeated cancel and reschedule", () => {
       }),
       "NOT_FOUND",
     );
+  });
+});
+
+describe("voice booking limits", () => {
+  async function callRow(clinicId: string, name: string) {
+    const [row] = await db
+      .insert(calls)
+      .values({ clinicId, provider: "retell", providerCallId: `${name}-${clinicId}` })
+      .returning({ id: calls.id });
+    return row!.id;
+  }
+
+  it("caps new appointments per call", async () => {
+    const clinic = await createTestClinic(db, {
+      settings: {
+        booking: { minNoticeMinutes: 0, slotIntervalMinutes: 30 },
+        limits: { bookingsPerCall: 1 },
+      },
+    });
+    const callId = await callRow(clinic.ctx.clinic.id, "limit-call");
+    await book(clinic, { callId });
+    // A retry of the same booking is still answered.
+    expect((await book(clinic, { callId })).created).toBe(false);
+    await expectDomainError(
+      book(clinic, {
+        callId,
+        time: "14:00",
+        patientName: "Ali Er",
+        patientPhone: "+905320000021",
+      }),
+      "BOOKING_LIMIT",
+    );
+  });
+
+  it("caps new voice appointments per number within a day; staff bookings are not limited", async () => {
+    const clinic = await createTestClinic(db, {
+      settings: {
+        booking: { minNoticeMinutes: 0, slotIntervalMinutes: 30 },
+        limits: { bookingsPerNumberPerDay: 2, bookingsPerCall: 5 },
+      },
+    });
+    await book(clinic, { time: "10:00" });
+    await book(clinic, { time: "11:00" });
+    await expectDomainError(book(clinic, { time: "12:00" }), "BOOKING_LIMIT");
+    await expect(book(clinic, { time: "12:00", source: "panel" })).resolves.toMatchObject({
+      created: true,
+    });
   });
 });

@@ -161,6 +161,23 @@ describe("inbound webhook", () => {
     });
   });
 
+  it("declines a caller who keeps dialling (audit P-08)", async () => {
+    const limited = await createTestClinic(db, {
+      settings: { limits: { callsPerNumberPerHour: 1 } },
+    });
+    const inbound = (id: string) =>
+      signedRequest({
+        event: "call_inbound",
+        call_inbound: { call_id: id, from_number: "+905320000027", to_number: limited.phoneNumber },
+      });
+    const first = await handleInbound(await inbound("limit_1"), deps());
+    expect((await first.json()).call_inbound.override_agent_id).toBe(limited.agentId);
+    const second = await handleInbound(await inbound("limit_2"), deps());
+    expect(await second.json()).toEqual({ call_inbound: { reject: true } });
+    // A declined call leaves no call record.
+    expect(await db.select().from(calls).where(eq(calls.providerCallId, "limit_2"))).toEqual([]);
+  });
+
   it("rejects numbers that belong to no clinic", async () => {
     const response = await handleInbound(
       await signedRequest({ event: "call_inbound", call_inbound: { to_number: "+902120000999" } }),

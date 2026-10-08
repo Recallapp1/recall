@@ -52,6 +52,29 @@ export const clinicSettingsSchema = z.object({
       dueSoonDays: z.number().int().min(1).max(60).default(14),
     })
     .prefault({}),
+  /**
+   * Abuse and cost limits for the voice assistant (audit P-08). Set by the
+   * Recall team per plan (console or database), never by panel forms.
+   */
+  limits: z
+    .object({
+      /** Calls from one caller number to this clinic. */
+      callsPerNumberPerHour: z.number().int().min(1).max(100).default(5),
+      callsPerNumberPerDay: z.number().int().min(1).max(500).default(15),
+      /** Calls with a withheld number share one budget. */
+      hiddenCallsPerHour: z.number().int().min(1).max(500).default(10),
+      /** All calls to the clinic. */
+      callsPerHour: z.number().int().min(1).max(1000).default(60),
+      /** Voice minutes per clinic-local day; beyond it calls are declined and the team alerted. */
+      dailyVoiceMinutes: z.number().int().min(10).max(10_000).default(300),
+      /** Hard stop for a single call (the voice platform ends it). */
+      maxCallMinutes: z.number().int().min(2).max(30).default(15),
+      /** New appointments one call may create. */
+      bookingsPerCall: z.number().int().min(1).max(10).default(2),
+      /** New voice appointments for one phone number within 24 hours. */
+      bookingsPerNumberPerDay: z.number().int().min(1).max(20).default(3),
+    })
+    .prefault({}),
   /** Clinic-wide panel preferences (F3.5); permissions still apply on top. */
   panel: z
     .object({
