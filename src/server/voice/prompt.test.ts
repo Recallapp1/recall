@@ -22,7 +22,7 @@ const clinic = {
   transferPhoneNumber: null as string | null,
 };
 
-function promptInput(overrides: Partial<PromptInput> = {}): PromptInput {
+function baseInput(overrides: Partial<PromptInput> = {}): PromptInput {
   return {
     clinic,
     settings: parseClinicSettings({ assistant: { name: "Elif" } }),
@@ -52,7 +52,11 @@ function promptInput(overrides: Partial<PromptInput> = {}): PromptInput {
   };
 }
 
-describe("buildSystemPrompt", () => {
+// Both prompt variants must carry every rule checked here (ADR-003 option A).
+describe.each(["full", "compact"] as const)("buildSystemPrompt (%s)", (variant) => {
+  const promptInput = (overrides: Partial<PromptInput> = {}) =>
+    baseInput({ variant, ...overrides });
+
   it("includes the clinic identity and directory with ids", () => {
     const prompt = buildSystemPrompt(promptInput());
     expect(prompt).toContain("Sen Gülüş Diş Kliniği için çalışan telefon asistanısın. Adın Elif.");
@@ -240,5 +244,17 @@ describe("isWithinClinicHours", () => {
     expect(
       isWithinClinicHours(clinicHours, new Date("2026-10-05T15:00:00Z"), "Europe/Istanbul"),
     ).toBe(false);
+  });
+});
+
+describe("prompt variants", () => {
+  it("compact is substantially shorter than full", () => {
+    const full = buildSystemPrompt(baseInput({ variant: "full" }));
+    const compact = buildSystemPrompt(baseInput({ variant: "compact" }));
+    expect(compact.length).toBeLessThan(full.length * 0.8);
+  });
+
+  it("defaults to the full prompt", () => {
+    expect(buildSystemPrompt(baseInput())).toBe(buildSystemPrompt(baseInput({ variant: "full" })));
   });
 });

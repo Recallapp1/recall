@@ -135,6 +135,36 @@ describe("voice and analysis settings", () => {
     ).toBe("eleven_multilingual_v2");
   });
 
+  it("leaves turn-taking and the prompt as they were when tuning is off", () => {
+    const off = buildRetellAgentSpec(input({ tuning: { promptVariant: "full" } }));
+    // Deploying the option A code with no settings must not touch live agents.
+    expect(specHash(off)).toBe(specHash(buildRetellAgentSpec(input())));
+    expect(off.agent).not.toHaveProperty("responsiveness");
+    expect(off.agent).not.toHaveProperty("interruption_sensitivity");
+    expect(off.agent).not.toHaveProperty("enable_dynamic_responsiveness");
+  });
+
+  it("applies the latency tuning when configured (ADR-003 option A)", () => {
+    const full = buildRetellAgentSpec(input());
+    const tuned = buildRetellAgentSpec(
+      input({
+        tuning: {
+          promptVariant: "compact",
+          responsiveness: 0.9,
+          interruptionSensitivity: 0.8,
+          dynamicResponsiveness: true,
+        },
+      }),
+    );
+    expect(tuned.agent).toMatchObject({
+      responsiveness: 0.9,
+      interruption_sensitivity: 0.8,
+      enable_dynamic_responsiveness: true,
+    });
+    expect(tuned.llm.general_prompt!.length).toBeLessThan(full.llm.general_prompt!.length);
+    expect(specHash(tuned)).not.toBe(specHash(full));
+  });
+
   it("asks for a minimal Turkish call summary", () => {
     const [summary] = buildRetellAgentSpec(input()).agent.post_call_analysis_data ?? [];
     expect(summary).toMatchObject({ type: "system-presets", name: "call_summary" });

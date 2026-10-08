@@ -74,6 +74,7 @@ async function main() {
         defaultVoiceId: settings.defaultVoiceId,
         voiceModel: settings.voiceModel,
         llmHighPriority: settings.llmHighPriority,
+        tuning: settings.tuning,
       },
       force,
     });

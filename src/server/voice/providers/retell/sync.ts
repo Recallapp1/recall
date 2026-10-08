@@ -28,7 +28,7 @@ export interface SyncDeps {
   api: RetellAgentApi;
   config: Pick<
     AgentSpecInput,
-    "appUrl" | "llmModel" | "defaultVoiceId" | "voiceModel" | "llmHighPriority"
+    "appUrl" | "llmModel" | "defaultVoiceId" | "voiceModel" | "llmHighPriority" | "tuning"
   >;
   /** Push even when the spec is unchanged (e.g. after edits in the Retell dashboard). */
   force?: boolean;

@@ -10,6 +10,7 @@ Tekrarlanabilir ses değerlendirmesi: [scripts/voice-eval/](../../scripts/voice-
 - Kontroller: tool çağrıları ve sonuçları (Retell kaydı), asistanın söyledikleri, dev veritabanında oluşan randevular ve iki tohum randevunun durumu.
 - Her çalıştırma önce kendi test hastalarını (`0532 900 00 xx`) siler, doğrulama sınırlarını sıfırlar ve iki randevu tohumlar.
 - Gecikme Retell'in arama kaydından alınır (`latency.e2e`, `llm`, `asr`, `tts`; ms).
+- Senaryo satırlarında `{pause}` (1,5 sn) ve `{longPause}` (2,5 sn) cümle içi sessizlik ekler; `pace: "slow"` yavaş konuşmadır. Arayan turu sayısı satır sayısını aşarsa asistan araya girmiştir.
 - Web aramasında arayan numara yoktur: tüm senaryolar "gizli numara" durumudur. Arayan numara kuralları entegrasyon testleriyle korunur (`handlers.integration.test.ts`). Webhook tekrarı ve tool döngüsü de entegrasyon testlerindedir.
 
 ## Çalıştırma
@@ -26,9 +27,9 @@ pnpm dev:tunnel
 pnpm voice:eval
 ```
 
-Tek senaryo: `pnpm voice:eval --only book-clear,emergency`. Ham sonuçlar `.voice-eval/results-*.json` (git dışı). Maliyet arama başına yaklaşık 0,15–0,35 $ (Retell).
+Tek senaryo: `pnpm voice:eval --only book-clear,emergency`. Başka bir yapılandırmayla koşmak için `--profile <id>` (`baseline`, `option-a`, `option-c-gemini`, `option-c-gpt`; [profiles.ts](../../scripts/voice-eval/profiles.ts)): dev ajanı koşu boyunca o model ve ayarlarla senkronlanır, sonunda env ayarlarına döner. `pnpm voice:eval --plan` arama yapmadan profilleri ve tahmini maliyeti listeler. Ham sonuçlar `.voice-eval/results-*.json` (git dışı). Maliyet arama başına yaklaşık 0,15–0,35 $ (Retell).
 
-## Senaryolar (24)
+## Senaryolar (26)
 
 | Kategori                  | Senaryolar                                                                |
 | ------------------------- | ------------------------------------------------------------------------- |
@@ -41,6 +42,7 @@ Tek senaryo: `pnpm voice:eval --only book-clear,emergency`. Ham sonuçlar `.voic
 | Prompt enjeksiyonu        | talimatları okutma, yönetici taklidi, kontrolsüz randevu dayatma          |
 | Bilgi                     | Cumartesi saatleri, sunulmayan hizmet                                     |
 | Dayanıklılık              | Bey/Hanım hitabı, sessiz/yanlış arama                                     |
+| Sıra alma (2026-10-08)    | yavaş konuşan (1,5 sn duraksama), tereddütlü arayan (2,5 sn duraksama)    |
 
 ## Sonuçlar: 2026-10-08, ilk koşu (Haiku + Flash)
 

@@ -4,6 +4,7 @@ import { can, requirePermission } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { loadClinicDirectory } from "@/server/domain/clinics";
 import { buildSystemPrompt } from "@/server/voice/prompt";
+import { env } from "@/lib/env";
 import { safeError } from "@/lib/safe-error";
 import {
   assistantSyncStatus,
@@ -34,6 +35,8 @@ export default async function AssistantSettingsPage() {
     clinic,
     settings,
     directory,
+    // The wording the live assistant uses (ADR-003 option A).
+    variant: env().VOICE_PROMPT_VARIANT,
     toolNames: { endCall: "end_call", transferCall: "transfer_call" },
     placeholders: {
       now: "[arama anındaki tarih ve saat]",

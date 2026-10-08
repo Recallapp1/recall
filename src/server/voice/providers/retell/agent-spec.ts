@@ -9,7 +9,12 @@ import type { ClinicSettings } from "../../../domain/clinic-settings";
 import type { ClinicDirectory } from "../../../domain/clinics";
 import { practitionerDisplayName } from "../../../domain/clinics";
 import { spokenTitles } from "../../../domain/speech";
-import { buildFirstMessage, buildSystemPrompt, type CallVariables } from "../../prompt";
+import {
+  buildFirstMessage,
+  buildSystemPrompt,
+  type CallVariables,
+  type PromptVariant,
+} from "../../prompt";
 import { toolParameters, tools } from "../../tools";
 
 type LlmParams = Retell.LlmCreateParams;
@@ -30,6 +35,20 @@ export interface AgentSpecInput {
   voiceModel?: string | undefined;
   /** Retell's high-priority LLM pool: lower, steadier latency at a higher price. */
   llmHighPriority?: boolean;
+  tuning?: VoiceTuning;
+}
+
+/**
+ * Latency settings from ADR-003 option A. Unset values are not sent, so
+ * Retell's defaults apply and the spec (and its hash) stays as it was.
+ */
+export interface VoiceTuning {
+  promptVariant: PromptVariant;
+  /** 0–1; Retell's default is 1. */
+  responsiveness?: number;
+  /** 0–1; Retell's default is 1. */
+  interruptionSensitivity?: number;
+  dynamicResponsiveness?: boolean;
 }
 
 export const RETELL_ROUTES = {
@@ -80,11 +99,13 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
   }
   const url = (path: string) => new URL(path, appUrl).toString();
   const tz = clinic.timezone;
+  const tuning = input.tuning;
 
   const generalPrompt = buildSystemPrompt({
     clinic,
     settings,
     directory,
+    variant: tuning?.promptVariant,
     toolNames: TOOL_NAMES,
     placeholders: {
       now: `{{current_time_${tz}}}`,
@@ -154,6 +175,13 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
         voice_model: input.voiceModel as AgentParams["voice_model"],
       }),
       language: "tr-TR",
+      ...(tuning?.responsiveness !== undefined && { responsiveness: tuning.responsiveness }),
+      ...(tuning?.interruptionSensitivity !== undefined && {
+        interruption_sensitivity: tuning.interruptionSensitivity,
+      }),
+      ...(tuning?.dynamicResponsiveness !== undefined && {
+        enable_dynamic_responsiveness: tuning.dynamicResponsiveness,
+      }),
       timezone: tz,
       webhook_url: url(RETELL_ROUTES.events),
       webhook_events: ["call_started", "call_ended", "call_analyzed"],

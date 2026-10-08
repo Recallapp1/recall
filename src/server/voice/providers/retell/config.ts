@@ -4,6 +4,8 @@ import Retell from "retell-sdk";
 
 import { env } from "@/lib/env";
 
+import type { VoiceTuning } from "./agent-spec";
+
 export const RETELL_PROVIDER = "retell";
 
 export interface RetellConfig {
@@ -15,6 +17,7 @@ export interface RetellConfig {
   /** TTS model; unset means Retell's default for the voice. */
   voiceModel: string | undefined;
   llmHighPriority: boolean;
+  tuning: VoiceTuning;
 }
 
 /** Retell settings, failing loudly when voice is used without being configured. */
@@ -30,6 +33,12 @@ export function retellConfig(): RetellConfig {
     defaultVoiceId: config.RETELL_VOICE_ID,
     voiceModel: config.RETELL_VOICE_MODEL,
     llmHighPriority: config.RETELL_LLM_HIGH_PRIORITY,
+    tuning: {
+      promptVariant: config.VOICE_PROMPT_VARIANT,
+      responsiveness: config.RETELL_RESPONSIVENESS,
+      interruptionSensitivity: config.RETELL_INTERRUPTION_SENSITIVITY,
+      dynamicResponsiveness: config.RETELL_DYNAMIC_RESPONSIVENESS,
+    },
   };
 }
 

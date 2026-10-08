@@ -30,6 +30,7 @@ export async function syncAssistantNow(clinicId: string): Promise<SyncResult | n
       defaultVoiceId: config.defaultVoiceId,
       voiceModel: config.voiceModel,
       llmHighPriority: config.llmHighPriority,
+      tuning: config.tuning,
     },
   });
 }
@@ -84,6 +85,7 @@ export async function ensureAssistant(clinicId: string, force = false): Promise<
       defaultVoiceId: config.defaultVoiceId,
       voiceModel: config.voiceModel,
       llmHighPriority: config.llmHighPriority,
+      tuning: config.tuning,
     },
     force,
   });

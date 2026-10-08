@@ -3,13 +3,16 @@
  *
  *   pnpm dev            # local app on the dev database
  *   pnpm dev:tunnel     # public URL for Retell, dev agent re-pointed
- *   pnpm voice:eval [--only id1,id2]
+ *   pnpm voice:eval [--only id1,id2] [--profile <id>]
+ *   pnpm voice:eval --plan     # profiles and estimated cost, no calls
  *
  * Every scenario is a real Retell web call with the dev clinic's assistant:
  * the caller's lines are spoken by Windows TTS (tts.ps1) and fed to Playwright's
  * Chromium as its microphone. Checks read the call's tool calls and transcript
  * from Retell and the appointments from the dev database. Refuses to run
- * against production.
+ * against production. `--profile` re-syncs the dev agent with another model or
+ * latency setting for the run and restores the env configuration afterwards
+ * (profiles.ts).
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -38,7 +41,10 @@ import { findClinicBySlug } from "@/server/domain/clinics";
 import { findAvailability } from "@/server/domain/scheduling";
 import { spokenDate } from "@/server/domain/speech";
 import { addLocalDays, localToday, utcToLocal } from "@/server/domain/time";
+import { retellClient, retellConfig } from "@/server/voice/providers/retell/config";
+import { syncClinicVoiceAgent } from "@/server/voice/providers/retell/sync";
 
+import { estimatedCost, profiles, type EvalProfile } from "./profiles";
 import { invariants, scenarios, type CallOutcome, type Scenario, type ToolCall } from "./scenarios";
 
 config({ path: [".env.local", ".env"], quiet: true });
@@ -139,10 +145,18 @@ function expandLines(lines: string[]): string[] {
   );
 }
 
+/** Silences inside a turn and the caller's pace, as SSML for tts.ps1. */
+function speechMarkup(line: string, pace: Scenario["pace"]): string {
+  const marked = line
+    .replaceAll("{pause}", '<break time="1500ms"/>')
+    .replaceAll("{longPause}", '<break time="2500ms"/>');
+  return pace === "slow" ? `<prosody rate="slow">${marked}</prosody>` : marked;
+}
+
 /** Caller audio for a scenario, cached by its spoken lines. */
 function callerAudio(scenario: Scenario): string {
   mkdirSync(WORK_DIR, { recursive: true });
-  const spoken = expandLines(scenario.lines);
+  const spoken = expandLines(scenario.lines).map((line) => speechMarkup(line, scenario.pace));
   const hash = createHash("sha1").update(spoken.join("\n")).digest("hex").slice(0, 12);
   const file = join(WORK_DIR, `${scenario.id}-${hash}.wav`);
   if (!existsSync(file)) {
@@ -254,11 +268,14 @@ async function runCall(scenario: Scenario, agentId: string, clinicId: string) {
   return { callId: call.call_id, startedAt, details };
 }
 
-function outcomeOf(details: Record<string, unknown>): Pick<CallOutcome, "agentText" | "tools"> {
+function outcomeOf(
+  details: Record<string, unknown>,
+): Pick<CallOutcome, "agentText" | "tools" | "userTurns"> {
   const turns = (details.transcript_with_tool_calls ?? []) as Array<Record<string, unknown>>;
   const tools: ToolCall[] = [];
   const byId = new Map<string, ToolCall>();
   const agent: string[] = [];
+  let userTurns = 0;
   const parse = (value: unknown) => {
     try {
       return typeof value === "string" ? JSON.parse(value) : (value as Record<string, unknown>);
@@ -268,6 +285,7 @@ function outcomeOf(details: Record<string, unknown>): Pick<CallOutcome, "agentTe
   };
   for (const turn of turns) {
     if (turn.role === "agent") agent.push(String(turn.content ?? ""));
+    if (turn.role === "user") userTurns += 1;
     if (turn.role === "tool_call_invocation") {
       const tool: ToolCall = {
         name: String(turn.name),
@@ -282,7 +300,7 @@ function outcomeOf(details: Record<string, unknown>): Pick<CallOutcome, "agentTe
       if (tool) tool.result = parse(turn.content);
     }
   }
-  return { agentText: agent.join(" "), tools };
+  return { agentText: agent.join(" "), tools, userTurns };
 }
 
 async function effects(
@@ -342,11 +360,55 @@ interface Latency {
   max?: number;
 }
 
+function argValue(name: string): string | undefined {
+  const index = process.argv.indexOf(name);
+  return index > -1 ? process.argv[index + 1] : undefined;
+}
+
+function printPlan(count: number) {
+  console.info(`${count} scenarios per run\n`);
+  for (const p of profiles) {
+    console.info(`${p.id.padEnd(16)} ${p.title}`);
+    console.info(
+      `${"".padEnd(16)} model ${p.llmModel} · ${JSON.stringify(p.tuning)} · ` +
+        `list $${p.listPricePerMinute.toFixed(4)}/min · run ≈ $${estimatedCost(p, count).toFixed(2)}`,
+    );
+  }
+}
+
+/** Points the dev clinic's agent at a profile's model and tuning, or back at the env settings. */
+async function syncDevAgent(clinicId: string, profile: EvalProfile | null) {
+  const settings = retellConfig();
+  const result = await syncClinicVoiceAgent(db(), clinicId, {
+    api: retellClient(),
+    config: {
+      appUrl: settings.appUrl,
+      llmModel: profile?.llmModel ?? settings.llmModel,
+      defaultVoiceId: settings.defaultVoiceId,
+      voiceModel: settings.voiceModel,
+      llmHighPriority: settings.llmHighPriority,
+      tuning: profile?.tuning ?? settings.tuning,
+    },
+    force: true,
+  });
+  if (result.status === "error") throw new Error(`Agent sync failed: ${result.error}`);
+}
+
 async function main() {
-  guard();
   const only = process.argv.includes("--only")
     ? new Set(process.argv[process.argv.indexOf("--only") + 1]!.split(","))
     : null;
+  const selected = scenarios.filter((s) => !only || only.has(s.id));
+  if (process.argv.includes("--plan")) {
+    printPlan(selected.length);
+    process.exit(0);
+  }
+  const profileId = argValue("--profile");
+  const profile = profileId ? profiles.find((p) => p.id === profileId) : null;
+  if (profileId && !profile) {
+    throw new Error(`Unknown profile "${profileId}" (pnpm voice:eval --plan).`);
+  }
+  guard();
   const [clinic] = await db().select().from(clinics).where(eq(clinics.slug, CLINIC_SLUG));
   if (!clinic) throw new Error(`Clinic ${CLINIC_SLUG} not found.`);
   const [agent] = await db().select().from(voiceAgents).where(eq(voiceAgents.clinicId, clinic.id));
@@ -356,23 +418,42 @@ async function main() {
   const health = await fetch(new URL("/api/health", process.env.APP_URL)).catch(() => null);
   if (!health?.ok) throw new Error("APP_URL is not reachable: start pnpm dev and pnpm dev:tunnel.");
 
-  const seeded = await resetData(clinic.id);
+  if (profile) {
+    await syncDevAgent(clinic.id, profile);
+    console.info(`Profile ${profile.id}: ${profile.title}`);
+  }
+  try {
+    await runScenarios(selected, clinic.id, agent.externalAgentId, profile);
+  } finally {
+    // The dev agent goes back to the env configuration even after a failed run.
+    if (profile) await syncDevAgent(clinic.id, null);
+  }
+  process.exit(0);
+}
+
+async function runScenarios(
+  selected: Scenario[],
+  clinicId: string,
+  agentId: string,
+  profile: EvalProfile | null | undefined,
+) {
+  const seeded = await resetData(clinicId);
   const results: Array<Record<string, unknown> & { passed: boolean; costCents: number }> = [];
   mkdirSync(WORK_DIR, { recursive: true });
-  const file = join(WORK_DIR, `results-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const file = join(WORK_DIR, `results-${profile?.id ?? "env"}-${stamp}.json`);
   // Saved after every scenario: an interrupted run keeps what it measured.
   const save = () =>
-    writeFileSync(file, JSON.stringify({ agent: agent.externalAgentId, results }, null, 2));
-  for (const scenario of scenarios.filter((s) => !only || only.has(s.id))) {
-    process.stdout.write(`▶ ${scenario.id} … `);
-    const { callId, startedAt, details } = await runCall(
-      scenario,
-      agent.externalAgentId,
-      clinic.id,
+    writeFileSync(
+      file,
+      JSON.stringify({ agent: agentId, profile: profile ?? "env", results }, null, 2),
     );
+  for (const scenario of selected) {
+    process.stdout.write(`▶ ${scenario.id} … `);
+    const { callId, startedAt, details } = await runCall(scenario, agentId, clinicId);
     const outcome: CallOutcome = {
       ...outcomeOf(details),
-      ...(await effects(scenario, clinic.id, startedAt, seeded)),
+      ...(await effects(scenario, clinicId, startedAt, seeded)),
     };
     const failures = [...scenario.check(outcome), ...invariants(outcome)];
     const latency = (details.latency ?? {}) as Record<string, Latency>;
@@ -398,7 +479,6 @@ async function main() {
   const passed = results.filter((r) => r.passed).length;
   const cost = results.reduce((sum, r) => sum + r.costCents, 0) / 100;
   console.info(`\n${passed}/${results.length} passed · cost $${cost.toFixed(2)} · ${file}`);
-  process.exit(0);
 }
 
 main().catch((error) => {

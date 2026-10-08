@@ -68,6 +68,7 @@ async function syncAgents(appUrl: string) {
         defaultVoiceId: settings.defaultVoiceId,
         voiceModel: settings.voiceModel,
         llmHighPriority: settings.llmHighPriority,
+        tuning: settings.tuning,
       },
     });
     console.info(

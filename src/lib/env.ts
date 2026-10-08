@@ -7,6 +7,19 @@ const optionalString = z
   .optional()
   .transform((value) => (value ? value : undefined));
 
+/** A 0–1 setting that is either set or left to the provider's default. */
+const optionalUnit = z
+  .string()
+  .optional()
+  .transform((value) => (value ? Number(value) : undefined))
+  .pipe(z.number().min(0).max(1).optional());
+
+/** "true" / "false", or unset to keep the provider's default. */
+const optionalFlag = z
+  .enum(["true", "false", ""])
+  .optional()
+  .transform((value) => (value ? value === "true" : undefined));
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_URL: z.url(),
@@ -30,6 +43,18 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
+  /**
+   * Latency tuning (ADR-003 option A). Each is off or unset by default, which
+   * keeps today's assistant exactly; set in Vercel to roll out, unset to roll back.
+   * "compact": the shorter system prompt with the same rules.
+   */
+  VOICE_PROMPT_VARIANT: z.enum(["full", "compact"]).default("full"),
+  /** Retell turn-taking, 0–1 (Retell default 1 = answers as soon as it can). Lower waits longer. */
+  RETELL_RESPONSIVENESS: optionalUnit,
+  /** 0–1 (Retell default 1). Lower needs more words before the caller interrupts the agent. */
+  RETELL_INTERRUPTION_SENSITIVITY: optionalUnit,
+  /** "true": Retell adapts its answer timing to the caller's speech rate (waits for slow speakers). */
+  RETELL_DYNAMIC_RESPONSIVENESS: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

@@ -1,9 +1,9 @@
 # ADR-003: Sesli Asistan LLM'i
 
-|       |                                                                                                                                                                                     |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Durum | **Geçerli: `claude-4.5-haiku` + ElevenLabs `eleven_flash_v2_5`** (production). Gecikme hedefin üstünde; model değişikliği ürün ekibi kararını bekliyor (aşağıda "Ölçüm 2026-10-08") |
-| Tarih | 2026-10-04 · güncelleme 2026-10-08                                                                                                                                                  |
+|       |                                                                                                                                                                                                                                                   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Durum | **Geçerli: `claude-4.5-haiku` + ElevenLabs `eleven_flash_v2_5`** (production). **Seçenek A onaylandı (2026-10-08)**: ayarlar hazır ama kapalı; ölçüm Retell kredisi yüklenince. C için test profilleri hazır; model değişikliği ayrıca onay ister |
+| Tarih | 2026-10-04 · güncelleme 2026-10-08                                                                                                                                                                                                                |
 
 ## Bağlam
 
@@ -81,3 +81,46 @@ Bugün: altyapı 0,055 + Claude 4.5 Haiku 0,025 + ElevenLabs Flash 0,040 = **0,1
 | D   | Ses: standart sesler (Cartesia/OpenAI vb.)                                                             | −0,025 $/dk        | TTS zaten kısa; maliyet düşer                                                                                             | Türkçe ses kalitesi dinlenmeli                                               |
 
 **Öneri (karar ürün ekibinde):** önce A (ücretsiz) ve aynı 24 senaryoda yeniden ölçüm; ardından B ve C'yi aynı senaryolarla karşılaştırmak için bir koşu (her biri ~7 $). Kalite bulguları ağır bastığı için uzun vadede B'nin güvenilirliği ile C'nin hızı arasında seçim yapılmalı. Model değişikliği klinik ve hastaların fark edeceği bir ürün değişikliği olduğundan onay olmadan yapılmaz.
+
+## Karar 2026-10-08: seçenek A onaylandı
+
+Ürün ekibi A'yı onayladı: model ve ses aynı (Haiku + Flash), Retell sıra alma ayarları **ihtiyatlı** (yavaş konuşanın sözü kesilmez), prompt kısaltılır. Ölçüm Retell kredisi yüklenene kadar yapılmaz. C (Gemini 3.0 Flash, GPT 4.1 mini) yalnızca aynı senaryolarda ölçülmek üzere hazırlanır; **production modeli onaysız değişmez**.
+
+**Uygulama (her biri env ile açılır, silinince eski hâline döner):**
+
+| Ayar                              | Değer (A) | Varsayılan (bugün)        | Not                                                                                                                                                           |
+| --------------------------------- | --------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VOICE_PROMPT_VARIANT`            | `compact` | `full`                    | Aynı kurallar, daha az sözcük. Demo klinikte 8.715 → 6.595 karakter (−%24; kural bölümleri yaklaşık −%40). Prompt testlerinin tamamı iki varyantta da çalışır |
+| `RETELL_DYNAMIC_RESPONSIVENESS`   | `true`    | tanımsız (Retell: kapalı) | Retell yanıt zamanlamasını arayanın konuşma hızına uyarlar: yavaş konuşanı bekler                                                                             |
+| `RETELL_RESPONSIVENESS`           | tanımsız  | tanımsız (Retell: 1)      | **1 zaten Retell'in en hızlı değeri**: daha hızlı yapılamaz, düşürmek yalnızca bekletir. A'da değişmez; ölçümde yavaş konuşan senaryosu düşerse düşürülür     |
+| `RETELL_INTERRUPTION_SENSITIVITY` | tanımsız  | tanımsız (Retell: 1)      | Gecikmeyi etkilemez; söz kesme davranışını değiştirmemek için dokunulmadı                                                                                     |
+
+Tanımsız ayarlar Retell'e hiç gönderilmez: kod production'a çıktığında ajanların tanımı (ve özeti) değişmez, yani deploy tek başına hiçbir aramayı etkilemez (testli).
+
+**Beklenti (dürüst):** Ölçülen tur gecikmesinin ~%40'ı LLM, ~%37'si ASR ve uç algılama. Uç algılama zaten en hızlı ayarda; prompt kısalması ilk token süresinde onlarca ila birkaç yüz milisaniyelik kazanç getirebilir. A tek başına p50 < 1.000 ms hedefini büyük olasılıkla tutturmaz; asıl soru C'nin LLM payını ne kadar düşürdüğü.
+
+**Ölçüm planı (kredi yüklenince; dev ajanı, production'a dokunmaz):**
+
+```bash
+pnpm voice:eval --plan
+```
+
+```bash
+pnpm voice:eval --profile baseline
+```
+
+```bash
+pnpm voice:eval --profile option-a
+```
+
+```bash
+pnpm voice:eval --profile option-c-gemini
+```
+
+```bash
+pnpm voice:eval --profile option-c-gpt
+```
+
+Her koşu 26 senaryo, ~4,5–5 $ (toplam ~19 $). Profil yalnızca dev kliniğinin ajanını koşu süresince değiştirir ve sonunda env ayarlarına geri döndürür. Yeni iki senaryo (`slow-speaker`, `hesitant-caller`) cümle içinde 1,5 ve 2,5 sn duraksar; asistan araya girerse transkriptteki arayan turu sayısı satır sayısını aşar ve senaryo düşer.
+
+**Production'a alma (ölçüm A'yı doğrularsa):** Vercel'de `VOICE_PROMPT_VARIANT=compact` ve `RETELL_DYNAMIC_RESPONSIVENESS=true` → yeniden deploy (build ajanları senkronlar) → bir test araması. **Geri alma:** iki değişkeni silip yeniden deploy. Karar kesinleşince kullanılmayan prompt varyantı koddan kaldırılır.

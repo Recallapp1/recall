@@ -25,6 +25,8 @@ export interface CallOutcome {
   newAppointments: Array<{ service: string; date: string; time: string; status: string }>;
   /** Status of the seeded appointments after the call. */
   seeded: Record<string, { status: string; date: string; time: string } | null>;
+  /** Caller turns in Retell's transcript; more than the script's lines means the agent cut in. */
+  userTurns: number;
 }
 
 export interface Scenario {
@@ -42,7 +44,13 @@ export interface Scenario {
     | "robustness";
   /** Phone the caller speaks (unique per scenario so effects can be counted). */
   phone?: string;
+  /**
+   * One entry per caller turn. `{pause}` (1.5 s) and `{longPause}` (2.5 s)
+   * insert silences inside a turn, as a slow or hesitant caller would.
+   */
   lines: string[];
+  /** "slow": the caller speaks at a slow rate (turn-taking scenarios). */
+  pace?: "slow";
   /** Returns the failed checks (empty = passed). */
   check: (o: CallOutcome) => string[];
 }
@@ -484,6 +492,43 @@ export const scenarios: Scenario[] = [
       "Teşekkürler, hoşça kalın.",
     ],
     check: (o) => [...ok(!says(o, /\b(Bey|Hanım)\b/), "no gendered title")],
+  },
+  // ── Turn-taking (ADR-003 option A: faster answers must not cut callers off) ─
+  {
+    id: "slow-speaker",
+    title: "Slow caller with pauses mid-sentence: not cut off, booked as said",
+    category: "robustness",
+    phone: PHONE(27),
+    pace: "slow",
+    lines: [
+      "Merhaba, {pause} ben bir randevu almak istiyordum, {pause} diş taşı temizliği için. {pause} {nextFri} günü {pause} saat on beşte olabilir mi, {pause} hekim fark etmez.",
+      `Adım {pause} Ayşe Demir, {pause} telefonum ${spokenPhone(27)}.`,
+      "Evet, {pause} doğru, {pause} onaylıyorum.",
+      "Teşekkürler, hoşça kalın.",
+    ],
+    check: (o) => [
+      ...ok(o.userTurns <= 4, "the assistant took the turn during a pause"),
+      ...ok(o.newAppointments.length === 1, "one appointment"),
+      ...ok(o.newAppointments[0]?.service === "Diş Taşı Temizliği", "booked the requested service"),
+      ...ok(o.newAppointments[0]?.time === "15:00", "booked at 15:00"),
+    ],
+  },
+  {
+    id: "hesitant-caller",
+    title: "Hesitates for seconds inside a sentence: waits, then books",
+    category: "robustness",
+    phone: PHONE(28),
+    lines: [
+      "Merhaba, {nextThu} günü {longPause} şey {longPause} saat on dörtte muayene randevusu istiyorum, hekim fark etmez; doluysa en yakın saat olsun.",
+      `Adım Ali Er, telefonum {longPause} ${spokenPhone(28)}.`,
+      "Evet, onaylıyorum.",
+      "Teşekkürler, hoşça kalın.",
+    ],
+    check: (o) => [
+      ...ok(o.userTurns <= 4, "the assistant took the turn during a pause"),
+      ...ok(o.newAppointments.length === 1, "one appointment"),
+      ...ok(o.newAppointments[0]?.service === "Muayene / Kontrol", "booked Muayene / Kontrol"),
+    ],
   },
   {
     id: "silence-goodbye",

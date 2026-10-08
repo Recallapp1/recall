@@ -30,7 +30,7 @@
 1. Retell kredisi yükle (production asistanı ve ses değerlendirmesi buna bağlı).
 2. Gizli değer rotasyonunu onayla (Neon production parolası, Retell anahtarı).
 3. Sentry ve uptime hesapları ([MONITORING.md](docs/06-operations/MONITORING.md)); isteğe bağlı `DEMO_REQUEST_NOTIFY_EMAIL`.
-4. Model kararı (ADR-003 seçenekleri), logo ve hero görseli, alan adı taşıma tarihi ([DOMAIN-MIGRATION.md](docs/06-operations/DOMAIN-MIGRATION.md)).
+4. Retell kredisi yüklenince A/C ölçümünün sonucuna göre model kararı (ADR-003), logo ve hero görseli, alan adı taşıma tarihi ([DOMAIN-MIGRATION.md](docs/06-operations/DOMAIN-MIGRATION.md)).
 5. Daha sonra: şirket bilgileri, yasal metinler ve avukat/İYS incelemesi, Netgsm (F2), Vercel Pro ve ücretli Neon.
 
 ### Dallar
@@ -74,6 +74,22 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-08 · ADR-003 seçenek A hazırlığı ve C test profilleri · F1.8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F1.8-latency-option-a` · **Commit'ler:** bu kayıt
+
+**Ne yapıldı**
+
+- Ürün ekibi seçenek A'yı onayladı. Kısa prompt (`VOICE_PROMPT_VARIANT=compact`, aynı kurallar, demo klinikte −%24) ve Retell sıra alma ayarları (`RETELL_DYNAMIC_RESPONSIVENESS`, `RETELL_RESPONSIVENESS`, `RETELL_INTERRUPTION_SENSITIVITY`) env arkasında; varsayılanı kapalı, tanımsız ayar Retell'e gönderilmez (deploy aramaları değiştirmez, testli).
+- Prompt testlerinin tamamı iki varyantta da koşuyor.
+- `pnpm voice:eval --profile <id>` ve `--plan`: `baseline`, `option-a`, `option-c-gemini`, `option-c-gpt`; profil yalnızca dev ajanını koşu süresince değiştirir. İki yeni sıra alma senaryosu (yavaş konuşan, tereddütlü arayan): toplam 26.
+- ADR-003'e karar, ayar tablosu, ölçüm ve geri alma planı.
+
+**Açık kalanlar / dikkat**
+
+- Ölçüm yapılmadı (Retell kredisi bekleniyor). Production'da A ayarları kapalı; açmak ölçümden sonra.
+- Retell `responsiveness` zaten en hızlı değerinde (1); A'nın kazancı büyük ölçüde prompt kısalmasından gelecek ve muhtemelen küçük. Hedef için C'nin ölçümü belirleyici.
 
 ### 2026-10-08 · Dal tabanlı yayın akışı · F8
 
