@@ -4,7 +4,7 @@ _Read-only audit by Claude (Opus 5.5) at commit `b0a90c0` (`main`). No code, con
 
 > **Update 2026-10-08 (after the audit):** the product owner made the repository private (P-03 resolved; verified: the unauthenticated API returns 404). The report was committed only after that. Fix progress is tracked in WORKLOG.md.
 >
-> **Fixed since (2026-10-08, each through a branch and green CI):** P-04 (Better Auth endpoints closed; the organization-delete lock-out was reproduced in a test and fixed), P-11 / F-10 (repeated cancel/reschedule), P-08 / F-06 / F-14 (call, minute and booking limits; maximum call duration per clinic), P-09 and P-10 / F-12 (erasure across all numbers; durable provider deletion queue). P-01/P-02 rotation is planned in SECRET-ROTATION-2026-10.md and waits for the product owner's go.
+> **Fixed since (2026-10-08, each through a branch and green CI):** P-04 (Better Auth endpoints closed; the organization-delete lock-out was reproduced in a test and fixed), P-11 / F-10 (repeated cancel/reschedule), P-08 / F-06 / F-14 (call, minute and booking limits; maximum call duration per clinic), P-09 and P-10 / F-12 (erasure across all numbers; durable provider deletion queue). P-01/P-02: rotated on 2026-10-09 (Neon production password, separate dev password, new Retell key with the old one deleted), verified; a separate dev Retell workspace and deleting the old backup branches remain.
 
 > Language: English, at the product owner's request (same as STATUS-REPORT-2026-10-07). Secret values, passwords, tokens and real personal data are deliberately absent: findings give path, line and type only.
 

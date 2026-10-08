@@ -19,7 +19,7 @@
 | SMS                 | Gönderim her ortamda kapalı (`SMS_SENDING_ENABLED` yok, Netgsm yok). Tüm SMS'ler bildirim kaydından geçer (tek yol, testli)                                                                                                                                                                                                                                                                                                                     |
 | Takip               | V0 + V1 production'da; demo klinikte açık                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Güvenlik            | Hız sınırları (Postgres), webhook tekrar koruması, CSP, kritik denetim kaydı, bileşik kiracı FK'leri, `pnpm audit` CI'da. 2026-10-08 denetimi ([PRELAUNCH-AUDIT-2026-10-08.md](docs/reviews/PRELAUNCH-AUDIT-2026-10-08.md)) sonrası: Better Auth HTTP uç noktaları kapalı (organizasyon silme kilitlenmesi giderildi), iptal/erteleme tekrar güvenli, arama ve randevu sınırları (`limits`), KVKK silmesi tüm numaralarda, Retell silme kuyruğu |
-| Gizli değerler      | **Rotasyon "başla" onayı bekliyor:** production DB parolası (dev dalı aynı parolayı taşıyor), Retell anahtarı (dev ve production aynı çalışma alanı). Adım adım plan: [SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md)                                                                                                                                                                                               |
+| Gizli değerler      | **Rotasyon yapıldı (2026-10-09):** Neon production parolası yenilendi, dev dalı ayrı parolada, Retell anahtarı yenilendi ve eskisi silindi; hepsi doğrulandı. Kalan: yedek dalların silinmesi, ayrı dev Retell çalışma alanı, lokal sırlar ([SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md))                                                                                                                        |
 | Testler             | 453 Vitest testi (action testleri dahil) + 22 Playwright testi (9 akış, 13 sayfada erişilebilirlik). CI yeşil (check + E2E)                                                                                                                                                                                                                                                                                                                     |
 | İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı), `ALARM` logları; Sentry kodu hazır (DSN yok), uptime hesabı yok                                                                                                                                                                                                                                                                                                                              |
 | Lokal               | Neon **`dev`** dalı; `pnpm dev` + `pnpm dev:tunnel`; E2E kendi bellek içi veritabanıyla                                                                                                                                                                                                                                                                                                                                                         |
@@ -74,6 +74,22 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-09 · Gizli değer rotasyonu · F8
+
+**Agent/kişi:** Claude (Opus 5.5) + ürün ekibi · **Dal:** `docs/rotation-done` · **Commit'ler:** bu kayıt
+
+**Ne yapıldı** (değerleri ürün ekibi girdi; hiçbiri yazdırılmadı)
+
+- Neon production parolası yenilendi, Vercel güncellendi, yeniden deploy. Eski parola production'da reddediliyor (`28P01`); `/api/health` → `db: ok`; imzalı webhook veritabanı yolu çalışıyor.
+- Neon dev dalı parolası ayrıldı; yeni lokal parola dev'i açıyor, production'da reddediliyor.
+- Retell: yeni anahtar oluşturuldu, webhook anahtarı yapıldı, Vercel güncellendi, yeniden deploy, eski anahtar silindi. Yeni anahtarla imzalı istek doğrulamayı geçiyor, yanlış anahtar 401.
+- `.env.local` 14. satırda eksik `=` düzeltildi (değer gösterilmeden).
+
+**Açık kalanlar / dikkat**
+
+- Retell'in webhook'ları yeni anahtarla imzaladığı ilk gerçek test aramasında görülecek (kredi gerekiyor).
+- Yedek dallar (eski parola, uç noktası yok) duruyor; silme onay bekliyor. Ayrı dev Retell çalışma alanı açılana kadar lokal dosya production anahtarını taşır.
 
 ### 2026-10-08 · Yayın öncesi denetim ve düzeltme partileri · F7, F8
 

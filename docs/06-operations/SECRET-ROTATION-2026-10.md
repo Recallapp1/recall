@@ -1,4 +1,6 @@
-# Gizli değer rotasyonu (Ekim 2026): plan, "başla" onayı bekliyor
+# Gizli değer rotasyonu (Ekim 2026)
+
+> **Durum (2026-10-09): 1, 2 ve 4. adımlar uygulandı ve doğrulandı.** Neon production parolası yenilendi (eski parola production'da reddediliyor, `28P01`); dev dalının parolası ayrıldı (yeni dev parolası production'da reddediliyor); Retell production anahtarı yenilendi, yeni anahtar webhook anahtarı, eski anahtar silindi (yanlış anahtarla imzalı istek 401, yeni anahtarla imzalı istek doğrulamayı geçiyor). Her adımdan sonra `/api/health` → `db: ok`. **Bekleyenler:** 3 (yedek dalların silinmesi, onay gerekir), 5 (dev için ayrı Retell çalışma alanı; o zamana kadar lokal `.env.local` production anahtarını taşır), 6 (lokal `CRON_SECRET`, `BETTER_AUTH_SECRET`), 7 (IP kısıtı kararı). Retell'in webhook'ları yeni anahtarla imzaladığı ilk gerçek test aramasında doğrulanacak (kredi gerekiyor).
 
 _Güncelleme 2026-10-08: yayın öncesi denetimin (P-01, P-02, P-16, P-17) bulgularıyla genişletildi. Hiçbir adım ürün ekibinin "başla" onayı olmadan uygulanmaz; değerler sohbete, commit'e veya loglara yazılmaz. Değerleri ürün ekibi girer; Claude yalnızca doğrular._
 
