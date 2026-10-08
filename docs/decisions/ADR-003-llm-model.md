@@ -1,9 +1,9 @@
 # ADR-003: Sesli Asistan LLM'i
 
-|       |                                           |
-| ----- | ----------------------------------------- |
-| Durum | Önerildi: Faz 1 ölçümleriyle kesinleşecek |
-| Tarih | 2026-10-04                                |
+|       |                                                                                                                                                                                     |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Durum | **Geçerli: `claude-4.5-haiku` + ElevenLabs `eleven_flash_v2_5`** (production). Gecikme hedefin üstünde; model değişikliği ürün ekibi kararını bekliyor (aşağıda "Ölçüm 2026-10-08") |
+| Tarih | 2026-10-04 · güncelleme 2026-10-08                                                                                                                                                  |
 
 ## Bağlam
 
@@ -22,10 +22,9 @@ Sesli asistanın LLM'i aynı anda şunları sağlamalı:
 | Claude Sonnet 5.5 | `claude-sonnet-5-5` | Hız ve yetenek dengesi, daha düşük maliyet                                                                      |
 | Claude Haiku 4.5  | `claude-haiku-4-5`  | En hızlı ve en ucuz; karmaşık akışlarda zayıf kalabilir                                                         |
 
-## Önerilen karar
+## İlk öneri (2026-10-04, geçersiz)
 
-- **Varsayılan:** `claude-opus-5-5`, düşük effort (en yüksek talimat bağlılığı ve tool güvenilirliği).
-- Model, `VOICE_LLM_MODEL` env değişkeni ile değiştirilebilir. Kod model adına bağımlı değildir.
+- Anthropic API üzerinden `claude-opus-5-5` önerilmişti; Retell geçişiyle (ADR-004) LLM'i Retell çalıştırır ve seçenekler Retell'in listesiyle sınırlıdır. Model `RETELL_LLM_MODEL` ile değişir; kod model adına bağlı değildir.
 - **Faz 1 ölçümü:** Aynı 20 senaryo üç modelle çalıştırılır. Karşılaştırılanlar: (a) senaryo başarısı, (b) p50/p95 ilk token süresi, (c) arama başı maliyet. Gecikme hedefini (p95 < 1,8 sn tur) tutturan modeller arasından en yüksek başarı oranına sahip olan seçilir; başarı eşitse daha ucuz olan seçilir.
 
 ## İlk ölçüm (2026-10-04, tek web call, 124 sn)
@@ -53,3 +52,32 @@ Hedef (p50 < 1,0 sn, p95 < 1,8 sn) tutturulamadı; en büyük pay LLM'de. Sırad
 
 - **Retell geçişi (2026-10-04):** LLM'i Retell çalıştırır; seçenekler Retell'in listesindeki Claude modelleriyle sınırlıdır: `claude-5-sonnet` (varsayılan, `RETELL_LLM_MODEL`), `claude-4.6-sonnet`, `claude-4.5-sonnet`, `claude-4.5-haiku`. Opus Retell'de sunulmuyor. Effort ve thinking gibi Anthropic parametreleri Retell üzerinden ayarlanamaz. F1.8 ölçümü bu modellerle yapılır.
 - Karar ölçümden sonra bu belgeye işlenir ve durum `Kabul edildi` olur.
+
+## Ölçüm 2026-10-08: ses değerlendirmesi (Haiku + Flash)
+
+Kaynak: [VOICE-EVAL.md](../02-voice-agent/VOICE-EVAL.md), 12 gerçek web araması (Retell kredisi bittiği için 24 senaryonun 12'si koştu), dev kliniği, production ile aynı ayarlar.
+
+| Ölçü (ms)         | Arama medyanlarının ortancası | Aralık        |
+| ----------------- | ----------------------------- | ------------- |
+| Uçtan uca tur p50 | ~1.550                        | 1.278 – 3.301 |
+| Uçtan uca tur p90 | ~2.700                        | 1.395 – 4.112 |
+| LLM (Haiku) p50   | ~630                          | 537 – 720     |
+| ASR p50           | ~580                          | 552 – 703     |
+| TTS (Flash) p50   | ~165                          | 156 – 238     |
+
+Hedef (p50 < 1.000, p95 < 1.800) **tutmuyor**. Pay: LLM ~%40, ASR/uç algılama ~%37, TTS ~%10, geri kalanı ağ ve Retell.
+
+Kalite bulguları (aynı aramalar): asistan bir kez `book_appointment` çağırmadan "Randevunuz oluşturuldu" dedi; saatleri rakamdan okurken bozdu ("on dört sıfır sıfır", 14:00 isteğini 14:30'a kaydetti); prompt örneğindeki soyadını hastaya söyledi. Yapısal düzeltmeler yapıldı (istenen saat tool'dan sözlü döner, sonuç iddiası kuralı, örnek adlar kaldırıldı); modelden bağımsız güvenceler sunucuda.
+
+## Seçenekler (fiyatlar: Retell fiyat sayfası, 2026-10-08)
+
+Bugün: altyapı 0,055 + Claude 4.5 Haiku 0,025 + ElevenLabs Flash 0,040 = **0,120 $/dk**.
+
+| #   | Seçenek                                                                                                | Dakika maliyeti    | Beklenen etki                                                                                                             | Risk                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| A   | Modeli koru; Retell ayarlarını ayarla (yanıt hızı / uç algılama, kesinti hassasiyeti), prompt'u kısalt | 0,120 $ (değişmez) | Tur başına muhtemelen 0,2–0,5 sn kazanç; ölçülmeli                                                                        | Çok erken konuşma, hastanın sözünü kesme                                     |
+| B   | **Claude 5.5 Sonnet** (Retell listesinde yeni)                                                         | 0,159 $ (+%33)     | Talimat ve tool güvenilirliği daha yüksek (yanlış "oluşturuldu" gibi hatalara karşı); gecikme Haiku'dan muhtemelen yüksek | Gecikme hedefinden daha da uzaklaşabilir                                     |
+| C   | Claude dışı hızlı model: Gemini 3.0 Flash (0,016) veya GPT 4.1 mini (0,0128)                           | ~0,108–0,111 $     | LLM payında belirgin kısalma beklenir                                                                                     | ADR'nin "Claude" kararını değiştirir; Türkçe ve tool güvenilirliği ölçülmeli |
+| D   | Ses: standart sesler (Cartesia/OpenAI vb.)                                                             | −0,025 $/dk        | TTS zaten kısa; maliyet düşer                                                                                             | Türkçe ses kalitesi dinlenmeli                                               |
+
+**Öneri (karar ürün ekibinde):** önce A (ücretsiz) ve aynı 24 senaryoda yeniden ölçüm; ardından B ve C'yi aynı senaryolarla karşılaştırmak için bir koşu (her biri ~7 $). Kalite bulguları ağır bastığı için uzun vadede B'nin güvenilirliği ile C'nin hızı arasında seçim yapılmalı. Model değişikliği klinik ve hastaların fark edeceği bir ürün değişikliği olduğundan onay olmadan yapılmaz.

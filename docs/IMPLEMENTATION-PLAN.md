@@ -315,7 +315,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 ### F5.5 Testler
 
 - [x] Server Action entegrasyon testleri (PGlite): yetki, doğrulama, kiracı izolasyonu — 2026-10-08
-- [x] Playwright: giriş → takvimde randevu oluştur → iptal; ayar değiştir → senkron tetiklendi; yetkisiz rol menüyü görmüyor — `e2e/` (13 senaryo, CI'da), 2026-10-08
+- [x] Playwright: giriş → takvimde randevu oluştur → iptal; ayar değiştir → senkron tetiklendi; yetkisiz rol menüyü görmüyor — `e2e/` (9 akış + 13 sayfada erişilebilirlik, CI'da), 2026-10-08
 - [ ] Görsel kontrol: her ekran 375 px ve 1440 px
 
 **F5 çıkış kriterleri:** Bir sekreter, panelden bir günü baştan sona yönetebiliyor; ayar değişiklikleri asistana yansıyor; iki farklı klinik farklı ayarlarla aynı anda sorunsuz çalışıyor.

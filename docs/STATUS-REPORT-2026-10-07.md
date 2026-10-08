@@ -1,5 +1,7 @@
 # Recall: Development Status Report
 
+> **Tarihli belge (7 Ekim 2026).** Bundan sonraki değişiklikler burada yok; güncel durum: [WORKLOG.md → Güncel durum](../WORKLOG.md#güncel-durum). Bu rapordaki bulguların çoğu 7–8 Ekim'de kapandı ([HARDENING-2026-10.md](HARDENING-2026-10.md)).
+
 **Date:** 7 October 2026 (Istanbul) · **Covers:** first commit (`8bf14be`, 4 Oct 2026 12:50) to `58023ca` (7 Oct 2026 11:34)
 **Stage:** development. No clinic is using the product. Production runs with test data only.
 **Prepared by:** Claude (Opus 5.5), from git history, WORKLOG, plan, ADRs, code, test runs, the production database (read-only queries), Vercel, Retell and GitHub.

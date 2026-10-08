@@ -8,36 +8,35 @@
 
 ## Güncel durum
 
-_Son güncelleme: 2026-10-07 (Takip V1 production'da; demo klinikte açık, SMS kapalı)_
+> **Projenin güncel durumunun tek yetkili kaynağı bu tablodur.** Planın faz tablosu ve eski raporlar tarihli özetlerdir. _Son güncelleme: 2026-10-08._
 
-| Konu                    | Durum                                                                                                                                                                                                                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aktif faz               | **F8 canlı.** Sırada: yasal sayfalar (şirket bilgisi bekleniyor), e-posta teslim iyileştirme, kalan yazılım (ses seçimi, özel rol arayüzü, E2E, F7 KVKK işleri), en son F2 Netgsm                                                                                                              |
-| F1 (ses)                | F1.1–F1.7 tamam. **F1.8**: demo ajan canlı (`agent_d0b8d67285431ede3db2c75201`). Model `claude-4.5-haiku` + `eleven_flash_v2_5` + öncelikli LLM havuzu (ADR-003). Yeni gecikme ölçümü bekleniyor                                                                                               |
-| Ses sağlayıcısı         | **Retell AI**, klinik başına senkronize ajan ([ADR-004](docs/decisions/ADR-004-retell-voice-platform.md))                                                                                                                                                                                      |
-| Tasarım                 | **[DESIGN.md](DESIGN.md) v2** (lacivert + beyaz, [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md)); token'lar `globals.css`, bileşenler `src/components/{design,ui,panel}` ([ADR-008](docs/decisions/ADR-008-shadcn-theming.md)), stil rehberi `/dev/tasarim`, `pnpm lint:tokens` |
-| E-posta                 | Resend, adaptör arkasında ([ADR-006](docs/decisions/ADR-006-email-provider.md)); F3'te kurulacak                                                                                                                                                                                               |
-| Testler                 | **326 test** geçiyor. Lint, lint:tokens, typecheck, format, build temiz                                                                                                                                                                                                                        |
-| Lokal DB                | **Neon** projesi `falling-mud-37269187` (Frankfurt), **`dev` dalı** (`.env.local` `DATABASE_URL`). Ana dal prod için ayrılmış (F8). PGlite `db:local` yedek seçenek olarak duruyor                                                                                                             |
-| Lokal ses testi         | `pnpm dev` + `pnpm dev:tunnel` (tüneli açar, `APP_URL`'i yazar, ajanları yönlendirir). Tarayıcı test araması uçtan uca doğrulandı (randevu DB'ye düşüyor)                                                                                                                                      |
-| GitHub                  | `origin` = https://github.com/recallapp0/recall                                                                                                                                                                                                                                                |
-| Deploy                  | **Canlı: https://recalltr.company** (Vercel `recall25/recall`, Hobby; `main` push = production). Neon `production` dalı. Resend doğrulandı (eu-west-1). Ayrıntı: [DEPLOYMENT.md](docs/06-operations/DEPLOYMENT.md#production-canlı-durumu)                                                     |
-| Bekleyen ürün kararları | [IMPLEMENTATION-PLAN.md → Açık sorular](docs/IMPLEMENTATION-PLAN.md#açık-sorular-ürün-ekibine)                                                                                                                                                                                                 |
-| Alınan ürün kararları   | [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                        |
+| Konu                | Durum (2026-10-08)                                                                                                                                                                                                                                                                     |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aşama               | Geliştirme. Hiçbir klinik kullanmıyor; production'da yalnızca demo klinik ve test verisi                                                                                                                                                                                               |
+| Production          | https://recalltr.company (Vercel Hobby, `fra1`), Neon **`production`** dalı (`sslmode=verify-full`), 15 migration (`0000`–`0014`). `main`'e push = deploy; build ajanları senkronlar                                                                                                   |
+| Sesli asistan       | Retell, `claude-4.5-haiku` + `eleven_flash_v2_5`. Arayan kimliği kuralları ([ADR-011](docs/decisions/ADR-011-caller-identity.md)), istenen saat sözlü (`requestedTime`), sonuç iddiası kuralı. **Retell kredisi bitti (2026-10-08): yüklenene kadar production asistanı arama alamaz** |
+| Ses değerlendirmesi | `pnpm voice:eval`, 24 senaryo; ilk koşu 12/24 (kredi bitti). Gecikme hedefin üstünde, model kararı ürün ekibinde ([ADR-003](docs/decisions/ADR-003-llm-model.md), [VOICE-EVAL.md](docs/02-voice-agent/VOICE-EVAL.md))                                                                  |
+| SMS                 | Gönderim her ortamda kapalı (`SMS_SENDING_ENABLED` yok, Netgsm yok). Tüm SMS'ler bildirim kaydından geçer (tek yol, testli)                                                                                                                                                            |
+| Takip               | V0 + V1 production'da; demo klinikte açık                                                                                                                                                                                                                                              |
+| Güvenlik            | Hız sınırları (Postgres), webhook tekrar koruması, CSP, kritik denetim kaydı, bileşik kiracı FK'leri, açık yönlendirme kapandı, `pnpm audit` CI'da ([SECURITY-REVIEW-2026-10.md](docs/05-compliance/SECURITY-REVIEW-2026-10.md))                                                       |
+| Gizli değerler      | **Rotasyon bekliyor:** production DB parolası ve Retell anahtarı dış incelemeye verilen kopyada vardı ([SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md)); ürün ekibi onayı bekleniyor                                                                       |
+| Testler             | 412 Vitest testi (action testleri dahil) + 22 Playwright testi (9 akış, 13 sayfada erişilebilirlik). CI yeşil (check + E2E)                                                                                                                                                            |
+| İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı), `ALARM` logları; Sentry kodu hazır (DSN yok), uptime hesabı yok                                                                                                                                                                     |
+| Lokal               | Neon **`dev`** dalı; `pnpm dev` + `pnpm dev:tunnel`; E2E kendi bellek içi veritabanıyla                                                                                                                                                                                                |
+| Karar günlüğü       | [HARDENING-2026-10.md](docs/HARDENING-2026-10.md) (Ekim 2026 sağlamlaştırma), [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                  |
 
-### Dallar ve saklanan işler
+### Ürün ekibinden beklenenler
 
-| Ad          | İçerik                                                  | Durum                                                                  |
-| ----------- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `main`      | Tüm tamamlanan işler                                    | `origin/main` ile aynı                                                 |
-| `stash@{0}` | "WIP F3 (orphaned session): add better-auth dependency" | Gereksiz (temiz kurulum yapıldı). Ürün ekibi silecek: `git stash drop` |
+1. Retell kredisi yükle (production asistanı ve ses değerlendirmesi buna bağlı).
+2. Gizli değer rotasyonunu onayla (Neon production parolası, Retell anahtarı).
+3. GitHub `main` dal koruması (E2E job CI'da yeşil olduktan sonra).
+4. Sentry ve uptime hesapları ([MONITORING.md](docs/06-operations/MONITORING.md)); isteğe bağlı `DEMO_REQUEST_NOTIFY_EMAIL`.
+5. Model kararı (ADR-003 seçenekleri), logo ve hero görseli, alan adı taşıma tarihi ([DOMAIN-MIGRATION.md](docs/06-operations/DOMAIN-MIGRATION.md)).
+6. Daha sonra: şirket bilgileri, yasal metinler ve avukat/İYS incelemesi, Netgsm (F2), Vercel Pro ve ücretli Neon.
 
-### Sıradaki işler
+### Dallar
 
-1. Otomatik testler: Playwright E2E (giriş → randevu → iptal; ayar → senkron; yetkisiz rol), server action testleri
-2. Güvenlik: hız sınırlama (giriş, webhook), CSP; izleme (Sentry/uptime)
-3. Canlıdan önce: Vercel Pro, Neon ücretli plan + auto-suspend kapalı
-4. En son: yasal sayfalar ve şirket bilgileri, F2 Netgsm
+Yalnızca `main` (birleşmiş tüm dallar silindi, 2026-10-08). Neon yedek dalları: `backup-pre-0009` … `backup-pre-0014` (2026-10-07), ürün ekibi istediğinde silinebilir.
 
 ---
 
@@ -76,6 +75,28 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-08 · Sağlamlaştırma: arayan kimliği, CI, SMS tek yol, güvenlik, izleme, testler, ses değerlendirmesi · F1.8, F3.6, F5.5, F7, F8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `main` (iş dalları fast-forward, sonra silindi) · **Commit'ler:** `e54449c` … `a4602a2`
+
+**Ne yapıldı** (ayrıntı ve gerekçeler: [HARDENING-2026-10.md](docs/HARDENING-2026-10.md))
+
+- Arayan kimliği: söylenen numarayla başkasının randevusuna erişim kapandı; production'da saldırgan ve gerçek hasta aramalarıyla doğrulandı ([ADR-011](docs/decisions/ADR-011-caller-identity.md)).
+- CI ilk kez yeşil (typecheck `next typegen` ister); build ve E2E job eklendi.
+- Tüm SMS'ler bildirim kaydından geçer; doğrudan gönderim yolu kaldırıldı.
+- Güvenlik: Postgres hız sınırları, webhook tekrar koruması, geri arama tekilliği ve saklama, CSP, kritik denetim kaydı, klinik metni temizliği, bileşik kiracı FK'leri (0013), açık yönlendirme, `pnpm audit` + Dependabot, güvenlik incelemesi.
+- İzleme: iş kayıtları ve kalp atışı (0014), alarmlar, Sentry kodu.
+- Testler: action testleri (rol × eylem × kiracı), Playwright E2E ve erişilebilirlik.
+- Ses: 24 senaryoluk değerlendirme, `requestedTime`, sonuç iddiası kuralı, ad normalizasyonu.
+- Panel: sütun sıralama, demo talebi e-postası (isteğe bağlı).
+- Belgeler: Neon dal adları, yayın süreci, alan adı taşıma, gizli değer rotasyon planı, plan kutuları, ADR-003.
+
+**Açık kalanlar / dikkat**
+
+- Retell kredisi bitti; production asistanı ve kalan 12 senaryo bekliyor.
+- Gizli değer rotasyonu onay bekliyor.
+- CI E2E: testler geçiyordu, Linux'ta test veritabanı sunucusu kapanmadığı için iş asılı kalıyordu; durdurma düzeltildi, hata özetini annotation olarak yayınlayan adım duruyor.
 
 ### 2026-10-07 · Production DATABASE_URL `sslmode=verify-full` · F8
 

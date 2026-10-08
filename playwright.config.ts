@@ -33,6 +33,8 @@ export default defineConfig({
       url: `http://127.0.0.1:${DB_PORT + 1}/`,
       reuseExistingServer: false,
       timeout: 120_000,
+      // Escalates to SIGKILL so a server that ignores SIGTERM cannot hang CI.
+      gracefulShutdown: { signal: "SIGTERM", timeout: 3_000 },
       env: { E2E_DB_PORT: String(DB_PORT) },
     },
     {
@@ -41,6 +43,7 @@ export default defineConfig({
       url: `${baseURL}/api/health`,
       reuseExistingServer: false,
       timeout: 600_000,
+      gracefulShutdown: { signal: "SIGTERM", timeout: 3_000 },
       env: {
         DATABASE_URL: `postgres://postgres:postgres@127.0.0.1:${DB_PORT}/postgres`,
         DATABASE_POOL_MAX: "1",

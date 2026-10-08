@@ -168,11 +168,12 @@ async function main() {
     .createServer((_, res) => res.end("ready"))
     .listen(E2E_DB_PORT + 1, "127.0.0.1");
   console.info(`e2e database ready on 127.0.0.1:${E2E_DB_PORT}`);
-  const stop = async () => {
+  // A throwaway database: on a stop signal, exit. Closing the socket server
+  // waits for the app's idle pool connections, which hung CI on Linux.
+  const stop = () => {
+    setTimeout(() => process.exit(0), 500).unref();
     ready.close();
-    await server.stop();
-    await client.close();
-    process.exit(0);
+    void server.stop().catch(() => {});
   };
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
