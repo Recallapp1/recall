@@ -43,3 +43,9 @@ next-env.d.ts
 
 # local pglite database
 /.pglite*
+
+# Playwright (e2e/)
+/e2e/.fixtures.json
+/e2e/.auth/
+/test-results/
+/playwright-report/
