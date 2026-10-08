@@ -35,7 +35,7 @@
 
 ### Dallar
 
-Yalnızca `main` (birleşmiş tüm dallar silindi, 2026-10-08). Neon yedek dalları: `backup-pre-0009` … `backup-pre-0014` (2026-10-07), ürün ekibi istediğinde silinebilir.
+Yalnızca `main` (birleşmiş tüm dallar silindi, 2026-10-08). Neon'da yalnızca `production` ve `dev` dalları var; 6 eski yedek dal (eski parolayı taşıyorlardı) ürün ekibi onayıyla 2026-10-09'da silindi.
 
 ---
 
