@@ -30,7 +30,7 @@ export default defineConfig({
   webServer: [
     {
       command: "pnpm exec tsx scripts/e2e-db.ts",
-      port: DB_PORT,
+      url: `http://127.0.0.1:${DB_PORT + 1}/`,
       reuseExistingServer: false,
       timeout: 120_000,
       env: { E2E_DB_PORT: String(DB_PORT) },

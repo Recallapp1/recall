@@ -324,3 +324,51 @@ describe("calls", () => {
     expect(booked.rows.every((row) => row.outcome === "booked")).toBe(true);
   });
 });
+
+describe("column sorting", () => {
+  it("sorts appointments by patient name either way, then by time", async () => {
+    const clinic = await createTestClinic(db);
+    await insertAppointment(clinic, { phone: "+905551000001", name: "Zehra Ak", minute: 9 * 60 });
+    await insertAppointment(clinic, { phone: "+905551000002", name: "Ahmet Bal", minute: 10 * 60 });
+    await insertAppointment(clinic, { phone: "+905551000003", name: "Mert Can", minute: 11 * 60 });
+    const scope = scopeFor(clinic.ctx, null);
+    const names = async (direction: "artan" | "azalan") =>
+      (
+        await listAppointments(
+          db,
+          scope,
+          { from: "2026-10-05", to: "2026-10-06" },
+          { sort: { key: "hasta", direction } },
+        )
+      ).rows.map((row) => row.patientName);
+    expect(await names("artan")).toEqual(["Ahmet Bal", "Mert Can", "Zehra Ak"]);
+    expect(await names("azalan")).toEqual(["Zehra Ak", "Mert Can", "Ahmet Bal"]);
+  });
+
+  it("sorts patients by appointment count with ties by name", async () => {
+    const clinic = await createTestClinic(db);
+    await insertAppointment(clinic, { phone: "+905552000001", name: "Bora Er", minute: 9 * 60 });
+    const first = await insertAppointment(clinic, {
+      phone: "+905552000002",
+      name: "Ayla Su",
+      minute: 10 * 60,
+    });
+    await db.insert(schema.appointments).values({
+      ...first,
+      id: undefined,
+      startsAt: new Date(first.startsAt.getTime() + 60 * 60 * 1000),
+      endsAt: new Date(first.endsAt.getTime() + 60 * 60 * 1000),
+    });
+    const scope = scopeFor(clinic.ctx, null);
+    const { rows } = await listPatients(db, scope, {
+      limit: 10,
+      offset: 0,
+      now,
+      sort: { key: "randevu", direction: "azalan" },
+    });
+    expect(rows.map((row) => [row.fullName, row.appointmentCount])).toEqual([
+      ["Ayla Su", 2],
+      ["Bora Er", 1],
+    ]);
+  });
+});

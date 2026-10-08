@@ -1,13 +1,18 @@
 "use server";
 
+import { after } from "next/server";
+
 import {
   demoRequestSchema,
   type DemoRequestField,
   type DemoRequestState,
 } from "@/lib/contracts/demo-request";
+import { env } from "@/lib/env";
 import { safeError } from "@/lib/safe-error";
 import { db } from "@/server/db";
 import { createDemoRequest } from "@/server/domain/demo-requests";
+import { sendEmail } from "@/server/notifications/email";
+import { demoRequestNotice } from "@/server/notifications/email-templates";
 import { allow, requestIp } from "@/server/security/rate-limits";
 
 /** Landing page demo request. Bots fill the hidden `website` field and are ignored. */
@@ -45,6 +50,20 @@ export async function submitDemoRequest(
 
   try {
     await createDemoRequest(db(), parsed.data, new Date());
+    const { DEMO_REQUEST_NOTIFY_EMAIL: to, APP_URL } = env();
+    if (to) {
+      // After the response: the visitor never waits for the e-mail.
+      after(() =>
+        sendEmail(
+          demoRequestNotice({
+            to,
+            clinicName: parsed.data.clinicName,
+            clinicType: parsed.data.clinicType,
+            consoleUrl: new URL("/admin/demo-talepleri", APP_URL).toString(),
+          }),
+        ),
+      );
+    }
     return { status: "success" };
   } catch (error) {
     console.error(

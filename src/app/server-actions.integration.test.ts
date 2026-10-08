@@ -659,6 +659,35 @@ describe("public actions", () => {
     expect(invalid).toMatchObject({ status: "error" });
   });
 
+  it("tells the Recall team about a demo request, without the requester's contact details", async () => {
+    vi.stubEnv("DEMO_REQUEST_NOTIFY_EMAIL", "ekip@recall.test");
+    actAs(null);
+    actionState.after = [];
+    actionState.emails = [];
+    const { submitDemoRequest } = await import("./(marketing)/actions");
+    const result = await submitDemoRequest(
+      { status: "idle" },
+      formData({
+        fullName: "Selin Demir",
+        clinicName: "Parlak Diş",
+        phone: "0532 777 88 99",
+        email: "selin@parlakdis.test",
+        clinicType: "Diş kliniği",
+        consent: "on",
+      }),
+    );
+    expect(result).toMatchObject({ status: "success" });
+    await Promise.all(actionState.after.map((task) => task()));
+    expect(actionState.emails).toHaveLength(1);
+    const [notice] = actionState.emails;
+    expect(notice).toMatchObject({ to: "ekip@recall.test" });
+    expect(notice!.text).toContain("Parlak Diş");
+    expect(notice!.text).toContain("/admin/demo-talepleri");
+    expect(notice!.text).not.toContain("0532");
+    expect(notice!.text).not.toContain("selin@");
+    vi.stubEnv("DEMO_REQUEST_NOTIFY_EMAIL", "");
+  });
+
   it("does not reveal whether an e-mail has an account", async () => {
     actAs(null);
     const { requestPasswordLink, signIn } = await import("./(auth)/actions");

@@ -22,7 +22,7 @@ const envSchema = z.object({
   /** Default voice for clinics that have not picked one (`pnpm voice:voices`). */
   RETELL_VOICE_ID: optionalString,
   /** One of Retell's supported LLM ids; see docs/decisions/ADR-003-llm-model.md. */
-  RETELL_LLM_MODEL: z.string().default("claude-5-sonnet"),
+  RETELL_LLM_MODEL: z.string().default("claude-4.5-haiku"),
   /** TTS model for the voice; must belong to the voice's provider (e.g. eleven_multilingual_v2). */
   RETELL_VOICE_MODEL: optionalString,
   /** "true": Retell's high-priority LLM pool (faster, steadier, costs more per minute). */
@@ -55,6 +55,12 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default("Recall <bildirim@recall.local>"),
 
   CRON_SECRET: optionalString,
+
+  /** Recall team inbox told about new demo requests; unset = no e-mail. */
+  DEMO_REQUEST_NOTIFY_EMAIL: z
+    .email()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 });
 
 export type Env = z.infer<typeof envSchema>;

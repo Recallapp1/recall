@@ -108,3 +108,23 @@ export function passwordEmail(input: {
       : `Bağlantı ${input.expiresInHours} saat geçerlidir. Bu talebi siz yapmadıysanız e-postayı yok sayın; parolanız değişmez.`,
   });
 }
+
+/** To the Recall team: a demo request arrived (details stay in the console). */
+export function demoRequestNotice(input: {
+  to: string;
+  clinicName: string;
+  clinicType: string;
+  consoleUrl: string;
+}): EmailMessage {
+  return render({
+    to: input.to,
+    subject: `Yeni demo talebi: ${input.clinicName}`,
+    heading: "Yeni demo talebi",
+    paragraphs: [
+      `${input.clinicName} (${input.clinicType}) tanıtım sitesinden demo talebi bıraktı.`,
+      "İletişim bilgileri konsoldaki demo talepleri listesinde.",
+    ],
+    action: { label: "Demo taleplerini aç", url: input.consoleUrl },
+    footnote: "Bu e-posta DEMO_REQUEST_NOTIFY_EMAIL adresine gönderilir.",
+  });
+}

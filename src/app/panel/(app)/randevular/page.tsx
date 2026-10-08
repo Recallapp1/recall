@@ -8,6 +8,7 @@ import {
   AppointmentStatusBadge,
   EmptyState,
   PageHeader,
+  SortableHead,
 } from "@/components/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,7 @@ export default async function AppointmentsPage({ searchParams }: PageProps<"/pan
   const query = appointmentListQuerySchema.parse(await searchParams);
   const today = localToday(new Date(), context.clinic.timezone);
   const range = periodRange(query.donem, today);
+  const sort = query.sirala ? { key: query.sirala, direction: query.yon ?? "artan" } : undefined;
 
   const [{ rows, total }, canCreate, booking] = await Promise.all([
     listAppointments(
@@ -83,7 +85,12 @@ export default async function AppointmentsPage({ searchParams }: PageProps<"/pan
         source: query.kaynak,
         search: query.q,
       },
-      { limit: PAGE_SIZE, offset: (query.sayfa - 1) * PAGE_SIZE, order: range.order },
+      {
+        limit: PAGE_SIZE,
+        offset: (query.sayfa - 1) * PAGE_SIZE,
+        order: range.order,
+        sort: sort,
+      },
     ),
     can({ appointments: ["create"] }),
     loadBookingOptions(context),
@@ -200,11 +207,23 @@ export default async function AppointmentsPage({ searchParams }: PageProps<"/pan
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tarih</TableHead>
-              <TableHead>Hasta</TableHead>
-              <TableHead>Hizmet</TableHead>
-              <TableHead>Hekim</TableHead>
-              <TableHead>Durum</TableHead>
+              {(
+                [
+                  ["tarih", "Tarih"],
+                  ["hasta", "Hasta"],
+                  ["hizmet", "Hizmet"],
+                  ["hekim", "Hekim"],
+                  ["durum", "Durum"],
+                ] as const
+              ).map(([key, label]) => (
+                <SortableHead
+                  key={key}
+                  label={label}
+                  sortKey={key}
+                  current={sort}
+                  href={(next) => href({ sirala: next.key, yon: next.direction })}
+                />
+              ))}
               <TableHead>Kaynak</TableHead>
             </TableRow>
           </TableHeader>

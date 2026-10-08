@@ -4,7 +4,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { z } from "zod";
 
-import { EmptyState, PageHeader } from "@/components/panel";
+import { EmptyState, PageHeader, SortableHead } from "@/components/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PATIENT_SORT_KEYS, sortParams } from "@/lib/contracts/sorting";
 import { formatPhone } from "@/lib/phone";
 import { requirePanelScope } from "@/server/auth/session";
 import { db } from "@/server/db";
@@ -28,13 +29,16 @@ const querySchema = z.object({
   q: z.string().trim().max(60).optional().catch(undefined),
   sayfa: z.coerce.number().int().min(1).max(500).catch(1),
   durum: z.string().optional().catch(undefined),
+  ...sortParams(PATIENT_SORT_KEYS),
 });
 
 export default async function PatientsPage({ searchParams }: PageProps<"/panel/hastalar">) {
   await connection();
   const { context, scope } = await requirePanelScope({ patients: ["read"] });
   const query = querySchema.parse(await searchParams);
+  const sort = query.sirala ? { key: query.sirala, direction: query.yon ?? "artan" } : undefined;
   const { rows, total } = await listPatients(db(), scope, {
+    sort,
     search: query.q,
     limit: PAGE_SIZE,
     offset: (query.sayfa - 1) * PAGE_SIZE,
@@ -47,9 +51,11 @@ export default async function PatientsPage({ searchParams }: PageProps<"/panel/h
     year: "numeric",
     timeZone: context.clinic.timezone,
   });
-  const pageHref = (sayfa: number) => {
+  const pageHref = (sayfa: number, nextSort = sort) => {
     const params = new URLSearchParams();
     if (query.q) params.set("q", query.q);
+    if (nextSort) params.set("sirala", nextSort.key);
+    if (nextSort) params.set("yon", nextSort.direction);
     if (sayfa > 1) params.set("sayfa", String(sayfa));
     const search = params.toString();
     return search ? `/panel/hastalar?${search}` : "/panel/hastalar";
@@ -92,11 +98,31 @@ export default async function PatientsPage({ searchParams }: PageProps<"/panel/h
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Hasta</TableHead>
+              <SortableHead
+                label="Hasta"
+                sortKey="ad"
+                current={sort}
+                href={(next) => pageHref(1, next)}
+              />
               <TableHead>Telefon</TableHead>
-              <TableHead>Randevu</TableHead>
-              <TableHead>Son randevu</TableHead>
-              <TableHead>Sıradaki</TableHead>
+              <SortableHead
+                label="Randevu"
+                sortKey="randevu"
+                current={sort}
+                href={(next) => pageHref(1, next)}
+              />
+              <SortableHead
+                label="Son randevu"
+                sortKey="son"
+                current={sort}
+                href={(next) => pageHref(1, next)}
+              />
+              <SortableHead
+                label="Sıradaki"
+                sortKey="siradaki"
+                current={sort}
+                href={(next) => pageHref(1, next)}
+              />
             </TableRow>
           </TableHeader>
           <TableBody>

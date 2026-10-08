@@ -16,6 +16,7 @@ import {
   notLike,
   or,
   sql,
+  type SQLWrapper,
 } from "drizzle-orm";
 
 import {
@@ -24,6 +25,8 @@ import {
   type AppointmentSource,
   type AppointmentStatus,
 } from "@/lib/contracts/appointment";
+
+import type { AppointmentSortKey, PatientSortKey, Sort } from "@/lib/contracts/sorting";
 
 import type { Executor } from "../db";
 import {
@@ -175,11 +178,34 @@ export interface AppointmentFilter {
   search?: string;
 }
 
+const APPOINTMENT_SORT_COLUMNS = {
+  tarih: appointments.startsAt,
+  hasta: patients.fullName,
+  hizmet: services.name,
+  hekim: practitioners.name,
+  durum: appointments.status,
+} as const;
+
+/** A chosen column first, then time; without one, the period's own order. */
+function appointmentOrder(options: { order?: "asc" | "desc"; sort?: Sort<AppointmentSortKey> }) {
+  const byTime =
+    options.order === "desc" ? desc(appointments.startsAt) : asc(appointments.startsAt);
+  if (!options.sort) return [byTime];
+  const column = APPOINTMENT_SORT_COLUMNS[options.sort.key];
+  const primary = options.sort.direction === "azalan" ? desc(column) : asc(column);
+  return options.sort.key === "tarih" ? [primary] : [primary, byTime];
+}
+
 export async function listAppointments(
   exec: Executor,
   scope: PanelScope,
   filter: AppointmentFilter,
-  options: { limit?: number; offset?: number; order?: "asc" | "desc" } = {},
+  options: {
+    limit?: number;
+    offset?: number;
+    order?: "asc" | "desc";
+    sort?: Sort<AppointmentSortKey>;
+  } = {},
 ): Promise<{ rows: PanelAppointment[]; total: number }> {
   const { start, end } = dayRange(scope, filter.from, filter.to);
   const search = filter.search?.trim();
@@ -204,7 +230,7 @@ export async function listAppointments(
   const [rows, [total]] = await Promise.all([
     appointmentQuery(exec)
       .where(and(...conditions))
-      .orderBy(options.order === "desc" ? desc(appointments.startsAt) : asc(appointments.startsAt))
+      .orderBy(...appointmentOrder(options))
       .limit(options.limit ?? 500)
       .offset(options.offset ?? 0),
     exec
@@ -558,10 +584,38 @@ export interface PanelPatient {
 /** Marker for anonymised patients; the phone column must stay unique per clinic. */
 export const ANONYMIZED_PREFIX = "anon:";
 
+/** Patients by name unless a column is chosen; empty dates go last either way. */
+function patientOrder(
+  sort: Sort<PatientSortKey> | undefined,
+  stats: {
+    appointmentCount: SQLWrapper;
+    lastAppointmentAt: SQLWrapper;
+    nextAppointmentAt: SQLWrapper;
+  },
+) {
+  const byName = asc(patients.fullName);
+  if (!sort || sort.key === "ad") {
+    return [sort?.direction === "azalan" ? desc(patients.fullName) : byName];
+  }
+  const column = {
+    randevu: sql`coalesce(${stats.appointmentCount}, 0)`,
+    son: sql`${stats.lastAppointmentAt}`,
+    siradaki: sql`${stats.nextAppointmentAt}`,
+  }[sort.key];
+  const direction = sort.direction === "azalan" ? sql`desc nulls last` : sql`asc nulls last`;
+  return [sql`${column} ${direction}`, byName];
+}
+
 export async function listPatients(
   exec: Executor,
   scope: PanelScope,
-  options: { search?: string; limit: number; offset: number; now: Date },
+  options: {
+    search?: string;
+    limit: number;
+    offset: number;
+    now: Date;
+    sort?: Sort<PatientSortKey>;
+  },
 ): Promise<{ rows: PanelPatient[]; total: number }> {
   const search = options.search?.trim();
   const digits = search?.replace(/\D/g, "");
@@ -630,7 +684,7 @@ export async function listPatients(
       .from(patients)
       .leftJoin(stats, eq(stats.patientId, patients.id))
       .where(and(...conditions))
-      .orderBy(asc(patients.fullName))
+      .orderBy(...patientOrder(options.sort, stats))
       .limit(options.limit)
       .offset(options.offset),
     exec

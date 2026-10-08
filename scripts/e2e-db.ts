@@ -6,6 +6,7 @@
  *   pnpm e2e:db   (started by playwright.config.ts)
  */
 import { writeFileSync } from "node:fs";
+import http from "node:http";
 
 import { PGlite } from "@electric-sql/pglite";
 import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
@@ -161,8 +162,14 @@ async function main() {
 
   const server = new PGLiteSocketServer({ db: client, port: E2E_DB_PORT, host: "127.0.0.1" });
   await server.start();
+  // Readiness over plain HTTP on IPv4: Playwright's port probe can miss a
+  // socket bound to 127.0.0.1 when "localhost" resolves to IPv6 (Linux CI).
+  const ready = http
+    .createServer((_, res) => res.end("ready"))
+    .listen(E2E_DB_PORT + 1, "127.0.0.1");
   console.info(`e2e database ready on 127.0.0.1:${E2E_DB_PORT}`);
   const stop = async () => {
+    ready.close();
     await server.stop();
     await client.close();
     process.exit(0);

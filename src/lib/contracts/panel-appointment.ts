@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { normalizePhone } from "../phone";
 import { APPOINTMENT_SOURCES, APPOINTMENT_STATUSES } from "./appointment";
+import { APPOINTMENT_SORT_KEYS, sortParams } from "./sorting";
 
 /** Panel forms and server actions for appointments (shared contract). */
 
@@ -46,6 +47,7 @@ export const appointmentListQuerySchema = z.object({
   kaynak: z.enum(APPOINTMENT_SOURCES).optional().catch(undefined),
   q: z.string().trim().max(60).optional().catch(undefined),
   sayfa: z.coerce.number().int().min(1).max(500).catch(1),
+  ...sortParams(APPOINTMENT_SORT_KEYS),
 });
 export type AppointmentListQuery = z.infer<typeof appointmentListQuerySchema>;
 

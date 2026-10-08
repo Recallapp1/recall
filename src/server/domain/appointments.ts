@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, asc, eq, gt, inArray, lt, sql } from "drizzle-orm";
 
+import { personName } from "@/lib/names";
 import { normalizePhone } from "@/lib/phone";
 
 import type { Database } from "../db";
@@ -131,7 +132,7 @@ export async function bookAppointment(
     const appointmentId = await db.transaction(async (tx) => {
       const [patient] = await tx
         .insert(patients)
-        .values({ clinicId: clinic.id, fullName: input.patientName.trim(), phone })
+        .values({ clinicId: clinic.id, fullName: personName(input.patientName), phone })
         .onConflictDoUpdate({
           target: [patients.clinicId, patients.phone],
           set: { updatedAt: sql`now()` },

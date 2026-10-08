@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
+import { personName } from "@/lib/names";
 import { normalizePhone } from "@/lib/phone";
 
 import type { Executor } from "../db";
@@ -168,7 +169,7 @@ export async function createCallbackRequest(
       clinicId: input.clinicId,
       callId: input.callId,
       reason: input.reason.trim().slice(0, CALLBACK_REASON_MAX),
-      patientName: input.patientName?.trim().slice(0, 100) || null,
+      patientName: input.patientName?.trim() ? personName(input.patientName).slice(0, 100) : null,
       phone,
     })
     // A concurrent duplicate loses the race on the partial unique index.
