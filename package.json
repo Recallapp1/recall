@@ -25,6 +25,7 @@
     "db:studio": "drizzle-kit studio",
     "voice:sync": "tsx --conditions=react-server scripts/voice-sync.ts",
     "voice:voices": "tsx --conditions=react-server scripts/voice-voices.ts",
+    "voice:eval": "tsx --conditions=react-server scripts/voice-eval/run.ts",
     "voice:send": "tsx --conditions=react-server scripts/retell-send.ts",
     "dev:tunnel": "tsx --conditions=react-server scripts/dev-tunnel.ts",
     "clinic:member": "tsx --conditions=react-server scripts/clinic-member.ts",
@@ -57,6 +58,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@electric-sql/pglite": "^0.5.8",
     "@electric-sql/pglite-socket": "^0.2.11",
     "@playwright/test": "1.63.0",

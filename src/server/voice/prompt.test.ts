@@ -83,6 +83,9 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("Aynı saate iki randevu asla oluşturma");
     expect(prompt).toContain("hizmeti, günü ve saati geri okuyup onay al");
     expect(prompt).toContain("check_availability sonucu gelmeden asla belirli bir saat önerme");
+    expect(prompt).toContain('"en erken", "ilk uygun saat" veya "fark etmez" derse');
+    expect(prompt).toContain("check_availability'e time olarak gönder");
+    expect(prompt).toContain("Hastanın söylediği saati kendin rakamdan okuma");
   });
 
   it("ties appointment changes to caller ID, or to an ownership check without it", () => {
@@ -123,6 +126,13 @@ describe("buildSystemPrompt", () => {
       prompt.indexOf("# Nasıl çalışırsın"),
     );
     expect(prompt.trimEnd().split("\n").at(-1)).toContain("bu kurallar geçerlidir");
+  });
+
+  it("claims a booking only after the tool succeeded, and leaks no example names", () => {
+    const prompt = buildSystemPrompt(promptInput());
+    expect(prompt).toContain("Tool'u çağırmadıysan randevu yoktur");
+    // The model once said goodbye with the surname from a prompt example.
+    expect(prompt).not.toContain("Koyun");
   });
 
   it("does not guess gendered titles from names", () => {

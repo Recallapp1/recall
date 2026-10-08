@@ -49,3 +49,6 @@ next-env.d.ts
 /e2e/.auth/
 /test-results/
 /playwright-report/
+
+# Voice evaluation (scripts/voice-eval/): caller audio and raw results
+/.voice-eval/

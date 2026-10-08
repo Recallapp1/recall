@@ -208,6 +208,31 @@ describe("custom functions", () => {
     expect(appointment).toMatchObject({ source: "voice", clinicId: clinic.ctx.clinic.id });
   });
 
+  it("answers a named time in words: free, or the nearest free times", async () => {
+    const free = await tool("check_availability", {
+      serviceId: clinic.serviceId,
+      date: "2026-10-06",
+      time: "14:00",
+    });
+    expect(free.body).toMatchObject({
+      ok: true,
+      requestedTime: { time: "14:00", spokenTime: "on dört", available: true },
+      slots: [{ time: "14:00" }],
+    });
+
+    const closed = await tool("check_availability", {
+      serviceId: clinic.serviceId,
+      date: "2026-10-06",
+      time: "08:00",
+    });
+    expect(closed.body.requestedTime).toMatchObject({ available: false, spokenTime: "sekiz" });
+    expect(closed.body.slots.map((s: { time: string }) => s.time)).toEqual([
+      "09:00",
+      "09:30",
+      "10:00",
+    ]);
+  });
+
   it("does not claim an SMS when no SMS channel delivers", async () => {
     const availability = await tool("check_availability", {
       serviceId: clinic.serviceId,
