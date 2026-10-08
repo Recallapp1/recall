@@ -26,8 +26,6 @@ export const LIMITS = {
   /** Token guessing on the set-password and invitation forms. */
   setPasswordIp: { limit: 10, windowMs: HOUR },
   invitationIp: { limit: 10, windowMs: HOUR },
-  /** Direct calls to Better Auth's public endpoints (our UI uses server actions). */
-  authHttpIp: { limit: 30, windowMs: 10 * MINUTE },
   /** Public landing form. */
   demoRequestIp: { limit: 5, windowMs: HOUR },
   /** Browser test calls are billed by the voice platform. */

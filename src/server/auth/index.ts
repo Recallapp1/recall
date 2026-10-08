@@ -1,6 +1,7 @@
 import "server-only";
 
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin, organization } from "better-auth/plugins";
@@ -49,6 +50,10 @@ function createAuth() {
     trustedOrigins: [...new Set([origin, new URL(config.APP_URL).origin])],
     database: drizzleAdapter(db(), {
       provider: "pg",
+      // Multi-step operations (delete organization, accept invitation) are
+      // all or nothing: without this, a refused organization delete had
+      // already removed every member and locked the clinic out (P-04).
+      transaction: true,
       schema: {
         user: users,
         session: sessions,
@@ -134,6 +139,12 @@ function createAuth() {
         allowUserToCreateOrganization: false,
         invitationExpiresIn: INVITATION_DAYS * 24 * 60 * 60,
         cancelPendingInvitationsOnReInvite: true,
+        organizationHooks: {
+          // Clinics are closed by the Recall team (with their data), never by a member.
+          async beforeDeleteOrganization() {
+            throw new APIError("FORBIDDEN", { message: "Klinik silinemez." });
+          },
+        },
         dynamicAccessControl: { enabled: true, maximumRolesPerOrganization: 20 },
         schema: {
           member: {

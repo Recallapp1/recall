@@ -19,6 +19,7 @@ export const metadata: Metadata = { title: "Denetim kaydı" };
 
 const ACTION_LABELS: Record<AuditAction, string> = {
   "auth.sign_in": "Giriş yaptı",
+  "security.auth_endpoint_blocked": "Kapalı bir oturum uç noktasını denedi",
   "team.invitation_created": "Davet gönderdi",
   "team.invitation_cancelled": "Daveti iptal etti",
   "team.invitation_accepted": "Daveti kabul etti",

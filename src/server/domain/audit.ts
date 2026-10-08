@@ -11,6 +11,7 @@ import { raiseAlarm } from "../observability/alarm";
 /** Audited actions (F3.4). Keep names stable: they are stored and filtered on. */
 export type AuditAction =
   | "auth.sign_in"
+  | "security.auth_endpoint_blocked"
   | "team.invitation_created"
   | "team.invitation_cancelled"
   | "team.invitation_accepted"
