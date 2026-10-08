@@ -1,9 +1,10 @@
 name: CI
 
+# Every branch push runs CI: `main` is protected and accepts a commit only
+# after `check` and `e2e` passed on it (docs/06-operations/DEPLOYMENT.md).
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches: ["**"]
 
 concurrency:
   group: ci-${{ github.ref }}

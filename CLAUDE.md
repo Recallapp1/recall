@@ -50,6 +50,7 @@ pnpm db:generate    # şemadan migration üret
 pnpm db:migrate     # migration'ları uygula
 pnpm db:seed        # demo klinik verisi
 pnpm db:studio      # Drizzle Studio
+pnpm ci:wait        # HEAD'in CI kontrollerini (check + e2e) bekle; geçerse 0 döner
 pnpm dev:tunnel     # lokal sesli test: tünel aç, APP_URL yaz, ajanları yeni adrese yönlendir
 pnpm voice:voices   # Retell seslerini listele
 pnpm voice:sync --clinic <slug>   # kliniğin Retell ajanını oluştur/güncelle (--all, --force)
@@ -100,7 +101,8 @@ docs/                     # Tüm ürün ve teknik belgeler
 
 ## Git
 
-- Ana dal `main`. Her iş için dal aç: `feat/F1.4-kisa-ad`, `fix/…`, `docs/…`, `chore/…` (görev kimliği plandan).
+- Ana dal `main` **korumalıdır**: yalnızca CI'da `check` ve `e2e` kontrolleri geçmiş commit'leri kabul eder. Doğrudan `main`'de commit atılmaz.
+- Her iş için dal aç: `feat/F1.4-kisa-ad`, `fix/…`, `docs/…`, `chore/…` (görev kimliği plandan). Akış: lokal kontroller → dalı push et → `pnpm ci:wait` → yeşilse `main`'e fast-forward birleştir ve push et (= production deploy) → dalı sil. Ayrıntı: [DEPLOYMENT.md → Yayın süreci](docs/06-operations/DEPLOYMENT.md#yayın-süreci-2026-10-08den-beri-dal-tabanlı).
 - Başka bir oturumun commit'lenmemiş yarım işine dokunma; WORKLOG'a not düş.
 - [Conventional Commits](https://www.conventionalcommits.org/), görev kimliğiyle: `feat(voice): add retell inbound webhook (F1.5)`.
 - Küçük, tek amaçlı commit'ler. Commit öncesi lint, typecheck ve test temiz olmalı.

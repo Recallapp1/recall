@@ -13,7 +13,7 @@
 | Konu                | Durum (2026-10-08)                                                                                                                                                                                                                                                                     |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Aşama               | Geliştirme. Hiçbir klinik kullanmıyor; production'da yalnızca demo klinik ve test verisi                                                                                                                                                                                               |
-| Production          | https://recalltr.company (Vercel Hobby, `fra1`), Neon **`production`** dalı (`sslmode=verify-full`), 15 migration (`0000`–`0014`). `main`'e push = deploy; build ajanları senkronlar                                                                                                   |
+| Production          | https://recalltr.company (Vercel Hobby, `fra1`), Neon **`production`** dalı (`sslmode=verify-full`), 15 migration (`0000`–`0014`). `main` korumalı (CI `check` + `e2e` zorunlu); iş dalı → CI → `main`'e fast-forward = deploy; build ajanları senkronlar                              |
 | Sesli asistan       | Retell, `claude-4.5-haiku` + `eleven_flash_v2_5`. Arayan kimliği kuralları ([ADR-011](docs/decisions/ADR-011-caller-identity.md)), istenen saat sözlü (`requestedTime`), sonuç iddiası kuralı. **Retell kredisi bitti (2026-10-08): yüklenene kadar production asistanı arama alamaz** |
 | Ses değerlendirmesi | `pnpm voice:eval`, 24 senaryo; ilk koşu 12/24 (kredi bitti). Gecikme hedefin üstünde, model kararı ürün ekibinde ([ADR-003](docs/decisions/ADR-003-llm-model.md), [VOICE-EVAL.md](docs/02-voice-agent/VOICE-EVAL.md))                                                                  |
 | SMS                 | Gönderim her ortamda kapalı (`SMS_SENDING_ENABLED` yok, Netgsm yok). Tüm SMS'ler bildirim kaydından geçer (tek yol, testli)                                                                                                                                                            |
@@ -29,10 +29,9 @@
 
 1. Retell kredisi yükle (production asistanı ve ses değerlendirmesi buna bağlı).
 2. Gizli değer rotasyonunu onayla (Neon production parolası, Retell anahtarı).
-3. GitHub `main` dal koruması (E2E job CI'da yeşil olduktan sonra).
-4. Sentry ve uptime hesapları ([MONITORING.md](docs/06-operations/MONITORING.md)); isteğe bağlı `DEMO_REQUEST_NOTIFY_EMAIL`.
-5. Model kararı (ADR-003 seçenekleri), logo ve hero görseli, alan adı taşıma tarihi ([DOMAIN-MIGRATION.md](docs/06-operations/DOMAIN-MIGRATION.md)).
-6. Daha sonra: şirket bilgileri, yasal metinler ve avukat/İYS incelemesi, Netgsm (F2), Vercel Pro ve ücretli Neon.
+3. Sentry ve uptime hesapları ([MONITORING.md](docs/06-operations/MONITORING.md)); isteğe bağlı `DEMO_REQUEST_NOTIFY_EMAIL`.
+4. Model kararı (ADR-003 seçenekleri), logo ve hero görseli, alan adı taşıma tarihi ([DOMAIN-MIGRATION.md](docs/06-operations/DOMAIN-MIGRATION.md)).
+5. Daha sonra: şirket bilgileri, yasal metinler ve avukat/İYS incelemesi, Netgsm (F2), Vercel Pro ve ücretli Neon.
 
 ### Dallar
 
@@ -75,6 +74,20 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-08 · Dal tabanlı yayın akışı · F8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `chore/branch-flow` · **Commit'ler:** bu kayıt
+
+**Ne yapıldı**
+
+- Ürün ekibi `main` korumasını açtı (`check` + `e2e` zorunlu). CI artık her dal push'unda çalışıyor; `pnpm ci:wait` bir commit'in kontrollerini bekleyip sonucu çıkış koduyla veriyor.
+- Vercel preview deploy'ları kapatıldı (`vercel.json` → `git.deploymentEnabled`): dal push'ları yalnızca CI'ı çalıştırır, yalnızca `main` deploy edilir.
+- Yayın süreci [DEPLOYMENT.md](docs/06-operations/DEPLOYMENT.md#yayın-süreci-2026-10-08den-beri-dal-tabanlı) ve CLAUDE.md'de dal tabanlı akışa göre yeniden yazıldı; karar günlüğüne 33. madde.
+
+**Açık kalanlar / dikkat**
+
+- Koruma "pull request zorunlu" olarak ayarlanırsa doğrudan fast-forward push reddedilir; o durumda PR üzerinden birleştirilir (bu dal ilk denemedir).
 
 ### 2026-10-08 · Sağlamlaştırma: arayan kimliği, CI, SMS tek yol, güvenlik, izleme, testler, ses değerlendirmesi · F1.8, F3.6, F5.5, F7, F8
 

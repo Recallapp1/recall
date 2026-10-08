@@ -6,10 +6,10 @@ Neon projesi `falling-mud-37269187` (AWS eu-central-1). **Neon'da `main` adlı b
 
 | Ortam            | Tetikleyici             | URL                               | Neon dalı                               | Dal id                      | Uç nokta (host'un başı)   |
 | ---------------- | ----------------------- | --------------------------------- | --------------------------------------- | --------------------------- | ------------------------- |
-| Production       | Git `main`'e push       | `https://recalltr.company`        | **`production`** (varsayılan dal)       | `br-frosty-union-b1y9qd14`  | `ep-small-bar-b1c058o0`   |
+| Production       | `main`'e birleştirme    | `https://recalltr.company`        | **`production`** (varsayılan dal)       | `br-frosty-union-b1y9qd14`  | `ep-small-bar-b1c058o0`   |
 | Lokal geliştirme | `pnpm dev`              | `http://localhost:3000` (+ tünel) | **`dev`**                               | `br-dawn-mountain-b1yqptr1` | `ep-empty-smoke-b163qx6v` |
 | Testler, CI, E2E | `pnpm test`, `pnpm e2e` | —                                 | Yok: bellekte PGlite                    | —                           | —                         |
-| Preview (Vercel) | —                       | Kullanılmıyor                     | Ortam değişkeni bilerek yok             | —                           | —                         |
+| Preview (Vercel) | —                       | Kapalı (`vercel.json`)            | Ortam değişkeni bilerek yok             | —                           | —                         |
 | Yedekler         | Migration'dan önce elle | —                                 | `backup-pre-00NN-<tarih>` (compute'suz) | —                           | —                         |
 
 **Yanlış veritabanına bağlanmamak için:** bir bağlantı dizesinin hangi dala gittiğini host'un başı söyler (`ep-small-bar…` = production). `voice:eval` gibi veri yazan yerel araçlar production uç noktasını görünce çalışmayı reddeder. Production dizesi yalnızca Vercel'de (sensitive) durur; lokale yazılmaz.
@@ -21,12 +21,12 @@ _Kurulum: 2026-10-05/06_
 | Konu       | Değer                                                                                                                                                                                                                                              |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Vercel     | Takım `RECALL` (`recall25`), proje `recall`, plan **Hobby** (ilk ücretli klinikten önce **Pro**'ya geçilecek: Hobby ticari kullanıma izin vermez)                                                                                                  |
-| Git        | `recallapp0/recall` bağlı; `main`'e her push production deploy'u başlatır                                                                                                                                                                          |
+| Git        | `recallapp0/recall` bağlı; `main`'e her push production deploy'u başlatır. `main` korumalı: yalnızca `check` ve `e2e` CI kontrolleri geçmiş commit kabul edilir (2026-10-08)                                                                       |
 | Alan adı   | `recalltr.company` (Vercel'den alındı, DNS Vercel'de). `www` → ana alan 308 yönlendirme (`next.config.ts`). Otomatik yenileme ürün ekibince bilerek kapalı: ilk klinikten önce yeni alana taşınılacak ([DOMAIN-MIGRATION.md](DOMAIN-MIGRATION.md)) |
 | Veritabanı | Neon `falling-mud-37269187`, **`production` dalı** (`br-frosty-union-b1y9qd14`; Frankfurt, ücretsiz plan; canlıya geçmeden ücretli plana ve auto-suspend kapatmaya). Bağlantı `sslmode=verify-full`                                                |
 | E-posta    | Resend, alan `recalltr.company`, bölge **eu-west-1** (İrlanda). DNS: `resend._domainkey` TXT (DKIM), `send` MX ve SPF TXT, `_dmarc` TXT (`p=none`)                                                                                                 |
 | SMS        | `console` (Netgsm F2'de). Bu modda asistan "SMS gönderdim" demez, log'a mesaj gövdesi yazılmaz                                                                                                                                                     |
-| Preview    | Ortam değişkeni yok: dal push'u yapılmıyor (dallar lokalde `main`'e ff-merge). Preview gerekirse `DATABASE_URL` **dev** dalına verilmeli, asla production'a değil (build migration çalıştırır)                                                     |
+| Preview    | Kapalı: `vercel.json` → `git.deploymentEnabled` yalnızca `main`'i deploy eder; iş dalı push'ları yalnızca CI'ı çalıştırır. Preview gerekirse `DATABASE_URL` **dev** dalına verilmeli, asla production'a değil (build migration çalıştırır)         |
 
 Gizli değerler (`DATABASE_URL`, `RETELL_API_KEY`, `RESEND_API_KEY`, `BETTER_AUTH_SECRET`) Vercel'de **sensitive** olarak durur ve kimse tarafından okunamaz. Oturum anahtarı Vercel'e doğrudan üretilerek yazıldı.
 
@@ -90,13 +90,20 @@ Kaynak gerçek: [`.env.example`](../../.env.example) ve [`src/lib/env.ts`](../..
 
 Vercel, `vercel-build` script'i varsa onu çalıştırır. Migration'lar **geriye dönük uyumlu** yazılır (önce kolon ekle, kodu deploy et, sonra eski kolonu kaldır), çünkü deploy sırasında eski sürüm hâlâ trafik alıyor olabilir.
 
-## Yayın süreci (2026-10-07'den beri)
+## Yayın süreci (2026-10-08'den beri: dal tabanlı)
 
-1. İş dalı aç (`fix/…`, `feat/…`); lokalde `pnpm lint && pnpm lint:tokens && pnpm typecheck && pnpm test` (çıkış kodlarıyla, boru yok).
-2. Yeni migration varsa önce Neon'da production'dan compute'suz yedek dal: `backup-pre-00NN-<tarih>`.
-3. `main`'e fast-forward merge ve push → Vercel production build: `drizzle-kit migrate` → `next build` → `voice:sync --existing --soft` (mevcut ajanlar prompt ve tool değişikliklerini deploy ile alır; ajan oluşturmaz, hata build'i durdurmaz).
-4. CI (GitHub Actions): `pnpm audit --prod`, lint, tokens, typecheck, format, test, production build; ardından Playwright E2E. `main` koruması açıldığında yeşil CI zorunlu olur.
-5. Deploy sonrası: build READY, `/api/health`, gerekiyorsa `/api/health/jobs` ve migration sayısı kontrol edilir.
+`main` GitHub'da korumalıdır: bir commit ancak **`check`** ve **`e2e`** kontrolleri o commit'te geçtiyse `main`'e girebilir. Doğrudan `main`'de çalışılmaz.
+
+1. `main`'den iş dalı aç (`feat/…`, `fix/…`, `docs/…`, `chore/…`); lokalde `pnpm lint && pnpm lint:tokens && pnpm typecheck && pnpm format:check && pnpm test` (çıkış kodlarıyla, boru yok).
+2. Dalı push et: `git push -u origin <dal>`. CI her dal push'unda çalışır: `pnpm audit --prod`, lint, tokens, typecheck, format, test, production build (`check`); ardından Playwright E2E (`e2e`). Dal push'u deploy etmez (preview kapalı).
+3. CI'ı bekle: `pnpm ci:wait` (HEAD için `check` + `e2e` bitene kadar bekler; ikisi de geçerse 0, biri düşerse bağlantısıyla 1 döner). Kırmızıysa dalda düzelt, yeniden push et, tekrar bekle.
+4. Yeni migration varsa birleştirmeden önce Neon'da production'dan compute'suz yedek dal: `backup-pre-00NN-<tarih>`.
+5. Birleştir (yalnızca fast-forward): `git switch main && git pull --ff-only && git merge --ff-only <dal> && git push origin main`. `main` bu arada ilerlediyse dalı `main` üzerine al (`git rebase main`), yeniden push et ve 3. adımdan devam et: yeni commit'in de CI'dan geçmesi gerekir.
+6. `main`'e push → Vercel production build: `drizzle-kit migrate` → `next build` → `voice:sync --existing --soft` (mevcut ajanlar prompt ve tool değişikliklerini deploy ile alır; ajan oluşturmaz, hata build'i durdurmaz).
+7. Deploy sonrası: build READY, `/api/health`, gerekiyorsa `/api/health/jobs` ve migration sayısı kontrol edilir.
+8. Dalı sil: `git branch -d <dal> && git push origin --delete <dal>`.
+
+Acil düzeltmede de aynı yol izlenir (CI yaklaşık 10 dakika); daha hızlı geri dönüş gerekiyorsa önce Vercel'de önceki deploy'a dönülür (aşağıda).
 
 ## Geri alma
 
