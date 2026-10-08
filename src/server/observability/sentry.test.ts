@@ -10,11 +10,11 @@ describe("Sentry scrubbing (KVKK)", () => {
       message: "boom",
       request: {
         method: "POST",
-        url: "https://recalltr.company/panel/hastalar/123?ara=05321234567",
-        data: { patientName: "Ayşe Yılmaz", phone: "+905321234567" },
+        url: "https://recalltr.company/panel/hastalar/123?ara=05320000025",
+        data: { patientName: "Ayşe Yılmaz", phone: "+905320000025" },
         cookies: { session: "secret" },
         headers: { cookie: "session=secret", authorization: "Bearer x" },
-        query_string: "ara=05321234567",
+        query_string: "ara=05320000025",
       },
       user: { email: "personel@klinik.test", ip_address: "1.2.3.4" },
       breadcrumbs: [{ message: "console: Ayşe Yılmaz" }],
@@ -24,7 +24,7 @@ describe("Sentry scrubbing (KVKK)", () => {
 
     expect(event.request).toEqual({ method: "POST", url: "/panel/hastalar/123" });
     const text = JSON.stringify(event);
-    for (const secret of ["Ayşe", "0532", "905321234567", "secret", "personel@", "1.2.3.4"]) {
+    for (const secret of ["Ayşe", "0532", "905320000025", "secret", "personel@", "1.2.3.4"]) {
       expect(text).not.toContain(secret);
     }
     expect(event.message).toBe("boom");

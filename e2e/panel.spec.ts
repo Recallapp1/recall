@@ -26,7 +26,7 @@ test.describe("owner", () => {
     await dialog.getByLabel("Tarih").fill(tomorrow());
     await dialog.getByRole("button", { name: /^10:00,/ }).click();
     await dialog.getByLabel("Hasta adı soyadı").fill("Deniz Uçar");
-    await dialog.getByLabel("Telefon").fill("0532 444 55 66");
+    await dialog.getByLabel("Telefon").fill("0532 000 00 14");
     await dialog.getByRole("button", { name: /Randevuyu oluştur/ }).click();
     await expect(page.getByText("Randevu oluşturuldu").first()).toBeVisible();
 

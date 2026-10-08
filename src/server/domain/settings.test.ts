@@ -146,7 +146,7 @@ describe("time off", () => {
     const clinic = b.ctx.clinic;
     const [patient] = await db
       .insert(schema.patients)
-      .values({ clinicId: clinic.id, fullName: "Tatil Hastası", phone: "+905321110000" })
+      .values({ clinicId: clinic.id, fullName: "Tatil Hastası", phone: "+905320000024" })
       .returning();
     const startsAt = localToUtc("2026-12-08", 10 * 60, clinic.timezone);
     await db.insert(schema.appointments).values({

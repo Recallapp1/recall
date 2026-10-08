@@ -103,11 +103,11 @@ async function main() {
 
   const [patientA] = await db
     .insert(schema.patients)
-    .values({ clinicId: a.id, fullName: "Elif Yıldız", phone: "+905321110001" })
+    .values({ clinicId: a.id, fullName: "Elif Yıldız", phone: "+905320000031" })
     .returning();
   const [followUpPatient] = await db
     .insert(schema.patients)
-    .values({ clinicId: a.id, fullName: "Takip Hastası", phone: "+905321110003" })
+    .values({ clinicId: a.id, fullName: "Takip Hastası", phone: "+905320000033" })
     .returning();
   await db.insert(schema.followUpRules).values({
     clinicId: a.id,
@@ -119,7 +119,7 @@ async function main() {
   });
   const [patientB] = await db
     .insert(schema.patients)
-    .values({ clinicId: b.id, fullName: "Gizli Hasta", phone: "+905321110002" })
+    .values({ clinicId: b.id, fullName: "Gizli Hasta", phone: "+905320000032" })
     .returning();
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
   tomorrow.setUTCHours(9, 0, 0, 0);

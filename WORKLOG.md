@@ -75,6 +75,16 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-08 · Dış inceleme paketi temizliği · F8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `chore/review-package-cleanup` · **Commit'ler:** bu kayıt
+
+**Ne yapıldı**
+
+- Dış inceleme paketi (`git archive HEAD`) tarandı: gerçek anahtar, token, parola veya bağlantı dizesi yok; `.env*` dosyalarından yalnızca `.env.example` izleniyor.
+- Seed, testler, test fixture'ları ve E2E veritabanındaki gerçek görünümlü cep numaraları açıkça sahte `0532 000 00 NN` aralığına taşındı. Prompt'taki okuma örneği ("0532 123 45 67") canlı asistanın metni olduğu için değişmedi.
+- VOICE-AND-LANGUAGE.md'de test aramasından alıntılanan ad uydurma bir adla değiştirildi.
+
 ### 2026-10-08 · ADR-003 seçenek A hazırlığı ve C test profilleri · F1.8
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `feat/F1.8-latency-option-a` · **Commit'ler:** bu kayıt
@@ -349,7 +359,7 @@ Kurallar:
   - `env()` geliştirmede önbelleklenmiyor, ki `next dev` `.env.local` değişikliğini (yeni `APP_URL`) yeniden başlatmadan görsün.
 - **Kök neden 2, web aramasında arayan numara:** Prompt Retell'in `{{user_number}}` değişkenini kullanıyordu; bu web aramalarında hiç dolmaz ve LLM'e ham yer tutucu olarak gider. Yerine bizim `caller_number` değişkenimiz geldi: inbound webhook doldurur, test araması boş geçer, LLM varsayılanı boş.
 - **Canlı aramada bulunan iki hata:**
-  - Model, numarayı doğru geri okuduğu hâlde bitişik yazarken bir rakam düşürüyordu (`0500111224`). Artık numarayı söylendiği gruplarla gönderiyor (`"0500 111 22 44"`). Geçersiz numara yeni `INVALID_PHONE` hatasını döndürüyor ve asistan numarayı tekrar istiyor (`requirePhone`).
+  - Model, numarayı doğru geri okuduğu hâlde bitişik yazarken bir rakam düşürüyordu (`0532000002`). Artık numarayı söylendiği gruplarla gönderiyor (`"0532 000 00 22"`). Geçersiz numara yeni `INVALID_PHONE` hatasını döndürüyor ve asistan numarayı tekrar istiyor (`requirePhone`).
   - Model "Randevunuz oluşturuldu" cümlesini tool çağrısıyla aynı anda söylüyordu; sonuç başarısızdı. Prompt kuralı eklendi: işlem yapan tool'un sonucu yalnızca tool döndükten sonra söylenir.
   - Ayrıca: daha önce söylenen saat tekrar sorulmuyor, onaydan sonra hemen kayıt yapılıyor, vedalaşmada ısrar edilmiyor.
 - Reddedilen Retell isteği artık yalnızca anahtar adları ve hatalı yollarla loglanıyor (`retell.payload_rejected`, değer yok).

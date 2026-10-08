@@ -8,7 +8,7 @@
 
 ## Bağlam
 
-Dış inceleme (Manus) ve kendi doğrulamamız: `find_appointments`, `cancel_appointment` ve `reschedule_appointment` telefon numarasını `input.phone ?? ctx.callerPhone` ile alıyordu. Model bir numara söylediğinde (ör. arayan "0555 999 88 77'ye kayıtlı randevumu iptal edin" dediğinde) arayan numara bilinse bile o numara kullanılıyordu. Sonuç:
+Dış inceleme (Manus) ve kendi doğrulamamız: `find_appointments`, `cancel_appointment` ve `reschedule_appointment` telefon numarasını `input.phone ?? ctx.callerPhone` ile alıyordu. Model bir numara söylediğinde (ör. arayan "0532 000 00 21'ye kayıtlı randevumu iptal edin" dediğinde) arayan numara bilinse bile o numara kullanılıyordu. Sonuç:
 
 - Başkasının numarasını bilen biri o kişinin randevularını öğrenebiliyor (tarih, saat, hizmet, hekim, maskeli ad), iptal edebiliyor veya erteleyebiliyordu.
 - Arayan numara gizliyken (gizli numara, tarayıcı test araması) hiçbir ek kontrol yoktu.

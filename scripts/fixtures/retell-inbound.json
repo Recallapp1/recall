@@ -2,7 +2,7 @@
   "event": "call_inbound",
   "call_inbound": {
     "call_id": "call_local_test_1",
-    "from_number": "+905321234567",
+    "from_number": "+905320000025",
     "to_number": "+902120000000"
   }
 }

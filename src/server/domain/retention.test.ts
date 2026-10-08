@@ -19,7 +19,7 @@ async function insertCall(id: string, startedAt: Date) {
     clinicId: clinic.ctx.clinic.id,
     provider: "retell",
     providerCallId: id,
-    fromNumber: "+905321234567",
+    fromNumber: "+905320000025",
     startedAt,
     transcript: "Agent: Merhaba",
     summary: "Bilgi aldı.",
@@ -81,7 +81,7 @@ describe("applyRetention", () => {
     expect(await row("fresh")).toMatchObject({
       recordingUrl: "https://rec.test/x.wav",
       transcript: "Agent: Merhaba",
-      fromNumber: "+905321234567",
+      fromNumber: "+905320000025",
     });
     expect(await row("month")).toMatchObject({
       recordingUrl: null,

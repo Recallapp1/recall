@@ -6,7 +6,7 @@ describe("safeError", () => {
   it("drops query parameters that carry personal data", () => {
     const driver = Object.assign(new Error('relation "x" does not exist'), { code: "42P01" });
     const wrapped = new Error(
-      'Failed query: insert into "patients" values ($1, $2)\nparams: Ayşe Yılmaz,+905321234567',
+      'Failed query: insert into "patients" values ($1, $2)\nparams: Ayşe Yılmaz,+905320000025',
       { cause: driver },
     );
     const result = safeError(wrapped);
@@ -20,7 +20,7 @@ describe("safeError", () => {
   });
 
   it("never returns the parameters of a wrapper without a cause", () => {
-    const wrapped = new Error("Failed query: select 1\nparams: +905321234567");
+    const wrapped = new Error("Failed query: select 1\nparams: +905320000025");
     expect(safeError(wrapped).message).toBe("Failed query");
   });
 

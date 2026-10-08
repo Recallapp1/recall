@@ -23,7 +23,7 @@ import {
 
 const API_KEY = "key_test_0123456789";
 const NOW = new Date("2026-10-04T09:00:00Z"); // Sunday noon in Istanbul
-const CALLER = "+905321234567";
+const CALLER = "+905320000025";
 const CALL_ID = "call_retell_1";
 
 let db: Database;
@@ -318,8 +318,8 @@ describe("custom functions", () => {
 
 // A stranger must not reach someone else's appointments by speaking their number.
 describe("caller identity (abuse cases)", () => {
-  const VICTIM = "+905559998877";
-  const VICTIM_SPOKEN = "0555 999 88 77";
+  const VICTIM = "+905320000021";
+  const VICTIM_SPOKEN = "0532 000 00 21";
   let victimAppointmentId: string;
 
   beforeAll(async () => {
@@ -595,7 +595,7 @@ describe("replay and abuse limits", () => {
 
 // Every SMS a call triggers goes through the outbox and its locks.
 describe("SMS from voice tools", () => {
-  const PHONE = "+905321110000";
+  const PHONE = "+905320000024";
   const book = (time: string, callId: string) =>
     tool(
       "book_appointment",

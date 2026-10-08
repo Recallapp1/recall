@@ -38,14 +38,14 @@ describe("spokenTime", () => {
 
 describe("spokenPhone", () => {
   it("reads Turkish numbers in dictation groups", () => {
-    expect(spokenPhone("+905321234567")).toBe(
-      "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi",
+    expect(spokenPhone("+905320000045")).toBe(
+      "sıfır beş yüz otuz iki, sıfır sıfır sıfır, sıfır sıfır, kırk beş",
     );
   });
 
   it("reads a leading zero inside a group on its own", () => {
-    expect(spokenPhone("+905321230507")).toBe(
-      "sıfır beş yüz otuz iki, yüz yirmi üç, sıfır beş, sıfır yedi",
+    expect(spokenPhone("+905320000507")).toBe(
+      "sıfır beş yüz otuz iki, sıfır sıfır sıfır, sıfır beş, sıfır yedi",
     );
   });
 

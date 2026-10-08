@@ -670,7 +670,7 @@ describe("public actions", () => {
       formData({
         fullName: "Selin Demir",
         clinicName: "Parlak Diş",
-        phone: "0532 777 88 99",
+        phone: "0532 000 00 20",
         email: "selin@parlakdis.test",
         clinicType: "Diş kliniği",
         consent: "on",

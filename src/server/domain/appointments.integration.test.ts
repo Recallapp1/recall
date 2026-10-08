@@ -17,7 +17,7 @@ import { findAvailability } from "./scheduling";
 // Sunday 2026-10-04 12:00 Istanbul; the next day is Monday 2026-10-05.
 const NOW = new Date("2026-10-04T09:00:00Z");
 const MONDAY = "2026-10-05";
-const CALLER = "+905321234567";
+const CALLER = "+905320000025";
 
 let db: Database;
 let close: () => Promise<void>;
@@ -113,7 +113,7 @@ describe("bookAppointment", () => {
     const clinic = await createTestClinic(db);
     await book(clinic);
     await expectDomainError(
-      book(clinic, { patientName: "Mehmet Kaya", patientPhone: "+905559998877" }),
+      book(clinic, { patientName: "Mehmet Kaya", patientPhone: "+905320000021" }),
       "SLOT_UNAVAILABLE",
     );
   });
@@ -162,13 +162,13 @@ describe("bookAppointment", () => {
 
   it("asks again for a number with a missing digit", async () => {
     const clinic = await createTestClinic(db);
-    // Seen live: the model read "0500 111 22 44" back correctly but sent ten digits.
-    await expectDomainError(book(clinic, { patientPhone: "0500111224" }), "INVALID_PHONE");
+    // Seen live: the model read "0532 000 00 22" back correctly but sent ten digits.
+    await expectDomainError(book(clinic, { patientPhone: "0532000002" }), "INVALID_PHONE");
   });
 
   it("accepts the number in spoken groups", async () => {
     const clinic = await createTestClinic(db);
-    const { created } = await book(clinic, { patientPhone: "0532 123 45 67" });
+    const { created } = await book(clinic, { patientPhone: "0532 000 00 25" });
     expect(created).toBe(true);
   });
 
@@ -228,7 +228,7 @@ describe("cancel and reschedule", () => {
     await expectDomainError(
       cancelAppointment(db, clinic.ctx, {
         appointmentId: appointment.id,
-        phone: "+905559998877",
+        phone: "+905320000021",
         now: NOW,
       }),
       "NOT_FOUND",
@@ -293,7 +293,7 @@ describe("cancel and reschedule", () => {
     await book(clinic, {
       time: "11:00",
       patientName: "Mehmet Kaya",
-      patientPhone: "+905559998877",
+      patientPhone: "+905320000021",
     });
 
     await expectDomainError(

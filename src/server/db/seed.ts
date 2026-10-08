@@ -200,14 +200,14 @@ async function main() {
         .insert(schema.patients)
         .values(
           [
-            ["Ayşe Yılmaz", "+905321234567"],
-            ["Mehmet Kaya", "+905331112233"],
-            ["Zeynep Arslan", "+905442223344"],
-            ["Can Öztürk", "+905053334455"],
-            ["Elif Şahin", "+905324445566"],
-            ["Burak Demir", "+905365556677"],
-            ["Selin Aydın", "+905426667788"],
-            ["Emre Çelik", "+905557778899"],
+            ["Ayşe Yılmaz", "+905320000010"],
+            ["Mehmet Kaya", "+905320000011"],
+            ["Zeynep Arslan", "+905320000012"],
+            ["Can Öztürk", "+905320000013"],
+            ["Elif Şahin", "+905320000014"],
+            ["Burak Demir", "+905320000015"],
+            ["Selin Aydın", "+905320000016"],
+            ["Emre Çelik", "+905320000017"],
           ].map(([fullName, phone]) => ({
             clinicId: clinic.id,
             fullName: fullName!,
@@ -313,7 +313,7 @@ async function main() {
           clinicId: clinic.id,
           callId: null,
           patientName: null,
-          phone: "+905309998877",
+          phone: "+905320000018",
           reason: "Çocuğu için pedodonti hizmeti olup olmadığını sordu.",
         },
       ]);

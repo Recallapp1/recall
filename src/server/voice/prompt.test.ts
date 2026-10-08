@@ -226,8 +226,8 @@ describe("buildCallVariables", () => {
   it("passes the caller number, or empty when unknown", () => {
     const clinic = { ...base, transferPhoneNumber: null };
     expect(
-      buildCallVariables(clinic, clinicHours, MONDAY_NOON, "+905321234567").caller_number,
-    ).toBe("+905321234567");
+      buildCallVariables(clinic, clinicHours, MONDAY_NOON, "+905320000025").caller_number,
+    ).toBe("+905320000025");
     expect(buildCallVariables(clinic, clinicHours, MONDAY_NOON, null).caller_number).toBe("");
   });
 });

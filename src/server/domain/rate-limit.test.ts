@@ -41,8 +41,8 @@ describe("Postgres rate limiter", () => {
   });
 
   it("hashes personal data out of keys and deletes expired windows", async () => {
-    const key = hashKey("clinic", "+905551112233");
-    expect(key).not.toContain("905551112233");
+    const key = hashKey("clinic", "+905320000023");
+    expect(key).not.toContain("905320000023");
     expect(key).toHaveLength(32);
     await consumeRateLimit(db, key, RULE, T0);
     expect(await deleteExpiredRateLimits(db, at(10 * 60_000))).toBeGreaterThan(0);
