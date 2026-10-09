@@ -94,6 +94,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - A9 · prompt güçlendirme (`VOICE_PROMPT_HARDENING`, hiçbir yerde açık değil): değişmez güvenlik bölümü başta, tam "yüz on ikiyi arayın" ifadesi, kayıt itirazı ve sistem hatası kuralları, klinik metni uzunluk ve karakter denetimiyle çitlenmiş güvenilmeyen veri, örnek ad/numara yok. Yeniden düzenleme sonrası bugünkü prompt bayt bayt aynı (8 kombinasyon); testler iki temel varyantta güçlendirilmiş hâli de koşuyor; `option-hardening` değerlendirme profili (çalıştırılmadı).
 - A10 · eksik testler: tam izin matrisi (her kaynak ve eylem × 4 rol, 148 durum), panel sorgu aileleri için kiracı izolasyonu (randevu, hasta, dışa aktarma, arama, geri arama, sesli arama, kullanım), her Retell rotasında imza gövdeden önce (imzasız bozuk JSON 401, imzalı 400), bilinmeyen/uyuşmayan ajan 404, aynı slot için eşzamanlı iki randevudan biri, geçmiş ve çok ileri tarih, saat dilimi (İstanbul sabit, Berlin yaz saati, gece yarısı), Türkçe ad ve telefon biçimleri. KVKK silmesi uçtan uca ve cron yetkisi önceki partilerde testli.
 - B1 · CI tedarik zinciri: tüm action'lar commit SHA'sına sabitlendi (sürüm yorumuyla), iş akışı izni `contents: read`, `pull_request_target`/secret kullanımı yok; bunları denetleyen test.
+- B2 · CI açıklamalarında kişisel görünümlü veri maskelenir (`scripts/redact-log.mjs`: telefon, e-posta, anahtar, bağlantı dizesi, yetki başlığı); Playwright raporu 3 gün saklanır.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

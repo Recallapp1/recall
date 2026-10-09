@@ -65,17 +65,18 @@ jobs:
         env:
           CI: "true"
           DEBUG: pw:webserver
-      # Job logs need admin rights; annotations are public, so the tail of a
-      # failed run is readable from the API by anyone working on the repo.
+      # Job logs need admin rights; annotations are readable from the API by
+      # anyone with access to the repo, so the tail is redacted first (B2).
       - name: report e2e failure
         if: failure()
         shell: bash
         run: |
-          tail -n 80 e2e.log | cut -c1-200 | tr -d '\r' | awk '{ gsub(/%/, "%25"); printf "%s%%0A", $0 }' > tail.txt
+          tail -n 80 e2e.log | node scripts/redact-log.mjs | cut -c1-200 | tr -d '\r' | awk '{ gsub(/%/, "%25"); printf "%s%%0A", $0 }' > tail.txt
           echo "::error title=e2e log tail::$(cat tail.txt)"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 7
+          # Synthetic data only, kept briefly (B2).
+          retention-days: 3
