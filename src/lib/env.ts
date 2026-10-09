@@ -81,6 +81,8 @@ const envSchema = z.object({
    * become critical (retry, alarm, the action fails) (audit A7). Off by default.
    */
   AUDIT_STRICT: optionalFlag,
+  /** "true": owners and admins see a read-only "Kullanım ve sınırlar" page (audit A8). Off by default. */
+  PANEL_LIMITS_VIEW: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

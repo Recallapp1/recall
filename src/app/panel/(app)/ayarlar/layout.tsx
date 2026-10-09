@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/panel";
+import { env } from "@/lib/env";
 import type { Permissions } from "@/lib/permissions";
 import { can, requirePermission } from "@/server/auth/session";
 
@@ -9,6 +10,8 @@ const SECTIONS: {
   label: string;
   permission: Permissions;
   feature?: "followUp";
+  /** Shown only while its switch is on. */
+  enabled?: () => boolean;
 }[] = [
   { href: "/panel/ayarlar", label: "Klinik", permission: { clinicSettings: ["read"] } },
   {
@@ -41,13 +44,21 @@ const SECTIONS: {
   },
   { href: "/panel/ayarlar/ekip", label: "Ekip", permission: { invitation: ["create"] } },
   { href: "/panel/ayarlar/denetim", label: "Denetim kaydı", permission: { audit: ["read"] } },
+  {
+    href: "/panel/ayarlar/sinirlar",
+    label: "Kullanım ve sınırlar",
+    permission: { billing: ["read"] },
+    enabled: () => env().PANEL_LIMITS_VIEW === true,
+  },
 ];
 
 export default async function SettingsLayout({ children }: LayoutProps<"/panel/ayarlar">) {
   const { settings } = await requirePermission({ clinicSettings: ["read"] });
   const allowed = await Promise.all(
     SECTIONS.map(async (section) =>
-      (!section.feature || settings.features[section.feature]) && (await can(section.permission))
+      (!section.feature || settings.features[section.feature]) &&
+      (!section.enabled || section.enabled()) &&
+      (await can(section.permission))
         ? section
         : null,
     ),

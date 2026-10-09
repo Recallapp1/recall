@@ -5,7 +5,10 @@ import { createTestClinic, createTestDb } from "@/test/db";
 import type { Database } from "../db";
 import { calls } from "../db/schema";
 import type { ClinicSettingsInput } from "./clinic-settings";
-import { admitInboundCall } from "./voice-limits";
+import { builtInRolesAllow } from "@/lib/permissions";
+
+import { appointments, patients } from "../db/schema";
+import { admitInboundCall, clinicUsage } from "./voice-limits";
 
 // Wednesday 2026-10-07 12:00 Istanbul.
 const NOW = new Date("2026-10-07T09:00:00Z");
@@ -103,5 +106,65 @@ describe("admitInboundCall", () => {
       admitted: false,
       reason: "daily_minutes",
     });
+  });
+});
+
+describe("clinicUsage (A8)", () => {
+  it("counts today's minutes, calls and assistant bookings in the clinic's day", async () => {
+    const { ctx, serviceId, practitionerId } = await clinicWith({});
+    const clinicId = ctx.clinic.id;
+    await db.insert(calls).values([
+      {
+        clinicId,
+        provider: "retell",
+        providerCallId: `use-a-${clinicId}`,
+        startedAt: new Date(NOW.getTime() - 30 * 60_000),
+        createdAt: new Date(NOW.getTime() - 30 * 60_000),
+        durationSeconds: 90,
+      },
+      {
+        clinicId,
+        provider: "retell",
+        providerCallId: `use-b-${clinicId}`,
+        startedAt: new Date(NOW.getTime() - 3 * 3600_000),
+        createdAt: new Date(NOW.getTime() - 3 * 3600_000),
+        durationSeconds: 30,
+      },
+      {
+        clinicId,
+        provider: "retell",
+        providerCallId: `use-old-${clinicId}`,
+        startedAt: new Date(NOW.getTime() - 26 * 3600_000),
+        createdAt: new Date(NOW.getTime() - 26 * 3600_000),
+        durationSeconds: 600,
+      },
+    ]);
+    const [patient] = await db
+      .insert(patients)
+      .values({ clinicId, fullName: "Kullanım Hasta", phone: "+905320000044" })
+      .returning();
+    await db.insert(appointments).values({
+      clinicId,
+      patientId: patient!.id,
+      practitionerId,
+      serviceId,
+      startsAt: new Date("2026-10-08T07:00:00Z"),
+      endsAt: new Date("2026-10-08T07:30:00Z"),
+      source: "voice",
+      createdAt: new Date(NOW.getTime() - 60_000),
+    });
+    expect(await clinicUsage(db, ctx, NOW)).toEqual({
+      voiceMinutesToday: 2,
+      callsToday: 2,
+      callsLastHour: 1,
+      voiceBookingsToday: 1,
+    });
+  });
+
+  it("is visible to owners and admins only (billing.read); editing stays with Recall", () => {
+    expect(builtInRolesAllow("owner", { billing: ["read"] })).toBe(true);
+    expect(builtInRolesAllow("admin", { billing: ["read"] })).toBe(true);
+    expect(builtInRolesAllow("staff", { billing: ["read"] })).toBe(false);
+    expect(builtInRolesAllow("practitioner", { billing: ["read"] })).toBe(false);
   });
 });

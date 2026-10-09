@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
-import { calls } from "../db/schema";
+import { ACTIVE_APPOINTMENT_STATUSES, appointments, calls } from "../db/schema";
 import { raiseAlarm } from "../observability/alarm";
 import type { ClinicContext } from "./clinics";
 import { consumeRateLimit, hashKey } from "./rate-limit";
@@ -83,4 +83,52 @@ export async function voiceMinutesSince(
     .from(calls)
     .where(and(eq(calls.clinicId, clinicId), gte(calls.startedAt, since)));
   return Number(row?.seconds ?? 0) / 60;
+}
+
+export interface ClinicUsage {
+  /** Billed voice minutes since local midnight. */
+  voiceMinutesToday: number;
+  callsToday: number;
+  callsLastHour: number;
+  /** Active appointments the assistant created since local midnight. */
+  voiceBookingsToday: number;
+}
+
+/** Today's usage against the limits, for the clinic's read-only view (audit A8). */
+export async function clinicUsage(
+  exec: Executor,
+  { clinic }: ClinicContext,
+  now: Date,
+): Promise<ClinicUsage> {
+  const midnight = localToUtc(localToday(now, clinic.timezone), 0, clinic.timezone);
+  const hourAgo = new Date(now.getTime() - HOUR);
+  const callsSince = async (since: Date) => {
+    const [row] = await exec
+      .select({ value: count() })
+      .from(calls)
+      .where(and(eq(calls.clinicId, clinic.id), gte(calls.createdAt, since)));
+    return row?.value ?? 0;
+  };
+  const [minutes, today, lastHour, [bookings]] = await Promise.all([
+    voiceMinutesSince(exec, clinic.id, midnight),
+    callsSince(midnight),
+    callsSince(hourAgo),
+    exec
+      .select({ value: count() })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.clinicId, clinic.id),
+          eq(appointments.source, "voice"),
+          inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
+          gte(appointments.createdAt, midnight),
+        ),
+      ),
+  ]);
+  return {
+    voiceMinutesToday: Math.round(minutes * 10) / 10,
+    callsToday: today,
+    callsLastHour: lastHour,
+    voiceBookingsToday: bookings?.value ?? 0,
+  };
 }
