@@ -99,6 +99,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - B4 · bağımlılıklar: `pnpm audit --prod` (1 orta: esbuild, yalnızca geliştirme sunucusu); kütüphaneler güncellendi (dotenv 18.0.6, lucide-react 1.53.0, retell-sdk 6.2.4, @sentry/nextjs 11.5.0); çatı güncellemesi ayrı partide; büyük sürümler (TypeScript 7, ESLint 10, @types/node 26) yalnızca listelendi.
 - B5 · `pnpm lint:secrets` (CI adımı: HEAD'deki izlenen dosyalarda gizli değer benzeri dize varsa başarısız; değerler maskelenir) ve `pnpm review:package` (git archive + tarama raporu, `outputs/`, hiçbir yere gönderilmez); `NEXT_PUBLIC_` değişkeni yok.
 - B6 · belgeler koda göre: `DEMO_REQUEST_NOTIFY_EMAIL` DEPLOYMENT'ta, ADR-003'e güçlendirme profili ve kademeli ölçüm, eskimiş plan maddeleri tarihli notla işaretlendi (F1.8 elle 20 senaryo, ASR/TTS karşılaştırması, `voice:attach-number`); her env değişkeninin belgelendiğini denetleyen test. COST-MODEL C7'de.
+- C1 · izleme: Sentry olay metinlerinde telefon/e-posta/anahtar maskeleme (CI ile aynı kurallar, eşlik testi); MONITORING.md'ye sağlık sözleşmesi, alarm ve log uyarı listesi, isteğe bağlı `HEALTH_JOBS_TOKEN` adımları. Sentry `SENTRY_DSN` olmadan kapalı.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

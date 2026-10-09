@@ -81,3 +81,32 @@ Yapılandırılmış JSON, kişisel veri yok ([SECURITY.md](../05-compliance/SEC
 2. Monitor 1: URL `https://recalltr.company/api/health`, beklenen durum 200, aralık planın en kısası (3–5 dk), bildirim e-posta (+ istersen telefon uygulaması).
 3. Monitor 2: URL `https://recalltr.company/api/health/jobs`, beklenen durum 200, aralık 30–60 dk. **8 Ekim 11:00 (İstanbul) sonrası ekle**: işlerin ilk kaydı o zamana kadar oluşmaz ve uç 503 döner.
 4. Alan adı taşınınca iki URL'i de güncelle ([DOMAIN-MIGRATION.md](DOMAIN-MIGRATION.md)).
+
+## Sağlık sözleşmesi (uptime izleyiciler için, 2026-10-09)
+
+| Uç                     | Başarılı                                    | Başarısız                                | Gövde                                                                                                         | Kimlik                  |
+| ---------------------- | ------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `GET /api/health`      | 200 `{"status":"ok","db":"ok","version":…}` | 503 `{"status":"degraded","db":"error"}` | Kişisel veri yok                                                                                              | Herkese açık            |
+| `GET /api/health/jobs` | 200 `{"status":"ok", …}`                    | 503 `{"status":"late" \| "error", …}`    | `HEALTH_JOBS_TOKEN` tanımlıysa ayrıntı (`jobs`) yalnızca `x-health-token` başlığıyla; durum kodu herkese aynı | Herkese açık durum kodu |
+
+İzleyici yalnızca **HTTP koduna** bakmalı; gövde değişebilir.
+
+## Alarmlar ve log tabanlı uyarılar (2026-10-09)
+
+| Olay                                    | Kaynak               | Anlamı                                                                | Önerilen uyarı                         |
+| --------------------------------------- | -------------------- | --------------------------------------------------------------------- | -------------------------------------- |
+| `ALARM audit.critical_write_failed`     | `recordAudit()`      | Kritik denetim kaydı yazılamadı, eylem durduruldu                     | Hemen e-posta                          |
+| `ALARM cron.*_failed`                   | cron rotaları        | Günlük iş başarısız                                                   | Hemen e-posta                          |
+| `ALARM voice.daily_minutes_reached`     | `admitInboundCall()` | Kliniğin günlük ses dakikası doldu, aramalar reddediliyor (günde bir) | Hemen e-posta                          |
+| `ALARM voice.provider_deletion_failing` | silme kuyruğu        | Retell kaydı 3+ denemede silinemedi (KVKK)                            | Hemen e-posta                          |
+| `metric: audit_write_failed`            | `recordAudit()`      | Olağan denetim kaydı yazılamadı (eylem sürdü)                         | Günde > 0 ise e-posta                  |
+| `call.flagged` (warn)                   | `POST_CALL_FLAGS`    | Arama işaretlendi (acil durum, uyuşmayan sonuç)                       | Panel rozeti; isteğe bağlı günlük özet |
+| `auth.endpoint_blocked` (warn)          | `/api/auth/*`        | Kapalı bir oturum uç noktası denendi                                  | Saatte > 20 ise e-posta                |
+
+Sentry açıksa `ALARM` olayları Sentry sorunu olur (etiket `alarm`); olay metinlerinde telefon, e-posta ve anahtar maskelenir (`src/lib/redact.ts`, testli).
+
+### İsteğe bağlı: iş ayrıntılarını gizleme
+
+1. Uzun rastgele bir değer üret (ör. `openssl rand -hex 24`).
+2. Vercel → `HEALTH_JOBS_TOKEN` = bu değer (Production, Sensitive) → Redeploy.
+3. Uptime izleyicide `/api/health/jobs` monitörüne özel başlık ekle: `x-health-token: <değer>` (ücretsiz planda başlık yoksa gerekmez: izleyici durum koduyla çalışır).

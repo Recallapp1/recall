@@ -21,3 +21,17 @@ describe("redact (CI annotations, B2)", () => {
     expect(redact(line)).toBe(line);
   });
 });
+
+describe("redaction rules stay identical in CI and Sentry", () => {
+  it("masks the same samples the same way", async () => {
+    const { redact: forSentry } = await import("./redact");
+    for (const sample of [
+      "arayan +905320000025 ve 0 (532) 000-00-25",
+      "posta sahip@klinik.test",
+      "key_0123456789abcdef01 postgres://u:p@h/db Bearer abcdefgh123",
+      "sıradan satır 26 passed",
+    ]) {
+      expect(forSentry(sample), sample).toBe(redact(sample));
+    }
+  });
+});

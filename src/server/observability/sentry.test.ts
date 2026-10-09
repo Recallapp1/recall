@@ -29,4 +29,18 @@ describe("Sentry scrubbing (KVKK)", () => {
     }
     expect(event.message).toBe("boom");
   });
+
+  it("masks phones, e-mails and keys quoted in error messages", () => {
+    const event = scrubEvent({
+      type: undefined,
+      message: "Hasta 0532 000 00 25 bulunamadı",
+      exception: {
+        values: [
+          { type: "Error", value: "insert failed for sahip@klinik.test key_0123456789abcdef01" },
+        ],
+      },
+    } as ErrorEvent);
+    expect(event.message).toBe("Hasta [telefon] bulunamadı");
+    expect(event.exception?.values?.[0]?.value).toBe("insert failed for [e-posta] [anahtar]");
+  });
 });

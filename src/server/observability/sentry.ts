@@ -3,6 +3,8 @@ import "server-only";
 import * as Sentry from "@sentry/nextjs";
 import type { Instrumentation } from "next";
 
+import { redact } from "@/lib/redact";
+
 let enabled = false;
 
 /**
@@ -33,6 +35,11 @@ export function scrubEvent<T extends Sentry.ErrorEvent>(event: T): T {
   delete event.breadcrumbs;
   delete event.extra;
   if (event.contexts) delete event.contexts.request;
+  // Error texts can quote input: phones, e-mails and keys are masked (C1).
+  if (event.message) event.message = redact(event.message);
+  for (const exception of event.exception?.values ?? []) {
+    if (exception.value) exception.value = redact(exception.value);
+  }
   return event;
 }
 
