@@ -103,6 +103,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - C2 · [BACKUP-RESTORE.md](docs/06-operations/BACKUP-RESTORE.md): bugünkü durum (Free, 6 saat), Launch önerisi ve maliyet tahmini (kaynaklı), RPO/RTO, geri yükleme provası ve gerçek geri yükleme adımları; `pnpm db:export` (yalnızca dev, veri yazdırmaz); `outputs/` .gitignore'da; dev veritabanı güncel migration'lara getirildi.
 - C3 · [INCIDENT-RESPONSE.md](docs/06-operations/INCIDENT-RESPONSE.md) (dereceler, roller, Retell/LLM/ElevenLabs/Neon/Vercel senaryoları, KVKK 72 saat akışı, Türkçe bildirim şablonları, olay kaydı şablonu) ve [SUPPORT-PROCESS.md](docs/06-operations/SUPPORT-PROCESS.md) (kanallar, yanıt hedefleri, sık talepler, KVKK talepleri, triage).
 - C4 · [CLINIC-ONBOARDING.md](docs/07-sales/CLINIC-ONBOARDING.md): ön koşullar, keşif bilgileri, konsol ve panel adımları (bugünkü ekranlara göre), numara ve asistan, 8 test senaryosu, yönlendirme, canlıya geçiş, ilk hafta, pilot anahtar önerisi, ayrılma.
+- C5 · [PHONE-LINE-OPTIONS.md](docs/07-sales/PHONE-LINE-OPTIONS.md): Retell'in özel SIP gereksinimleri (resmî belge), Verimor ve Netgsm seçenekleri ve kaynaklı fiyatlar, doğrulanmamış noktalar işaretli, maliyet varsayımları, öneri ve ilk görüşme için 10 soru.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 
