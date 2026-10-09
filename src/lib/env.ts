@@ -49,6 +49,12 @@ const envSchema = z.object({
    * "compact": the shorter system prompt with the same rules.
    */
   VOICE_PROMPT_VARIANT: z.enum(["full", "compact"]).default("full"),
+  /**
+   * "true": hardened prompt (safety first, clinic text as untrusted data,
+   * recording objection and backend-failure rules, no example names or
+   * numbers) (audit A9). Off everywhere until measured.
+   */
+  VOICE_PROMPT_HARDENING: optionalFlag,
   /** Retell turn-taking, 0–1 (Retell default 1 = answers as soon as it can). Lower waits longer. */
   RETELL_RESPONSIVENESS: optionalUnit,
   /** 0–1 (Retell default 1). Lower needs more words before the caller interrupts the agent. */

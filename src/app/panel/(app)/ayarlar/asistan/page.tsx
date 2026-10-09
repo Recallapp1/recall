@@ -37,6 +37,7 @@ export default async function AssistantSettingsPage() {
     directory,
     // The wording the live assistant uses (ADR-003 option A).
     variant: env().VOICE_PROMPT_VARIANT,
+    hardening: env().VOICE_PROMPT_HARDENING,
     toolNames: { endCall: "end_call", transferCall: "transfer_call" },
     placeholders: {
       now: "[arama anındaki tarih ve saat]",

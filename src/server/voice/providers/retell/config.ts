@@ -35,6 +35,7 @@ export function retellConfig(): RetellConfig {
     llmHighPriority: config.RETELL_LLM_HIGH_PRIORITY,
     tuning: {
       promptVariant: config.VOICE_PROMPT_VARIANT,
+      promptHardening: config.VOICE_PROMPT_HARDENING,
       responsiveness: config.RETELL_RESPONSIVENESS,
       interruptionSensitivity: config.RETELL_INTERRUPTION_SENSITIVITY,
       dynamicResponsiveness: config.RETELL_DYNAMIC_RESPONSIVENESS,

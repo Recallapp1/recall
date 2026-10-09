@@ -14,6 +14,8 @@ Inbound webhook çalışmayan aramalarda (Retell panelindeki test, web call) biz
 
 Aşağıdaki şablon gösterim amaçlıdır; birebir metin koddadır.
 
+**Varyantlar (2026-10-09):** `VOICE_PROMPT_VARIANT` (`full` varsayılan, `compact` ADR-003 seçenek A) ve `VOICE_PROMPT_HARDENING` (A9: önce değişmez güvenlik kuralları, kliniğin yazdığı her şey güvenilmeyen veri bloğunda, kayıt itirazı ve sistem hatası kuralları, örnek ad/numara yok). İkisi de varsayılan olarak kapalı; bugünkü prompt bu belgedeki gibidir.
+
 ## Yapı
 
 ```

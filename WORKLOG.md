@@ -91,6 +91,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - A6 · `/api/health/jobs` için isteğe bağlı `HEALTH_JOBS_TOKEN` (tanımsızken değişiklik yok): anonim istek yalnızca durumu alır, ayrıntı için `x-health-token`; sabit zamanlı karşılaştırma `secretMatches()`; `cache-control: no-store`.
 - A7 · denetim politikası: [AUDIT-POLICY.md](docs/05-compliance/AUDIT-POLICY.md); `AUDIT_STRICT` (kapalı) hasta, randevu, onay ve ayar kayıtlarını kritik yapar; olağan başarısızlıklar `metric: audit_write_failed` ile işaretli.
 - A8 · salt okunur "Kullanım ve sınırlar" sayfası (`PANEL_LIMITS_VIEW`, kapalı): sınırlar ve bugünkü kullanım (ses dakikası, aramalar, asistan randevuları); yalnızca `billing.read` (sahip, yönetici); düzenleme Recall ekibinde.
+- A9 · prompt güçlendirme (`VOICE_PROMPT_HARDENING`, hiçbir yerde açık değil): değişmez güvenlik bölümü başta, tam "yüz on ikiyi arayın" ifadesi, kayıt itirazı ve sistem hatası kuralları, klinik metni uzunluk ve karakter denetimiyle çitlenmiş güvenilmeyen veri, örnek ad/numara yok. Yeniden düzenleme sonrası bugünkü prompt bayt bayt aynı (8 kombinasyon); testler iki temel varyantta güçlendirilmiş hâli de koşuyor; `option-hardening` değerlendirme profili (çalıştırılmadı).
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

@@ -44,6 +44,8 @@ export interface AgentSpecInput {
  */
 export interface VoiceTuning {
   promptVariant: PromptVariant;
+  /** VOICE_PROMPT_HARDENING (audit A9). Unset keeps the prompt unchanged. */
+  promptHardening?: boolean;
   /** 0–1; Retell's default is 1. */
   responsiveness?: number;
   /** 0–1; Retell's default is 1. */
@@ -106,6 +108,7 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
     settings,
     directory,
     variant: tuning?.promptVariant,
+    hardening: tuning?.promptHardening,
     toolNames: TOOL_NAMES,
     placeholders: {
       now: `{{current_time_${tz}}}`,

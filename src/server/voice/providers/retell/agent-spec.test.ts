@@ -144,6 +144,20 @@ describe("voice and analysis settings", () => {
     expect(off.agent).not.toHaveProperty("enable_dynamic_responsiveness");
   });
 
+  it("keeps the agent spec unchanged unless prompt hardening is explicitly on (A9)", () => {
+    const base = specHash(buildRetellAgentSpec(input()));
+    expect(
+      specHash(
+        buildRetellAgentSpec(input({ tuning: { promptVariant: "full", promptHardening: false } })),
+      ),
+    ).toBe(base);
+    expect(
+      specHash(
+        buildRetellAgentSpec(input({ tuning: { promptVariant: "full", promptHardening: true } })),
+      ),
+    ).not.toBe(base);
+  });
+
   it("applies the latency tuning when configured (ADR-003 option A)", () => {
     const full = buildRetellAgentSpec(input());
     const tuned = buildRetellAgentSpec(

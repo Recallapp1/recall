@@ -44,6 +44,13 @@ export const profiles: EvalProfile[] = [
     listPricePerMinute: INFRA + 0.025 + ELEVENLABS,
   },
   {
+    id: "option-hardening",
+    title: "Hardened prompt (A9): Haiku, full prompt + safety hardening, Retell defaults",
+    llmModel: "claude-4.5-haiku",
+    tuning: { promptVariant: "full", promptHardening: true },
+    listPricePerMinute: INFRA + 0.025 + ELEVENLABS,
+  },
+  {
     id: "option-c-gemini",
     title: "Option C: Gemini 3.0 Flash with option A settings",
     llmModel: "gemini-3.0-flash",

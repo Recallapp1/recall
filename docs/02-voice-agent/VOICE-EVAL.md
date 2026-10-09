@@ -27,7 +27,7 @@ pnpm dev:tunnel
 pnpm voice:eval
 ```
 
-Değerlendirme lokal `.env.local` anahtarıyla, yani **Recall Dev** Retell çalışma alanında çalışır (2026-10-09'dan beri); maliyet dev alanının kredisinden düşer, production kredisine dokunmaz. Tek senaryo: `pnpm voice:eval --only book-clear,emergency`. Başka bir yapılandırmayla koşmak için `--profile <id>` (`baseline`, `option-a`, `option-c-gemini`, `option-c-gpt`; [profiles.ts](../../scripts/voice-eval/profiles.ts)): dev ajanı koşu boyunca o model ve ayarlarla senkronlanır, sonunda env ayarlarına döner. `pnpm voice:eval --plan` arama yapmadan profilleri ve tahmini maliyeti listeler. Ham sonuçlar `.voice-eval/results-*.json` (git dışı). Maliyet arama başına yaklaşık 0,15–0,35 $ (Retell).
+Değerlendirme lokal `.env.local` anahtarıyla, yani **Recall Dev** Retell çalışma alanında çalışır (2026-10-09'dan beri); maliyet dev alanının kredisinden düşer, production kredisine dokunmaz. Tek senaryo: `pnpm voice:eval --only book-clear,emergency`. Başka bir yapılandırmayla koşmak için `--profile <id>` (`baseline`, `option-a`, `option-hardening`, `option-c-gemini`, `option-c-gpt`; [profiles.ts](../../scripts/voice-eval/profiles.ts)): dev ajanı koşu boyunca o model ve ayarlarla senkronlanır, sonunda env ayarlarına döner. `pnpm voice:eval --plan` arama yapmadan profilleri ve tahmini maliyeti listeler. Ham sonuçlar `.voice-eval/results-*.json` (git dışı). Maliyet arama başına yaklaşık 0,15–0,35 $ (Retell).
 
 ## Senaryolar (26)
 
