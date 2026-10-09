@@ -17,10 +17,14 @@ export function rejectUnauthorizedCron(
     return Response.json({ error: "CRON_SECRET is not set" }, { status: 503 });
   }
   const header = request.headers.get("authorization") ?? "";
-  // Hash both sides so the comparison is constant-time whatever the lengths.
-  const digest = (value: string) => createHash("sha256").update(value).digest();
-  if (!timingSafeEqual(digest(header), digest(`Bearer ${secret}`))) {
+  if (!secretMatches(header, `Bearer ${secret}`)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   return null;
+}
+
+/** Constant-time comparison: both sides are hashed, so lengths do not leak. */
+export function secretMatches(given: string, expected: string): boolean {
+  const digest = (value: string) => createHash("sha256").update(value).digest();
+  return timingSafeEqual(digest(given), digest(expected));
 }

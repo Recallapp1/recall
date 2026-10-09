@@ -71,6 +71,11 @@ const envSchema = z.object({
    * and tool call; a repeat returns the stored first result (audit A3). Off by default.
    */
   VOICE_TOOL_IDEMPOTENCY: optionalFlag,
+  /**
+   * When set, /api/health/jobs shows job details only with the
+   * `x-health-token` header; others get the status alone (audit A6).
+   */
+  HEALTH_JOBS_TOKEN: optionalString,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

@@ -360,3 +360,4 @@ Status per finding; commit ids are added as each batch reaches `main`. "Off" mea
 | F-10 (request-keyed idempotency) | Fixed, **off**                                | `VOICE_TOOL_IDEMPOTENCY=true`; natural-key idempotency (P-11) stays on                                                   | A3     |
 | F-11 (recording URL ownership)   | Hardened (was a false positive; now asserted) | Always on; defensive only                                                                                                | A4     |
 | F-01, F-02 (practitioner scope)  | Verified, no open path; tests added           | Custom-role scope is by design (decision log)                                                                            | A5     |
+| F-15 (health endpoints)          | Fixed, **off** until a token is set           | `HEALTH_JOBS_TOKEN`; `/api/health` unchanged                                                                             | A6     |
