@@ -18,6 +18,7 @@ import {
 } from "../../../domain/clinics";
 import { consumeRateLimit, hashKey } from "../../../domain/rate-limit";
 import { admitInboundCall } from "../../../domain/voice-limits";
+import { MUTATING_TOOLS, requestKey, runOnce } from "../../../domain/tool-requests";
 import {
   enqueueProviderDeletions,
   processProviderDeletions,
@@ -38,6 +39,8 @@ export interface RetellHandlerDeps {
   postCallFlags?: boolean;
   /** VOICE_SHARED_NUMBER_CHECK. Unset means off. */
   sharedNumberCheck?: boolean;
+  /** VOICE_TOOL_IDEMPOTENCY: mutating tools run once per request key. Unset means off. */
+  toolIdempotency?: boolean;
   /** Dispatches one clinic's queued messages (locks, opt-out, window, caps). */
   dispatchClinic: (clinicId: string) => Promise<void>;
   /** Removes the call (audio included) from the provider. */
@@ -156,18 +159,72 @@ export async function handleFunctionCall(request: Request, deps: RetellHandlerDe
     startedAt: timestamp(call.start_timestamp),
   });
 
-  const result = await runTool(name, args, {
-    db: deps.db,
-    clinic: ctx,
-    callId: callRow.id,
-    callerPhone,
-    now: deps.now(),
-    defer: deps.defer,
-    smsDelivers: deps.smsDelivers,
-    sendQueuedMessages: () => deps.defer(() => deps.dispatchClinic(ctx.clinic.id)),
-    sharedNumberCheck: deps.sharedNumberCheck,
-  });
-  return Response.json(result);
+  const run = () =>
+    runTool(name, args, {
+      db: deps.db,
+      clinic: ctx,
+      callId: callRow.id,
+      callerPhone,
+      now: deps.now(),
+      defer: deps.defer,
+      smsDelivers: deps.smsDelivers,
+      sendQueuedMessages: () => deps.defer(() => deps.dispatchClinic(ctx.clinic.id)),
+      sharedNumberCheck: deps.sharedNumberCheck,
+    });
+  if (!deps.toolIdempotency || !MUTATING_TOOLS.has(name)) return Response.json(await run());
+
+  // One run per request (audit A3): a repeat returns the first result.
+  const outcome = await runOnce(
+    deps.db,
+    {
+      clinicId: ctx.clinic.id,
+      callId: callRow.id,
+      tool: name,
+      requestKey: requestKey(name, args, providerToolCallId(parsed.data, name, args)),
+    },
+    now,
+    run,
+  );
+  if (outcome.kind === "in_progress") {
+    return Response.json({
+      ok: false,
+      error: "DUPLICATE_REQUEST",
+      message:
+        "Bu istek şu anda işleniyor. Sonucu görmek için biraz sonra find_appointments kullan.",
+    });
+  }
+  return Response.json(
+    outcome.kind === "replayed" ? { ...outcome.result, replayed: true } : outcome.result,
+  );
+}
+
+/**
+ * Retell's tool call id for this request: the latest invocation in the call's
+ * transcript with the same tool name and the same arguments. Anything less
+ * certain falls back to a key from the tool name and arguments.
+ */
+function providerToolCallId(
+  body: unknown,
+  tool: string,
+  args: Record<string, unknown>,
+): string | null {
+  const turns = (body as { call?: { transcript_with_tool_calls?: unknown } }).call
+    ?.transcript_with_tool_calls;
+  if (!Array.isArray(turns)) return null;
+  const wanted = requestKey(tool, args, null);
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const turn = turns[i] as Record<string, unknown>;
+    if (turn?.role !== "tool_call_invocation" || turn.name !== tool) continue;
+    if (typeof turn.tool_call_id !== "string") continue;
+    let invoked: unknown;
+    try {
+      invoked = typeof turn.arguments === "string" ? JSON.parse(turn.arguments) : turn.arguments;
+    } catch {
+      continue;
+    }
+    if (requestKey(tool, invoked, null) === wanted) return turn.tool_call_id;
+  }
+  return null;
 }
 
 /** Lifecycle events: keeps our call record (duration, transcript, summary, cost) current. */

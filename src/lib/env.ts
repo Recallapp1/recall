@@ -66,6 +66,11 @@ const envSchema = z.object({
    * caller ID (audit A2, F-07). Off by default.
    */
   VOICE_SHARED_NUMBER_CHECK: optionalFlag,
+  /**
+   * "true": book, cancel, reschedule and callback requests are keyed by call
+   * and tool call; a repeat returns the stored first result (audit A3). Off by default.
+   */
+  VOICE_TOOL_IDEMPOTENCY: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

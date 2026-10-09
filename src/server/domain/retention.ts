@@ -3,7 +3,14 @@ import "server-only";
 import { and, inArray, isNotNull, lt, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
-import { callbackRequests, calls, followUpPlans, jobRuns, notifications } from "../db/schema";
+import {
+  callbackRequests,
+  calls,
+  followUpPlans,
+  jobRuns,
+  notifications,
+  toolRequests,
+} from "../db/schema";
 import { deleteExpiredRateLimits } from "./rate-limit";
 
 /** docs/05-compliance/DATA-RETENTION.md */
@@ -21,6 +28,8 @@ export const RETENTION_DAYS = {
   callbackRequest: 90,
   /** Job run records (counts only): enough history to see a pattern. */
   jobRun: 90,
+  /** Voice tool request records (ids and spoken dates): only needed during the call. */
+  toolRequest: 30,
 } as const;
 
 export interface RetentionResult {
@@ -32,6 +41,7 @@ export interface RetentionResult {
   rateLimitsDeleted: number;
   callbacksDeleted: number;
   jobRunsDeleted: number;
+  toolRequestsDeleted: number;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -100,7 +110,15 @@ export async function applyRetention(exec: Executor, now: Date): Promise<Retenti
     .where(lt(jobRuns.startedAt, new Date(now.getTime() - RETENTION_DAYS.jobRun * DAY_MS)))
     .returning({ id: jobRuns.id });
 
+  const oldRequests = await exec
+    .delete(toolRequests)
+    .where(
+      lt(toolRequests.createdAt, new Date(now.getTime() - RETENTION_DAYS.toolRequest * DAY_MS)),
+    )
+    .returning({ callId: toolRequests.callId });
+
   return {
+    toolRequestsDeleted: oldRequests.length,
     jobRunsDeleted: oldRuns.length,
     callbacksDeleted: oldCallbacks.length,
     rateLimitsDeleted,

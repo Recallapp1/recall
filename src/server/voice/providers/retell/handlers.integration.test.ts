@@ -15,6 +15,7 @@ import {
   notifications,
   patients,
   providerDeletions,
+  toolRequests,
 } from "../../../db/schema";
 import { dispatchClinicNotifications } from "../../../domain/notifications";
 import {
@@ -1085,5 +1086,101 @@ describe("shared numbers (VOICE_SHARED_NUMBER_CHECK)", () => {
       .from(appointments)
       .where(eq(appointments.id, found.body.appointments[0].appointmentId));
     expect(row?.name).toBeNull();
+  });
+});
+
+describe("request-keyed idempotency (VOICE_TOOL_IDEMPOTENCY)", () => {
+  const on = { toolIdempotency: true };
+  const pause = () => new Promise((resolve) => setTimeout(resolve, 5));
+  const bookArgs = (time: string) => ({
+    serviceId: clinic.serviceId,
+    practitionerId: clinic.practitionerId,
+    date: "2026-10-15",
+    time,
+    patientName: "Tekrar Hasta",
+  });
+  const requestsFor = async (callId: string) => {
+    const [row] = await db.select().from(calls).where(eq(calls.providerCallId, callId));
+    return row ? db.select().from(toolRequests).where(eq(toolRequests.callId, row.id)) : [];
+  };
+
+  it("stores nothing and keeps today's behaviour when the switch is unset", async () => {
+    const caller = { from_number: "+905320000081", call_id: "idem_off" };
+    const first = await tool("book_appointment", bookArgs("09:00"), caller);
+    await pause();
+    const again = await tool("book_appointment", bookArgs("09:00"), caller);
+    expect(first.body).toMatchObject({ ok: true, alreadyExisted: false });
+    expect(again.body).toMatchObject({ ok: true, alreadyExisted: true });
+    expect(await requestsFor("idem_off")).toEqual([]);
+  });
+
+  it("returns the first result for a repeated booking, with one confirmation SMS", async () => {
+    const caller = { from_number: "+905320000082", call_id: "idem_on" };
+    const first = await tool("book_appointment", bookArgs("10:00"), caller, on);
+    await pause();
+    const again = await tool("book_appointment", bookArgs("10:00"), caller, on);
+    expect(first.body).toMatchObject({ ok: true, alreadyExisted: false });
+    expect(again.body).toMatchObject({
+      ok: true,
+      replayed: true,
+      appointmentId: first.body.appointmentId,
+      alreadyExisted: false,
+    });
+    const queued = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.subjectId, first.body.appointmentId));
+    expect(queued.filter((n) => n.kind === "appointment_confirmation")).toHaveLength(1);
+    expect((await requestsFor("idem_on")).map((r) => r.status)).toEqual(["done"]);
+  });
+
+  it("runs one of two simultaneous identical requests", async () => {
+    const body = {
+      name: "book_appointment",
+      args: bookArgs("11:00"),
+      call: call({ from_number: "+905320000083", call_id: "idem_race" }),
+    };
+    const a = await signedRequest(body);
+    await pause();
+    const b = await signedRequest(body);
+    const results = await Promise.all([
+      handleFunctionCall(a, deps(on)).then((r) => r.json()),
+      handleFunctionCall(b, deps(on)).then((r) => r.json()),
+    ]);
+    const ran = results.filter((r) => r.ok === true && !r.replayed);
+    expect(ran).toHaveLength(1);
+    const other = results.find((r) => r !== ran[0]);
+    expect(other.error === "DUPLICATE_REQUEST" || other.replayed === true).toBe(true);
+    const booked = await db
+      .select()
+      .from(appointments)
+      .where(eq(appointments.id, ran[0].appointmentId));
+    expect(booked).toHaveLength(1);
+  });
+
+  it("keys by Retell's tool call id when the invocation is in the transcript", async () => {
+    const args = bookArgs("12:00");
+    const withTurns = {
+      from_number: "+905320000084",
+      call_id: "idem_tc",
+      transcript_with_tool_calls: [
+        { role: "user", content: "Randevu istiyorum." },
+        {
+          role: "tool_call_invocation",
+          name: "book_appointment",
+          tool_call_id: "tc_abc",
+          arguments: JSON.stringify(args),
+        },
+      ],
+    };
+    await tool("book_appointment", args, withTurns, on);
+    expect((await requestsFor("idem_tc")).map((r) => r.requestKey)).toEqual(["tc:tc_abc"]);
+  });
+
+  it("does not store a failed request, so a corrected retry runs", async () => {
+    const caller = { from_number: "+905320000085", call_id: "idem_fail" };
+    const closed = await tool("book_appointment", { ...bookArgs("03:00") }, caller, on);
+    expect(closed.body).toMatchObject({ ok: false });
+    expect(await requestsFor("idem_fail")).toEqual([]);
   });
 });

@@ -944,6 +944,36 @@ export const providerDeletions = pgTable(
   ],
 );
 
+/**
+ * One row per mutating voice tool request (VOICE_TOOL_IDEMPOTENCY, audit A3):
+ * keyed by the call and the provider's tool call id (or the tool name and its
+ * arguments), so a repeated request returns the first result instead of
+ * running again. Results hold ids and spoken dates, never names or numbers.
+ */
+export const toolRequests = pgTable(
+  "tool_requests",
+  {
+    clinicId: clinicRef(),
+    callId: uuid().notNull(),
+    requestKey: text().notNull(),
+    tool: text().notNull(),
+    /** pending | done */
+    status: text().notNull().default("pending"),
+    result: jsonb().$type<Record<string, unknown>>(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.callId, t.requestKey] }),
+    index().on(t.createdAt),
+    foreignKey({
+      name: "tool_requests_call_fk",
+      columns: [t.clinicId, t.callId],
+      foreignColumns: [calls.clinicId, calls.id],
+    }).onDelete("cascade"),
+  ],
+);
+
 export type Clinic = typeof clinics.$inferSelect;
 export type Practitioner = typeof practitioners.$inferSelect;
 export type Service = typeof services.$inferSelect;
