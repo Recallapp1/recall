@@ -2,6 +2,7 @@ import "server-only";
 
 import { desc, eq } from "drizzle-orm";
 
+import { env } from "@/lib/env";
 import { safeError } from "@/lib/safe-error";
 
 import type { Database, Executor } from "../db";
@@ -89,6 +90,41 @@ export const CRITICAL_AUDIT_ACTIONS: ReadonlySet<AuditAction> = new Set<AuditAct
   "platform.clinic_status_changed",
 ]);
 
+/**
+ * With AUDIT_STRICT (audit A7) these become critical too: every change to
+ * patient data, appointments, consent and clinic settings must leave its
+ * trace. Off by default; see docs/05-compliance/AUDIT-POLICY.md.
+ */
+export const STRICT_AUDIT_ACTIONS: ReadonlySet<AuditAction> = new Set<AuditAction>([
+  "patient.updated",
+  "patient.sms_opt_out",
+  "patient.sms_opt_in",
+  "appointment.created",
+  "appointment.updated",
+  "appointment.status_changed",
+  "settings.updated",
+  "follow_up.started",
+  "follow_up.stopped",
+  "follow_up.consent_recorded",
+  "follow_up.consent_withdrawn",
+  "team.invitation_accepted",
+  "platform.clinic_created",
+]);
+
+function strictAudit(): boolean {
+  try {
+    return env().AUDIT_STRICT === true;
+  } catch {
+    // Without a valid environment (some unit tests) the default applies.
+    return false;
+  }
+}
+
+/** Whether a failed write of this record must stop the action. */
+export function isCriticalAudit(action: AuditAction, strict: boolean = strictAudit()): boolean {
+  return CRITICAL_AUDIT_ACTIONS.has(action) || (strict && STRICT_AUDIT_ACTIONS.has(action));
+}
+
 export class AuditWriteError extends Error {
   constructor(readonly action: AuditAction) {
     super(`Audit record could not be written: ${action}`);
@@ -104,7 +140,7 @@ const CRITICAL_ATTEMPTS = 3;
  * fail, an alarm is raised and `AuditWriteError` is thrown.
  */
 export async function recordAudit(exec: Executor, input: AuditInput): Promise<void> {
-  const critical = CRITICAL_AUDIT_ACTIONS.has(input.action);
+  const critical = isCriticalAudit(input.action);
   for (let attempt = 1; ; attempt += 1) {
     try {
       // Savepoint inside a transaction: a failed insert must not abort the caller's work.
@@ -117,6 +153,8 @@ export async function recordAudit(exec: Executor, input: AuditInput): Promise<vo
         console.error(
           JSON.stringify({
             msg: "audit.write_failed",
+            // Counted by a log-based alert (docs/06-operations/MONITORING.md).
+            metric: "audit_write_failed",
             action: input.action,
             error: safeError(error),
           }),

@@ -76,6 +76,11 @@ const envSchema = z.object({
    * `x-health-token` header; others get the status alone (audit A6).
    */
   HEALTH_JOBS_TOKEN: optionalString,
+  /**
+   * "true": audit records of patient data, appointment and settings changes
+   * become critical (retry, alarm, the action fails) (audit A7). Off by default.
+   */
+  AUDIT_STRICT: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

@@ -89,6 +89,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - A4 · kayıt bağlantısı sahipliği (her zaman açık, meşru dinlemeyi değiştirmez): istekten önce satırın klinik, sağlayıcı ve sağlayıcı arama kimliği doğrulanır; Retell'in yanıtındaki arama kimliği eşleşmezse bağlantı verilmez.
 - A5 · F-01/F-02 yeniden doğrulandı: yerleşik hekim rolü aramalara, kayıtlara, geri aramalara ve dışa aktarmaya erişemiyor; hekimin panel sorguları kendi takvimine daralıyor. Eksik testler eklendi (açık bulunamadı, kod değişikliği yok).
 - A6 · `/api/health/jobs` için isteğe bağlı `HEALTH_JOBS_TOKEN` (tanımsızken değişiklik yok): anonim istek yalnızca durumu alır, ayrıntı için `x-health-token`; sabit zamanlı karşılaştırma `secretMatches()`; `cache-control: no-store`.
+- A7 · denetim politikası: [AUDIT-POLICY.md](docs/05-compliance/AUDIT-POLICY.md); `AUDIT_STRICT` (kapalı) hasta, randevu, onay ve ayar kayıtlarını kritik yapar; olağan başarısızlıklar `metric: audit_write_failed` ile işaretli.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

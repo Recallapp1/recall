@@ -5,7 +5,14 @@ import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
 import type { Database, Executor } from "../db";
 import { auditEvents, clinics } from "../db/schema";
-import { AuditWriteError, recordAudit, withAudit } from "./audit";
+import {
+  AuditWriteError,
+  CRITICAL_AUDIT_ACTIONS,
+  isCriticalAudit,
+  recordAudit,
+  STRICT_AUDIT_ACTIONS,
+  withAudit,
+} from "./audit";
 import { parseClinicSettings } from "./clinic-settings";
 import { setClinicFeature } from "./settings";
 
@@ -93,5 +100,34 @@ describe("audit records", () => {
       .from(auditEvents)
       .where(eq(auditEvents.clinicId, clinic.ctx.clinic.id));
     expect(records.map((r) => r.action)).toContain("platform.feature_changed");
+  });
+});
+
+describe("audit policy (AUDIT_STRICT, A7)", () => {
+  it("keeps today's split when strict mode is off", () => {
+    expect(isCriticalAudit("patient.exported", false)).toBe(true);
+    expect(isCriticalAudit("appointment.created", false)).toBe(false);
+    expect(isCriticalAudit("patient.updated", false)).toBe(false);
+  });
+
+  it("makes patient, appointment, consent and settings changes critical when on", () => {
+    for (const action of STRICT_AUDIT_ACTIONS) expect(isCriticalAudit(action, true)).toBe(true);
+    for (const action of CRITICAL_AUDIT_ACTIONS) expect(isCriticalAudit(action, true)).toBe(true);
+    expect(isCriticalAudit("auth.sign_in", true)).toBe(false);
+  });
+
+  it("is off when the environment does not set it", () => {
+    expect(isCriticalAudit("appointment.created")).toBe(false);
+  });
+
+  it("tags ordinary failures for a log-based alert", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    await recordAudit(brokenDb, {
+      clinicId: clinic.ctx.clinic.id,
+      actorUserId: null,
+      action: "auth.sign_in",
+    });
+    expect(String(log.mock.calls[0]?.[0])).toContain('"metric":"audit_write_failed"');
+    log.mockRestore();
   });
 });
