@@ -39,6 +39,7 @@ export const bookAppointmentTool = defineTool({
       patientPhone: input.patientPhone ?? ctx.callerPhone,
       // Booking for a family member's number is allowed; it just discloses nothing.
       phoneUnverified: spokenPhone !== null && spokenPhone !== ctx.callerPhone,
+      ...(ctx.sharedNumberCheck && { bookedForName: input.patientName }),
       source: "voice",
       callId: ctx.callId,
       now: ctx.now,

@@ -8,7 +8,7 @@ import { findUpcomingAppointments, findVerifiedAppointments } from "../../domain
 import { linkCallToPatients } from "../../domain/call-patients";
 import { DomainError } from "../../domain/errors";
 import { spokenDate, spokenTime, spokenTitles } from "../../domain/speech";
-import { ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
+import { needsOwnershipCheck, ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
 import { defineTool } from "./define";
 import { phone } from "./schemas";
 
@@ -20,8 +20,9 @@ export const findAppointments = defineTool({
   input: z.object({ phone: phone.optional(), verification: ownershipCheck.optional() }),
   async handler(ctx, input) {
     const caller = resolveCaller(ctx, input.phone);
+    const verify = await needsOwnershipCheck(ctx, caller);
 
-    if (caller.trusted) {
+    if (!verify) {
       const appointments = await findUpcomingAppointments(
         ctx.db,
         ctx.clinic,
@@ -47,16 +48,25 @@ export const findAppointments = defineTool({
           // Initials only: enough to confirm identity without disclosing data.
           patient: maskName(a.patientName),
         })),
-        hint: caller.ignoredSpokenNumber
-          ? "Telefonla yalnızca arayan numaraya kayıtlı randevular yönetilebilir. Başka bir numaraya kayıtlı randevu için klinik ekibinin geri aramasını öner."
-          : appointments.length === 0
-            ? "Bu numaraya kayıtlı gelecek randevu yok."
-            : undefined,
+        hint:
+          caller.trusted && caller.ignoredSpokenNumber
+            ? "Telefonla yalnızca arayan numaraya kayıtlı randevular yönetilebilir. Başka bir numaraya kayıtlı randevu için klinik ekibinin geri aramasını öner."
+            : appointments.length === 0
+              ? "Bu numaraya kayıtlı gelecek randevu yok."
+              : undefined,
       };
     }
 
-    // No caller ID: the same answer for every number until ownership is shown.
+    // No caller ID, or a number shared by several people: the same answer for
+    // every number until ownership is shown, and only the matching appointment.
     if (!input.verification) {
+      if (caller.trusted) {
+        return {
+          ok: true,
+          verificationRequired: true,
+          hint: "Bu numaraya birden fazla kişi adına randevu kayıtlı olabilir. Randevu olup olmadığını veya kimin adına olduğunu söyleme. Hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini iste; sonra find_appointments'ı verification ile tekrar çağır.",
+        };
+      }
       if (!input.phone?.trim()) {
         throw new DomainError(
           "PHONE_REQUIRED",

@@ -84,6 +84,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 **Partiler**
 
 - A1 · aramadan sonra işaretler (`POST_CALL_FLAGS`, kapalı): kayıtla uyuşmayan randevu/iptal/taşıma iddiası, acil durum ve tıbbi risk (Türkçe kalıplar, yanlış pozitif örnekleri), `calls.flags` (migration 0016, yalnızca ekleme), panelde rozet, `call.flagged` denetim kaydı.
+- A2 · ortak numara (`VOICE_SHARED_NUMBER_CHECK`, kapalı): sesli randevunun kimin adına alındığı `appointments.booked_for_name` (migration 0017, yalnızca ekleme); farklı adlar taşıyan numarada iptal/erteleme/bulma ad, tarih ve saat ister, diğer kişilerin adı veya saati söylenmez. Testler: aile, gizli numara, yanlış ad, aynı ada birden çok randevu, kapalıyken değişmeyen davranış.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

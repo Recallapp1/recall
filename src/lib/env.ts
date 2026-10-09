@@ -60,6 +60,12 @@ const envSchema = z.object({
    * medical-risk mentions for the panel (audit F-03, F-04). Off by default.
    */
   POST_CALL_FLAGS: optionalFlag,
+  /**
+   * "true": a number with appointments booked for different people counts as
+   * shared; changing or revealing one needs name, date and time even with
+   * caller ID (audit A2, F-07). Off by default.
+   */
+  VOICE_SHARED_NUMBER_CHECK: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

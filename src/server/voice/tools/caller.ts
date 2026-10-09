@@ -5,7 +5,11 @@ import { z } from "zod";
 import { normalizePhone } from "@/lib/phone";
 
 import { DomainError } from "../../domain/errors";
-import type { OwnershipCheck } from "../../domain/appointments";
+import {
+  findUpcomingAppointments,
+  isSharedNumber,
+  type OwnershipCheck,
+} from "../../domain/appointments";
 import { consumeRateLimit, hashKey, isRateLimited } from "../../domain/rate-limit";
 import type { ToolContext } from "./define";
 import { localDate, localTime } from "./schemas";
@@ -50,6 +54,21 @@ export function resolveCaller(ctx: ToolContext, spokenPhone: string | undefined)
     };
   }
   return { trusted: false, phone: spokenPhone ?? null };
+}
+
+/**
+ * Whether this caller must prove ownership (name, date, time): always without
+ * caller ID, and with VOICE_SHARED_NUMBER_CHECK also when the caller's number
+ * holds appointments for more than one person.
+ */
+export async function needsOwnershipCheck(
+  ctx: ToolContext,
+  caller: CallerIdentity,
+): Promise<boolean> {
+  if (!caller.trusted) return true;
+  if (!ctx.sharedNumberCheck) return false;
+  const upcoming = await findUpcomingAppointments(ctx.db, ctx.clinic, caller.phone, ctx.now);
+  return isSharedNumber(upcoming);
 }
 
 function limitKeys(ctx: ToolContext, phone: string | null) {

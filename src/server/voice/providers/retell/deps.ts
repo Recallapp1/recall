@@ -35,6 +35,7 @@ export function withRetell(handler: Handler) {
       defer: (task) => after(task),
       smsDelivers: smsProvider().delivers,
       postCallFlags: env().POST_CALL_FLAGS === true,
+      sharedNumberCheck: env().VOICE_SHARED_NUMBER_CHECK === true,
       dispatchClinic: async (clinicId) => {
         const config = env();
         try {

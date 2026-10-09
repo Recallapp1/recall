@@ -485,6 +485,11 @@ export const appointments = pgTable(
     source: appointmentSource().notNull(),
     callId: uuid().references(() => calls.id, { onDelete: "set null" }),
     notes: text(),
+    /**
+     * Name the caller booked for (VOICE_SHARED_NUMBER_CHECK). Several people
+     * can share a phone number while the patient record is per number.
+     */
+    bookedForName: text(),
     cancelledAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

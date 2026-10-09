@@ -9,7 +9,7 @@ import { DomainError } from "../../domain/errors";
 import { spokenTitles } from "../../domain/speech";
 import { spokenDate, spokenTime } from "../../domain/speech";
 import { enqueueAppointmentMessage } from "../../domain/notifications";
-import { ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
+import { needsOwnershipCheck, ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
 import { defineTool } from "./define";
 import { entityId, localDate, localTime, phone } from "./schemas";
 
@@ -41,9 +41,9 @@ export const rescheduleAppointmentTool = defineTool({
         callId: ctx.callId,
         now: ctx.now,
       });
-    const { previous, appointment, alreadyRescheduled } = caller.trusted
-      ? await reschedule()
-      : await withOwnershipCheck(ctx, caller.phone, verification, reschedule);
+    const { previous, appointment, alreadyRescheduled } = (await needsOwnershipCheck(ctx, caller))
+      ? await withOwnershipCheck(ctx, caller.phone, verification, reschedule)
+      : await reschedule();
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "rescheduled");
     await linkCallToPatients(ctx.db, clinic.id, ctx.callId, [appointment.patientId]);

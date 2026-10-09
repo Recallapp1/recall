@@ -31,6 +31,8 @@ export interface AppointmentSummary {
   practitionerName: string;
   patientName: string;
   patientPhone: string;
+  /** Who the voice booking was for, when recorded (shared numbers). */
+  bookedForName: string | null;
   startsAt: Date;
 }
 
@@ -48,6 +50,8 @@ export interface BookAppointmentInput {
    * already has an appointment unless the caller also gave the patient's name.
    */
   phoneUnverified?: boolean;
+  /** Recorded only with VOICE_SHARED_NUMBER_CHECK: who this appointment is for. */
+  bookedForName?: string;
   callId?: string | null;
   now: Date;
 }
@@ -82,7 +86,7 @@ export async function bookAppointment(
   const existing = await findActiveAppointmentAt(db, clinic, phone, input);
   if (existing) {
     const appointment = await summarize(db, clinic, existing.id);
-    if (input.phoneUnverified && !sameFullName(appointment.patientName, input.patientName)) {
+    if (input.phoneUnverified && !sameFullName(nameOnAppointment(appointment), input.patientName)) {
       throw new DomainError("SLOT_UNAVAILABLE", "Bu saat uygun değil.");
     }
     return { appointment, created: false };
@@ -155,6 +159,7 @@ export async function bookAppointment(
           source: input.source,
           callId: input.callId ?? null,
           notes: input.notes,
+          ...(input.bookedForName && { bookedForName: personName(input.bookedForName) }),
         })
         .returning({ id: appointments.id });
       // Follow-up (Takip): attach to the patient's plan when exactly one fits.
@@ -306,11 +311,31 @@ function editDistanceAtMostOne(a: string, b: string): boolean {
   return edits + (a.length - i) + (b.length - j) <= 1;
 }
 
+/** The name a caller must give for this appointment: who it was booked for, else the patient. */
+export function nameOnAppointment(
+  summary: Pick<AppointmentSummary, "bookedForName" | "patientName">,
+): string {
+  return summary.bookedForName ?? summary.patientName;
+}
+
+/**
+ * Whether upcoming appointments on one number belong to more than one person
+ * (names compared like an ownership check: speech-recognition tolerant).
+ */
+export function isSharedNumber(summaries: readonly AppointmentSummary[]): boolean {
+  const names: string[] = [];
+  for (const summary of summaries) {
+    const name = nameOnAppointment(summary);
+    if (!names.some((known) => sameFullName(known, name))) names.push(name);
+  }
+  return names.length > 1;
+}
+
 function matchesCheck(summary: AppointmentSummary, check: OwnershipCheck): boolean {
   return (
     summary.date === check.appointmentDate &&
     summary.time === check.appointmentTime &&
-    sameFullName(summary.patientName, check.patientName)
+    sameFullName(nameOnAppointment(summary), check.patientName)
   );
 }
 
@@ -591,6 +616,7 @@ function summaryQuery(db: Database) {
       practitionerTitle: practitioners.title,
       patientName: patients.fullName,
       patientPhone: patients.phone,
+      bookedForName: appointments.bookedForName,
       status: appointments.status,
     })
     .from(appointments)
@@ -616,6 +642,7 @@ function toSummary(row: SummaryRow, timeZone: string): AppointmentSummary {
     }),
     patientName: row.patientName,
     patientPhone: row.patientPhone,
+    bookedForName: row.bookedForName,
     startsAt: row.startsAt,
   };
 }

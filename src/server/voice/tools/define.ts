@@ -28,6 +28,8 @@ export interface ToolContext {
    * locks, opt-out, send window and caps.
    */
   sendQueuedMessages: () => void;
+  /** VOICE_SHARED_NUMBER_CHECK: shared numbers need name, date and time. Unset means off. */
+  sharedNumberCheck?: boolean;
 }
 
 export type ToolErrorCode =

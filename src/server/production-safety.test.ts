@@ -49,6 +49,7 @@ const ADDED_COLUMNS: Record<string, string[]> = {
     'ALTER TABLE "calls" ADD COLUMN "flags" text[];',
     'ALTER TABLE "calls" ADD COLUMN "flagged_at" timestamp with time zone;',
   ],
+  "0017_appointment_booked_for": ['ALTER TABLE "appointments" ADD COLUMN "booked_for_name" text;'],
 };
 
 /**

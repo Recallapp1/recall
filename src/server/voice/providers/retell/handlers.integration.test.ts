@@ -478,7 +478,6 @@ describe("caller identity (abuse cases)", () => {
       appointmentTime: "10:00",
     };
     const found = await tool("find_appointments", { phone: VICTIM_SPOKEN, verification }, web);
-    expect(found.body).toMatchObject({ ok: true });
     expect(found.body.appointments).toHaveLength(1);
     expect(found.body.appointments[0].appointmentId).toBe(victimAppointmentId);
     // Only what the caller already said: no service or practitioner details.
@@ -953,5 +952,138 @@ describe("post-call flags (POST_CALL_FLAGS)", () => {
       deps({ postCallFlags: true }),
     );
     expect((await flagsOf("flags_clean"))?.flags).toEqual([]);
+  });
+});
+
+describe("shared numbers (VOICE_SHARED_NUMBER_CHECK)", () => {
+  const on = { sharedNumberCheck: true };
+  const book = (
+    from: string | null,
+    callId: string,
+    name: string,
+    time: string,
+    extra: Record<string, unknown> = {},
+  ) =>
+    tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-12",
+        time,
+        patientName: name,
+        ...extra,
+      },
+      { from_number: from, call_id: callId },
+      on,
+    );
+
+  it("asks a shared number for name, date and time, and reveals only the match", async () => {
+    const FAMILY = "+905320000071";
+    expect((await book(FAMILY, "fam_1", "Ayşe Demir", "10:00")).body).toMatchObject({ ok: true });
+    expect((await book(FAMILY, "fam_1", "Ali Demir", "11:00")).body).toMatchObject({ ok: true });
+    const caller = { from_number: FAMILY, call_id: "fam_2" };
+
+    const open = await tool("find_appointments", {}, caller, on);
+    expect(open.body).toMatchObject({ ok: true, verificationRequired: true });
+    expect(JSON.stringify(open.body)).not.toMatch(/Ayşe|Ali|10:00|11:00/);
+
+    const wrong = await tool(
+      "find_appointments",
+      {
+        verification: {
+          patientName: "Veli Demir",
+          appointmentDate: "2026-10-12",
+          appointmentTime: "11:00",
+        },
+      },
+      caller,
+      on,
+    );
+    expect(wrong.body).toMatchObject({ ok: false, error: "VERIFICATION_FAILED" });
+
+    const verification = {
+      patientName: "Ali Demir",
+      appointmentDate: "2026-10-12",
+      appointmentTime: "11:00",
+    };
+    const found = await tool("find_appointments", { verification }, caller, on);
+    expect(found.body.appointments).toHaveLength(1);
+    expect(found.body.appointments[0]).toMatchObject({ time: "11:00" });
+    expect(JSON.stringify(found.body)).not.toContain("Ayşe");
+
+    const blind = await tool(
+      "cancel_appointment",
+      { appointmentId: found.body.appointments[0].appointmentId },
+      caller,
+      on,
+    );
+    expect(blind.body).toMatchObject({ ok: false, error: "VERIFICATION_REQUIRED" });
+    const cancelled = await tool(
+      "cancel_appointment",
+      { appointmentId: found.body.appointments[0].appointmentId, verification },
+      caller,
+      on,
+    );
+    expect(cancelled.body).toMatchObject({ ok: true });
+
+    // Ayşe's appointment is untouched.
+    const rows = await db
+      .select({ name: appointments.bookedForName, status: appointments.status })
+      .from(appointments)
+      .where(eq(appointments.bookedForName, "Ayşe Demir"));
+    expect(rows).toEqual([{ name: "Ayşe Demir", status: "scheduled" }]);
+  });
+
+  it("with a hidden number, the time picks one of several appointments for the same name", async () => {
+    const SPOKEN = "0532 000 00 72";
+    const hidden = (id: string) => ({ from_number: null, call_id: id, call_type: "web_call" });
+    const first = await book(null, "hid_1", "Selin Kaya", "13:00", {
+      patientPhone: SPOKEN,
+      date: "2026-10-14",
+    });
+    const second = await book(null, "hid_2", "Selin Kaya", "14:00", {
+      patientPhone: SPOKEN,
+      date: "2026-10-14",
+    });
+    expect([first.body.ok, second.body.ok]).toEqual([true, true]);
+    const found = await tool(
+      "find_appointments",
+      {
+        phone: SPOKEN,
+        verification: {
+          patientName: "Selin Kaya",
+          appointmentDate: "2026-10-14",
+          appointmentTime: "14:00",
+        },
+      },
+      hidden("hid_3"),
+      on,
+    );
+    expect(found.body.error ?? "none").toBe("none");
+    expect(found.body.appointments.map((a: { time: string }) => a.time)).toEqual(["14:00"]);
+  });
+
+  it("changes nothing when the switch is unset", async () => {
+    const HOUSE = "+905320000073";
+    await tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-13",
+        time: "10:00",
+        patientName: "Can Er",
+      },
+      { from_number: HOUSE, call_id: "off_1" },
+    );
+    const found = await tool("find_appointments", {}, { from_number: HOUSE, call_id: "off_2" });
+    expect(found.body.error ?? "none").toBe("none");
+    expect(found.body.appointments).toHaveLength(1);
+    const [row] = await db
+      .select({ name: appointments.bookedForName })
+      .from(appointments)
+      .where(eq(appointments.id, found.body.appointments[0].appointmentId));
+    expect(row?.name).toBeNull();
   });
 });

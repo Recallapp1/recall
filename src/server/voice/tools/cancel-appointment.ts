@@ -7,7 +7,7 @@ import { linkCallToPatients } from "../../domain/call-patients";
 import { markCallOutcome } from "../../domain/calls";
 import { spokenDate, spokenTime } from "../../domain/speech";
 import { enqueueAppointmentMessage } from "../../domain/notifications";
-import { ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
+import { needsOwnershipCheck, ownershipCheck, resolveCaller, withOwnershipCheck } from "./caller";
 import { defineTool } from "./define";
 import { entityId, phone } from "./schemas";
 
@@ -31,9 +31,9 @@ export const cancelAppointmentTool = defineTool({
         check,
         now: ctx.now,
       });
-    const appointment = caller.trusted
-      ? await cancel()
-      : await withOwnershipCheck(ctx, caller.phone, input.verification, cancel);
+    const appointment = (await needsOwnershipCheck(ctx, caller))
+      ? await withOwnershipCheck(ctx, caller.phone, input.verification, cancel)
+      : await cancel();
 
     if (ctx.callId) await markCallOutcome(ctx.db, clinic.id, ctx.callId, "cancelled");
     await linkCallToPatients(ctx.db, clinic.id, ctx.callId, [appointment.patientId]);

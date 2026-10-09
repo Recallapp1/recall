@@ -1,0 +1,1 @@
+ALTER TABLE "appointments" ADD COLUMN "booked_for_name" text;

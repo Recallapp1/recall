@@ -36,6 +36,8 @@ export interface RetellHandlerDeps {
   smsDelivers: boolean;
   /** POST_CALL_FLAGS: flag finished calls for the panel. Unset means off. */
   postCallFlags?: boolean;
+  /** VOICE_SHARED_NUMBER_CHECK. Unset means off. */
+  sharedNumberCheck?: boolean;
   /** Dispatches one clinic's queued messages (locks, opt-out, window, caps). */
   dispatchClinic: (clinicId: string) => Promise<void>;
   /** Removes the call (audio included) from the provider. */
@@ -163,6 +165,7 @@ export async function handleFunctionCall(request: Request, deps: RetellHandlerDe
     defer: deps.defer,
     smsDelivers: deps.smsDelivers,
     sendQueuedMessages: () => deps.defer(() => deps.dispatchClinic(ctx.clinic.id)),
+    sharedNumberCheck: deps.sharedNumberCheck,
   });
   return Response.json(result);
 }
