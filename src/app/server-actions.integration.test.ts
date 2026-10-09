@@ -557,6 +557,41 @@ describe("clinic actions: permission, validation and tenant isolation", () => {
     );
   });
 
+  it("keeps practitioners away from calls, recordings, callbacks and exports (F-01, F-02)", async () => {
+    const [own] = await actionState.db
+      .insert(schema.patients)
+      .values({ clinicId: a.ctx.clinic.id, fullName: "Hekim Testi", phone: "+905320000091" })
+      .returning();
+    const denied: Permissions[] = [
+      { calls: ["read"] },
+      { calls: ["listen_recording"] },
+      { callbacks: ["read"] },
+      { patients: ["export"] },
+    ];
+    for (const permission of denied) {
+      expect(builtInRolesAllow("practitioner", permission), JSON.stringify(permission)).toBe(false);
+    }
+    actAs(users.practitioner);
+    const { GET } = await import("./panel/(app)/hastalar/[id]/disa-aktar/route");
+    const context = { params: Promise.resolve({ id: own!.id }) } as never;
+    await expect(GET(new Request("http://localhost/x"), context)).rejects.toBeInstanceOf(
+      ForbiddenSignal,
+    );
+    const { getRecordingUrl } = await import("./panel/(app)/aramalar/actions");
+    await expect(getRecordingUrl(bRows.callId)).rejects.toBeInstanceOf(ForbiddenSignal);
+  });
+
+  it("narrows a practitioner's panel queries to their own calendar; staff see the clinic", async () => {
+    const { requirePanelScope } = await import("@/server/auth/session");
+    actAs(users.practitioner);
+    const narrowed = await requirePanelScope({ patients: ["read"] });
+    expect(narrowed.scope.practitionerId).toBeTruthy();
+    expect(narrowed.scope.clinicId).toBe(a.ctx.clinic.id);
+    actAs(users.staff);
+    const wide = await requirePanelScope({ patients: ["read"] });
+    expect(wide.scope.practitionerId).toBeNull();
+  });
+
   it("does the real thing for the clinic's own data", async () => {
     actAs(users.staff);
     const { updateCallback } = await import("./panel/(app)/geri-arama/actions");

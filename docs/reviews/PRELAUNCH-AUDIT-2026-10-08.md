@@ -359,3 +359,4 @@ Status per finding; commit ids are added as each batch reaches `main`. "Off" mea
 | F-07 / P-12 (shared numbers)     | Partly fixed, **off**                         | `VOICE_SHARED_NUMBER_CHECK=true`; several patients per number would need a non-additive migration (blocked by the rules) | A2     |
 | F-10 (request-keyed idempotency) | Fixed, **off**                                | `VOICE_TOOL_IDEMPOTENCY=true`; natural-key idempotency (P-11) stays on                                                   | A3     |
 | F-11 (recording URL ownership)   | Hardened (was a false positive; now asserted) | Always on; defensive only                                                                                                | A4     |
+| F-01, F-02 (practitioner scope)  | Verified, no open path; tests added           | Custom-role scope is by design (decision log)                                                                            | A5     |

@@ -87,6 +87,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - A2 · ortak numara (`VOICE_SHARED_NUMBER_CHECK`, kapalı): sesli randevunun kimin adına alındığı `appointments.booked_for_name` (migration 0017, yalnızca ekleme); farklı adlar taşıyan numarada iptal/erteleme/bulma ad, tarih ve saat ister, diğer kişilerin adı veya saati söylenmez. Testler: aile, gizli numara, yanlış ad, aynı ada birden çok randevu, kapalıyken değişmeyen davranış.
 - A3 · istek anahtarlı tekillik (`VOICE_TOOL_IDEMPOTENCY`, kapalı): `tool_requests` tablosu (migration 0018, yalnızca ekleme), Retell `tool_call_id` veya tool adı + argüman özeti; atomik sahiplenme, tekrar ilk sonucu döndürür, eşzamanlı ikinci istek "işleniyor", başarısız sonuç saklanmaz, 30 günlük saklama. "Zaten iptal/taşındı" yanıtları korunur.
 - A4 · kayıt bağlantısı sahipliği (her zaman açık, meşru dinlemeyi değiştirmez): istekten önce satırın klinik, sağlayıcı ve sağlayıcı arama kimliği doğrulanır; Retell'in yanıtındaki arama kimliği eşleşmezse bağlantı verilmez.
+- A5 · F-01/F-02 yeniden doğrulandı: yerleşik hekim rolü aramalara, kayıtlara, geri aramalara ve dışa aktarmaya erişemiyor; hekimin panel sorguları kendi takvimine daralıyor. Eksik testler eklendi (açık bulunamadı, kod değişikliği yok).
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 
