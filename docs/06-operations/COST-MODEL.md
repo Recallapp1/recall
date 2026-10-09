@@ -1,59 +1,70 @@
-# Maliyet Modeli
+# Maliyet modeli
 
-> Rakamlar **tahminidir** ve Faz 1'de gerçek arama verisiyle güncellenecek. Sağlayıcı fiyatları değişir; kullanmadan önce güncel fiyat sayfalarından teyit edin.
+_Güncelleme 2026-10-09 (denetim C7). Önceki sürüm (2026-10-04) tahmine dayanıyordu; bu sürüm ölçülen değerleri kullanır. **Tüm senaryolar varsayımdır**; kur, fiyat ve kullanım değiştikçe güncellenir._
 
-## Dakika başı değişken maliyet bileşenleri
+## 1. Dakika başı ses maliyeti
 
-| Bileşen                                | Birim         | Tahmin (USD/dk) | Not                                                                                          |
-| -------------------------------------- | ------------- | --------------- | -------------------------------------------------------------------------------------------- |
-| Retell platform ücreti (ses altyapısı) | dk            | Plana göre      | STT, TTS ve telefon dahil fiyatlandırma Retell planına bağlı; güncel fiyattan teyit edilecek |
-| STT                                    | dk            | 0,005–0,02      | Sağlayıcıya göre                                                                             |
-| TTS                                    | karakter → dk | 0,02–0,08       | ElevenLabs pahalı uç, Azure ucuz uç                                                          |
-| LLM                                    | token         | 0,01–0,05       | Aşağıda                                                                                      |
-| SIP trunk (Türk operatör)              | dk            | ~0,005–0,02     | Gelen arama ücretlendirmesi operatöre bağlı                                                  |
-| **Toplam**                             |               | **~0,09–0,22**  |                                                                                              |
+Kaynak: Retell fiyat sayfası (2026-10-08) ve ilk değerlendirme koşusu ([VOICE-EVAL.md](../02-voice-agent/VOICE-EVAL.md), 12 arama).
 
-## LLM maliyeti hesabı
+| Bileşen                                              | $/dk (liste) |
+| ---------------------------------------------------- | ------------ |
+| Retell ses altyapısı                                 | 0,055        |
+| Claude 4.5 Haiku (bugünkü model)                     | 0,025        |
+| ElevenLabs (Flash dahil)                             | 0,040        |
+| **Liste toplamı (bugün)**                            | **0,120**    |
+| **Ölçülen faturalanan** (12 arama, ortalama 1,26 dk) | **0,153**    |
 
-Varsayım: 3 dakikalık arama, 10 tur. Her turda system prompt (~2.000 token) + büyüyen geçmiş → tur başı ortalama ~3.500 input token, ~60 output token.
+Faturalanan, listeden ~%28 yüksek (Retell'in arama başına ek kalemleri). Senaryolarda **0,153 $/dk** kullanılır.
 
-|            | Input token | Output token      |
-| ---------- | ----------- | ----------------- |
-| Arama başı | ~35.000     | ~600 (+ thinking) |
+### ADR-003 seçeneklerine göre (liste fiyatı → ölçüm oranıyla tahmini faturalanan)
 
-Anthropic API fiyatları (MTok başına, 2026-09 itibarıyla):
+| Seçenek                        | Model                | Liste $/dk | Tahmini faturalanan $/dk |
+| ------------------------------ | -------------------- | ---------- | ------------------------ |
+| Bugün / A (ayar + kısa prompt) | Claude 4.5 Haiku     | 0,120      | 0,153                    |
+| B                              | Claude 5.5 Sonnet    | 0,159      | 0,203                    |
+| C                              | Gemini 3.0 Flash     | 0,111      | 0,141                    |
+| C                              | GPT 4.1 mini         | 0,108      | 0,138                    |
+| D                              | Haiku + standart ses | 0,095      | 0,121                    |
 
-| Model               | Input $/MTok | Output $/MTok | Arama başı (≈) | Dakika başı (≈) |
-| ------------------- | ------------ | ------------- | -------------- | --------------- |
-| `claude-opus-5-5`   | 4,00         | 20,00         | ~0,15 $        | ~0,05 $         |
-| `claude-sonnet-5-5` | 2,00         | 10,00         | ~0,08 $        | ~0,025 $        |
-| `claude-haiku-4-5`  | 1,00         | 5,00          | ~0,04 $        | ~0,013 $        |
+## 2. Diğer kalemler
 
-**LLM'i Retell çalıştırır:** Claude modelleri Retell'in model listesinden seçilir (`claude-5-sonnet`, `claude-4.6-sonnet`, `claude-4.5-sonnet`, `claude-4.5-haiku`) ve Retell fiyatlandırmasıyla faturalanır. Yukarıdaki Anthropic fiyatları yalnızca karşılaştırma içindir; gerçek arama başı maliyet `call_cost.combined_cost` (cent) alanından ölçülür (F1.8).
+| Kalem                      | Birim | Tahmin                                             | Kaynak / not                                                                                      |
+| -------------------------- | ----- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| SIP hattı (Verimor örneği) | ay    | santral 478 ₺ + SIP Trunk modülü 1.299 ₺ ≈ 1.800 ₺ | [PHONE-LINE-OPTIONS.md](../07-sales/PHONE-LINE-OPTIONS.md); klinik başına mı tek mi **sorulacak** |
+| Gelen arama dakikası (hat) | dk    | genelde 0 (arayan öder)                            | **Doğrulanmadı**                                                                                  |
+| SMS                        | adet  | 0,20–0,30 ₺ (varsayım)                             | Netgsm fiyatı **sorulacak**; şu an kapalı                                                         |
+| E-posta (Resend)           | ay    | 0 $ (ücretsiz katman 3.000/ay)                     | Yalnızca personel e-postaları                                                                     |
+| Hata takibi (Sentry)       | ay    | 0 $ (Developer)                                    | MONITORING.md                                                                                     |
+| Veritabanı (Neon Launch)   | ay    | 5–19 $                                             | [BACKUP-RESTORE.md](BACKUP-RESTORE.md)                                                            |
+| Barındırma (Vercel Pro)    | ay    | 20 $/kullanıcı                                     | Ticari kullanım için gerekli                                                                      |
+| Alan adı                   | yıl   | ~15–40 $                                           | [DOMAIN-MIGRATION.md](DOMAIN-MIGRATION.md)                                                        |
 
-Model seçimi: [ADR-003](../decisions/ADR-003-llm-model.md)
+**Ortak sabit gider (tüm klinikler için):** Vercel 20 $ + Neon ~19 $ + Sentry 0 $ + Resend 0 $ ≈ **40 $/ay**.
 
-## Sabit maliyetler (aylık, tahmini)
+## 3. Klinik başı aylık senaryolar (varsayım)
 
-| Kalem                         | Tahmin         |
-| ----------------------------- | -------------- |
-| Vercel Pro                    | 20 $ / üye     |
-| Neon (Launch/Scale)           | 20–70 $        |
-| Türk numarası (klinik başına) | Operatöre göre |
-| Sentry, uptime izleme         | 0–30 $         |
+Varsayımlar: arama başına ortalama 1,5 dk; aramaların %40'ı randevuyla biter; randevu başına 2 SMS (onay + hatırlatma; SMS açılınca); 1 USD = 45 ₺ (**varsayım**, güncellenmeli); SIP hattı klinik başına 1.800 ₺ (≈ 40 $).
 
-## Birim ekonomi örneği
+| Senaryo           | Arama/ay | Dakika/ay | Ses (0,153 $/dk) | SIP  | SMS              | **Değişken toplam**      | %60 brüt marj için en az fiyat (×2,5) |
+| ----------------- | -------- | --------- | ---------------- | ---- | ---------------- | ------------------------ | ------------------------------------- |
+| Küçük (1–2 hekim) | 200      | 300       | 46 $             | 40 $ | 160 adet ≈ 1 $   | **≈ 87 $ (≈ 3.900 ₺)**   | **≈ 218 $ (≈ 9.800 ₺)**               |
+| Orta (3–6 hekim)  | 650      | 1.000     | 153 $            | 40 $ | 520 adet ≈ 3 $   | **≈ 196 $ (≈ 8.800 ₺)**  | **≈ 490 $ (≈ 22.000 ₺)**              |
+| Büyük (7+ hekim)  | 2.000    | 3.000     | 459 $            | 40 $ | 1.600 adet ≈ 9 $ | **≈ 508 $ (≈ 22.900 ₺)** | **≈ 1.270 $ (≈ 57.000 ₺)**            |
 
-Profesyonel paket: 1.000 dk/ay dahil ([PRICING.md](../00-product/PRICING.md)).
+Ortak sabit gider (~40 $/ay) klinik sayısına bölünür; 10 klinikte klinik başı ~4 $.
 
-|                                          |                                              |
-| ---------------------------------------- | -------------------------------------------- |
-| Değişken maliyet (0,15 $/dk orta tahmin) | 150 $                                        |
-| SMS (1.000 adet)                         | Netgsm fiyatına göre                         |
-| Numara                                   | Operatöre göre                               |
-| **Hedef fiyat (%60 brüt marj)**          | ≥ 375 $ + SMS ve numara maliyetinin 2,5 katı |
+### Hassasiyet
 
-## İzleme
+- **Model:** C (Gemini Flash) ses maliyetini ~%8 düşürür (orta senaryoda ≈ 12 $/ay); B (Sonnet) ~%33 artırır.
+- **Arama süresi:** gecikme ve tekrar sorular süreyi uzatır; ortalama 1,5 → 2 dk olursa ses maliyeti %33 artar.
+- **SIP hattı paylaşılabiliyorsa** (tek hesapta birden çok numara), küçük klinikte değişken maliyet ~%45 düşer.
 
-- Her aramanın maliyeti `calls.cost_usd` alanına (Retell `call_cost.combined_cost`, cent → USD) yazılır.
-- Klinik bazında aylık maliyet ve gelir karşılaştırması (iç pano, Faz 2).
+## 4. Fiyatlandırmaya etkisi
+
+[PRICING.md](../00-product/PRICING.md) ilkesi (paket fiyatı ≥ değişken maliyetin 2,5 katı) bu varsayımlarla: Başlangıç (300 dk) ≈ **9.800 ₺/ay**, Profesyonel (1.000 dk) ≈ **22.000 ₺/ay**, Klinik+ (3.000 dk) ≈ **57.000 ₺/ay** taban fiyat. Bu tabanlar, yarı zamanlı bir sekreterin maliyetiyle ve klinik görüşmeleriyle karşılaştırılarak kesinleşir (iş kararı). SIP maliyetinin paylaşılması küçük paketi belirgin ucuzlatır.
+
+## 5. Güncelleme
+
+- Değerlendirme koşusundan sonra (kredi yüklenince) dakika başı faturalanan değer yeniden ölçülür.
+- SIP ve SMS teklifleri gelince §2 güncellenir.
+- Kur her fiyat güncellemesinde gözden geçirilir; fiyatların TL mi USD bazlı mı olacağı PRICING.md'deki açık soru.

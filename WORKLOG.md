@@ -105,6 +105,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - C4 · [CLINIC-ONBOARDING.md](docs/07-sales/CLINIC-ONBOARDING.md): ön koşullar, keşif bilgileri, konsol ve panel adımları (bugünkü ekranlara göre), numara ve asistan, 8 test senaryosu, yönlendirme, canlıya geçiş, ilk hafta, pilot anahtar önerisi, ayrılma.
 - C5 · [PHONE-LINE-OPTIONS.md](docs/07-sales/PHONE-LINE-OPTIONS.md): Retell'in özel SIP gereksinimleri (resmî belge), Verimor ve Netgsm seçenekleri ve kaynaklı fiyatlar, doğrulanmamış noktalar işaretli, maliyet varsayımları, öneri ve ilk görüşme için 10 soru.
 - C6 · [docs/legal-drafts/](docs/legal-drafts/README.md) (hepsi TASLAK, yayınlanmadı): avukat brifi (19 soru), Mermaid veri akışı ve alt işleyen tablosu, KVKK aydınlatma metni (klinik adına), Recall gizlilik politikası, klinik hizmet koşulları, DPA iskeleti, görüşme başı anons metni; taslak işaretini ve yayınlanmadığını denetleyen test.
+- C7 · [COST-MODEL.md](docs/06-operations/COST-MODEL.md) ölçülen değerlerle yeniden yazıldı: dakika başı 0,120 $ liste / 0,153 $ faturalanan, ADR-003 seçenekleri, SIP/SMS/e-posta/Sentry/Neon/Vercel kalemleri, klinik başı 3 senaryo ve hassasiyet (hepsi varsayım); PRICING.md'ye taban fiyat notu.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

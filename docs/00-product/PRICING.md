@@ -26,6 +26,8 @@
 
 ₺X, ₺Y, ₺Z ve aylık ücretler maliyet ölçümlerinden sonra belirlenecek.
 
+**2026-10-09 taban hesabı (varsayım):** ölçülen ses maliyeti (0,153 $/dk faturalanan) ve klinik başı SIP hattıyla %60 brüt marj için taban aylık fiyatlar: Başlangıç ≈ 9.800 ₺, Profesyonel ≈ 22.000 ₺, Klinik+ ≈ 57.000 ₺ ([COST-MODEL.md](../06-operations/COST-MODEL.md) §3–4). Kesin fiyat iş kararıdır.
+
 ## Diğer
 
 - **Kurulum ücreti:** Pilot dönemde yok. Sonrasında numara taşıma ve özel yapılandırma için tek seferlik ücret opsiyonu.
