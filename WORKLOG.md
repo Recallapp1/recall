@@ -86,6 +86,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - A1 · aramadan sonra işaretler (`POST_CALL_FLAGS`, kapalı): kayıtla uyuşmayan randevu/iptal/taşıma iddiası, acil durum ve tıbbi risk (Türkçe kalıplar, yanlış pozitif örnekleri), `calls.flags` (migration 0016, yalnızca ekleme), panelde rozet, `call.flagged` denetim kaydı.
 - A2 · ortak numara (`VOICE_SHARED_NUMBER_CHECK`, kapalı): sesli randevunun kimin adına alındığı `appointments.booked_for_name` (migration 0017, yalnızca ekleme); farklı adlar taşıyan numarada iptal/erteleme/bulma ad, tarih ve saat ister, diğer kişilerin adı veya saati söylenmez. Testler: aile, gizli numara, yanlış ad, aynı ada birden çok randevu, kapalıyken değişmeyen davranış.
 - A3 · istek anahtarlı tekillik (`VOICE_TOOL_IDEMPOTENCY`, kapalı): `tool_requests` tablosu (migration 0018, yalnızca ekleme), Retell `tool_call_id` veya tool adı + argüman özeti; atomik sahiplenme, tekrar ilk sonucu döndürür, eşzamanlı ikinci istek "işleniyor", başarısız sonuç saklanmaz, 30 günlük saklama. "Zaten iptal/taşındı" yanıtları korunur.
+- A4 · kayıt bağlantısı sahipliği (her zaman açık, meşru dinlemeyi değiştirmez): istekten önce satırın klinik, sağlayıcı ve sağlayıcı arama kimliği doğrulanır; Retell'in yanıtındaki arama kimliği eşleşmezse bağlantı verilmez.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

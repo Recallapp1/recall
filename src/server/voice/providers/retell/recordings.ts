@@ -10,12 +10,20 @@ import { RETELL_PROVIDER, retellClient } from "./config";
 export async function freshRecordingUrl(providerCallId: string): Promise<string | null> {
   try {
     const call = await retellClient().call.retrieve(providerCallId);
+    // The provider must answer for exactly the call we asked about (audit A4).
+    if (call.call_id !== providerCallId) {
+      console.error(JSON.stringify({ msg: "recording.provider_call_mismatch" }));
+      return null;
+    }
     return call.recording_url ?? null;
   } catch (error) {
     if (isNotFound(error)) return null;
     throw error;
   }
 }
+
+/** Providers whose recordings the panel can fetch. */
+export const RECORDING_PROVIDERS: readonly string[] = [RETELL_PROVIDER];
 
 /** Deletes the call (audio, transcript, logs) on the provider's side. */
 export async function deleteProviderCall(providerCallId: string): Promise<void> {

@@ -61,6 +61,7 @@ vi.mock("@/server/voice/sync", async (importOriginal) => ({
   listAssistantVoices: async () => [],
   deleteVoiceProviderCall: async () => {},
   freshRecordingUrl: async () => "https://rec.test/recording.wav",
+  RECORDING_PROVIDERS: ["retell"],
 }));
 
 let close: () => Promise<void>;

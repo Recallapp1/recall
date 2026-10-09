@@ -7,7 +7,8 @@ import { requirePanelScope } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { recordAudit } from "@/server/domain/audit";
 import { getCall } from "@/server/domain/panel";
-import { freshRecordingUrl } from "@/server/voice/sync";
+import { recordingTarget } from "@/server/domain/recording-access";
+import { freshRecordingUrl, RECORDING_PROVIDERS } from "@/server/voice/sync";
 
 /**
  * Hands out a short-lived recording link only to roles with
@@ -21,11 +22,15 @@ export async function getRecordingUrl(
   if (!z.uuid().safeParse(callId).success) return { ok: false, message: "Kayıt bulunamadı." };
 
   const call = await getCall(db(), scope, callId);
-  if (!call?.recordingUrl) return { ok: false, message: "Bu aramanın kaydı yok." };
+  // Bound to the authorised row: this clinic, a supported provider, a provider call id.
+  const target = call
+    ? recordingTarget(call, { clinicId: context.clinic.id, providers: RECORDING_PROVIDERS })
+    : null;
+  if (!target) return { ok: false, message: "Bu aramanın kaydı yok." };
 
   let url: string | null;
   try {
-    url = await freshRecordingUrl(call.providerCallId);
+    url = await freshRecordingUrl(target.providerCallId);
   } catch (error) {
     console.error(JSON.stringify({ msg: "call.recording_fetch_failed", error: safeError(error) }));
     return { ok: false, message: "Kayıt şu anda açılamadı. Lütfen tekrar deneyin." };

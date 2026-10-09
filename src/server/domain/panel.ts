@@ -530,6 +530,7 @@ export async function listCalls(
 }
 
 export interface PanelCallDetail extends PanelCall {
+  clinicId: string;
   endedReason: string | null;
   transcript: string | null;
   recordingUrl: string | null;
@@ -570,6 +571,7 @@ export async function getCall(
     flags: (call.flags as CallFlag[] | null) ?? null,
     patientId: row.patientId,
     patientName: row.patientName,
+    clinicId: call.clinicId,
     endedReason: call.endedReason,
     transcript: call.transcript,
     recordingUrl: call.recordingUrl,

@@ -353,8 +353,9 @@ Engineering on my side for tiers (a)+(b): roughly **12–15 working days**; the 
 
 Status per finding; commit ids are added as each batch reaches `main`. "Off" means built and tested, but disabled until the owner sets the switch.
 
-| Finding                          | Status                | Switch / note                                                                                                            | Commit |
-| -------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------ |
-| F-03, F-04 (post-call checks)    | Fixed, **off**        | `POST_CALL_FLAGS=true`                                                                                                   | A1     |
-| F-07 / P-12 (shared numbers)     | Partly fixed, **off** | `VOICE_SHARED_NUMBER_CHECK=true`; several patients per number would need a non-additive migration (blocked by the rules) | A2     |
-| F-10 (request-keyed idempotency) | Fixed, **off**        | `VOICE_TOOL_IDEMPOTENCY=true`; natural-key idempotency (P-11) stays on                                                   | A3     |
+| Finding                          | Status                                        | Switch / note                                                                                                            | Commit |
+| -------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------ |
+| F-03, F-04 (post-call checks)    | Fixed, **off**                                | `POST_CALL_FLAGS=true`                                                                                                   | A1     |
+| F-07 / P-12 (shared numbers)     | Partly fixed, **off**                         | `VOICE_SHARED_NUMBER_CHECK=true`; several patients per number would need a non-additive migration (blocked by the rules) | A2     |
+| F-10 (request-keyed idempotency) | Fixed, **off**                                | `VOICE_TOOL_IDEMPOTENCY=true`; natural-key idempotency (P-11) stays on                                                   | A3     |
+| F-11 (recording URL ownership)   | Hardened (was a false positive; now asserted) | Always on; defensive only                                                                                                | A4     |

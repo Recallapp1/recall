@@ -15,6 +15,7 @@ export {
   deleteProviderCall,
   deleteVoiceProviderCall,
   freshRecordingUrl,
+  RECORDING_PROVIDERS,
 } from "./providers/retell/recordings";
 export {
   defaultAssistantVoiceId,
