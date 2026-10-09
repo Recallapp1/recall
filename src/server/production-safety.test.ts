@@ -270,3 +270,17 @@ describe("time zone handling", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("CI supply chain (B1)", () => {
+  const workflows = readdirSync(".github/workflows").filter((f) => /\.ya?ml$/.test(f));
+
+  it.each(workflows)("%s pins every action to a commit and reads only", (file) => {
+    const text = readFileSync(`.github/workflows/${file}`, "utf8");
+    const uses = [...text.matchAll(/uses:\s*([^\s#]+)/g)].map((m) => m[1]!);
+    expect(uses.length).toBeGreaterThan(0);
+    for (const ref of uses) expect(ref, ref).toMatch(/@[0-9a-f]{40}$/);
+    expect(text).toMatch(/^permissions:\n {2}contents: read$/m);
+    const code = text.replace(/^\s*#.*$/gm, "");
+    expect(code).not.toMatch(/pull_request_target|secrets\./);
+  });
+});
