@@ -8,6 +8,7 @@ import { normalizePhone } from "@/lib/phone";
 
 import type { Database } from "../../../db";
 import { voiceAgents } from "../../../db/schema";
+import { flagCall } from "../../../domain/call-flag-records";
 import { completeCall, upsertCall } from "../../../domain/calls";
 import {
   findClinicByAgentId,
@@ -33,6 +34,8 @@ export interface RetellHandlerDeps {
   now: () => Date;
   defer: (task: () => Promise<void>) => void;
   smsDelivers: boolean;
+  /** POST_CALL_FLAGS: flag finished calls for the panel. Unset means off. */
+  postCallFlags?: boolean;
   /** Dispatches one clinic's queued messages (locks, opt-out, window, caps). */
   dispatchClinic: (clinicId: string) => Promise<void>;
   /** Removes the call (audio included) from the provider. */
@@ -198,6 +201,12 @@ export async function handleCallEvent(request: Request, deps: RetellHandlerDeps)
       summary: call.call_analysis?.call_summary,
       costUsd: combinedCostCents != null ? combinedCostCents / 100 : null,
     });
+  }
+
+  // The analysis is the last event: transcript and summary are final.
+  if (event === "call_analyzed" && deps.postCallFlags) {
+    const flags = await flagCall(deps.db, ctx.clinic.id, callRow.id, deps.now());
+    if (flags.length > 0) log("warn", "call.flagged", { clinicId: ctx.clinic.id, flags });
   }
 
   // Recording off: Retell has no audio-only switch, and storing nothing also

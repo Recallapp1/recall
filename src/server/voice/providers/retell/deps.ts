@@ -34,6 +34,7 @@ export function withRetell(handler: Handler) {
       now: () => new Date(),
       defer: (task) => after(task),
       smsDelivers: smsProvider().delivers,
+      postCallFlags: env().POST_CALL_FLAGS === true,
       dispatchClinic: async (clinicId) => {
         const config = env();
         try {

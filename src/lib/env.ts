@@ -55,6 +55,11 @@ const envSchema = z.object({
   RETELL_INTERRUPTION_SENSITIVITY: optionalUnit,
   /** "true": Retell adapts its answer timing to the caller's speech rate (waits for slow speakers). */
   RETELL_DYNAMIC_RESPONSIVENESS: optionalFlag,
+  /**
+   * "true": after each call, flag unbacked booking claims and emergency or
+   * medical-risk mentions for the panel (audit F-03, F-04). Off by default.
+   */
+  POST_CALL_FLAGS: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

@@ -27,6 +27,7 @@ import {
   type AppointmentStatus,
 } from "@/lib/contracts/appointment";
 
+import type { CallFlag } from "@/lib/contracts/call";
 import type { AppointmentSortKey, PatientSortKey, Sort } from "@/lib/contracts/sorting";
 
 import type { Executor } from "../db";
@@ -476,6 +477,8 @@ export interface PanelCall {
   summary: string | null;
   hasTranscript: boolean;
   hasRecording: boolean;
+  /** Post-call flags (POST_CALL_FLAGS); null when the call was not checked. */
+  flags: CallFlag[] | null;
   /** Patient whose phone matches the caller, if known to the clinic. */
   patientId: string | null;
   patientName: string | null;
@@ -502,6 +505,7 @@ export async function listCalls(
         summary: calls.summary,
         hasTranscript: sql<boolean>`${calls.transcript} is not null`,
         hasRecording: sql<boolean>`${calls.recordingUrl} is not null`,
+        flags: calls.flags,
         patientId: patients.id,
         patientName: patients.fullName,
       })
@@ -519,7 +523,10 @@ export async function listCalls(
       .from(calls)
       .where(and(...conditions)),
   ]);
-  return { rows, total: total?.value ?? 0 };
+  return {
+    rows: rows.map((row) => ({ ...row, flags: (row.flags as CallFlag[] | null) ?? null })),
+    total: total?.value ?? 0,
+  };
 }
 
 export interface PanelCallDetail extends PanelCall {
@@ -560,6 +567,7 @@ export async function getCall(
     summary: call.summary,
     hasTranscript: call.transcript !== null,
     hasRecording: call.recordingUrl !== null,
+    flags: (call.flags as CallFlag[] | null) ?? null,
     patientId: row.patientId,
     patientName: row.patientName,
     endedReason: call.endedReason,

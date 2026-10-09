@@ -8,5 +8,6 @@ export {
 export { AppointmentSourceBadge, AppointmentStatusBadge } from "./status-badges";
 export { PageHeader } from "./page-header";
 export { OutcomeBadge } from "./outcome-badge";
+export { CallFlagBadges } from "./call-flag-badges";
 export { AutoRefresh } from "./auto-refresh";
 export { SortableHead } from "./sortable-head";

@@ -75,6 +75,16 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-09 · Otonom yayın öncesi sağlamlaştırma (Tier A–C) · F7, F8
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** parti başına ayrı dal · **Commit'ler:** aşağıda, parti parti
+
+Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz, arama veya kredi yok. Kararlar: [DECISIONS-TO-REVIEW.md](docs/DECISIONS-TO-REVIEW.md); sahibe kalanlar: [NEXT-STEPS-FOR-OWNER.md](docs/NEXT-STEPS-FOR-OWNER.md).
+
+**Partiler**
+
+- A1 · aramadan sonra işaretler (`POST_CALL_FLAGS`, kapalı): kayıtla uyuşmayan randevu/iptal/taşıma iddiası, acil durum ve tıbbi risk (Türkçe kalıplar, yanlış pozitif örnekleri), `calls.flags` (migration 0016, yalnızca ekleme), panelde rozet, `call.flagged` denetim kaydı.
+
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 
 **Agent/kişi:** Claude (Opus 5.5) + ürün ekibi · **Dal:** `docs/rotation-done` · **Commit'ler:** bu kayıt

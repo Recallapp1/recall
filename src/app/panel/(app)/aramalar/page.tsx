@@ -4,7 +4,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { z } from "zod";
 
-import { EmptyState, OutcomeBadge, PageHeader } from "@/components/panel";
+import { CallFlagBadges, EmptyState, OutcomeBadge, PageHeader } from "@/components/panel";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -119,7 +119,10 @@ export default async function CallsPage({ searchParams }: PageProps<"/panel/aram
                   </span>
                 </TableCell>
                 <TableCell>
-                  <OutcomeBadge outcome={row.outcome} />
+                  <span className="inline-flex flex-wrap gap-1">
+                    <OutcomeBadge outcome={row.outcome} />
+                    <CallFlagBadges flags={row.flags} />
+                  </span>
                 </TableCell>
                 <TableCell className="text-body tabular-nums">
                   {formatDuration(row.durationSeconds)}

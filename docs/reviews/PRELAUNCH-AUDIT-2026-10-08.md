@@ -346,3 +346,13 @@ Engineering on my side for tiers (a)+(b): roughly **12–15 working days**; the 
 - COST-MODEL.md estimates (0.09–0.22 $/min, Sonnet-era token math) and PRICING.md draft: outdated by measured numbers.
 - STATUS-REPORT-2026-10-07.md: dated and superseded by the WORKLOG status table and this audit.
 - Six Neon backup branches from 2026-10-07 hold production snapshots with the old password; delete after rotation (they also use 6 of the 10-branch limit).
+
+---
+
+## 11. Fix status (autonomous hardening, 2026-10-09)
+
+Status per finding; commit ids are added as each batch reaches `main`. "Off" means built and tested, but disabled until the owner sets the switch.
+
+| Finding                       | Status         | Switch / note          | Commit |
+| ----------------------------- | -------------- | ---------------------- | ------ |
+| F-03, F-04 (post-call checks) | Fixed, **off** | `POST_CALL_FLAGS=true` | A1     |

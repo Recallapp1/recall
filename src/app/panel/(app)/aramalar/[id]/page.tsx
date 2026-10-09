@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AppointmentStatusBadge, OutcomeBadge, PageHeader } from "@/components/panel";
+import {
+  AppointmentStatusBadge,
+  CallFlagBadges,
+  OutcomeBadge,
+  PageHeader,
+} from "@/components/panel";
 import { formatDuration } from "@/lib/contracts/call";
 import { formatMinutes, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
@@ -42,7 +47,12 @@ export default async function CallPage({ params }: PageProps<"/panel/aramalar/[i
       <PageHeader
         title={call.patientName ?? "Kayıtlı olmayan arayan"}
         description={`${when} · ${formatDuration(call.durationSeconds)}`}
-        actions={<OutcomeBadge outcome={call.outcome} />}
+        actions={
+          <span className="inline-flex flex-wrap gap-1">
+            <OutcomeBadge outcome={call.outcome} />
+            <CallFlagBadges flags={call.flags} />
+          </span>
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">

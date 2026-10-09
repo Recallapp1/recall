@@ -7,6 +7,7 @@ import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 import type { Database } from "../../../db";
 import {
   appointments,
+  auditEvents,
   callbackRequests,
   callPatients,
   calls,
@@ -901,5 +902,56 @@ describe("provider deletion queue", () => {
       .where(eq(providerDeletions.providerCallId, "call_quiet_fail"));
     expect(queued).toMatchObject({ attempts: 1, doneAt: null, lastError: "Error 503" });
     expect(queued!.nextAttemptAt.getTime()).toBeGreaterThan(NOW.getTime());
+  });
+});
+
+describe("post-call flags (POST_CALL_FLAGS)", () => {
+  const analyzed = (callId: string, transcript: string) =>
+    signedRequest({
+      event: "call_analyzed",
+      call: {
+        call_id: callId,
+        agent_id: clinic.agentId,
+        call_type: "web_call",
+        transcript,
+        call_analysis: { call_summary: "Randevu talebi." },
+      },
+    });
+  const flagsOf = async (callId: string) =>
+    (await db.select().from(calls).where(eq(calls.providerCallId, callId)))[0];
+
+  it("writes nothing when the switch is unset (unchanged behaviour)", async () => {
+    await handleCallEvent(
+      await analyzed("flags_off", "User: Nefes alamıyorum.\nAgent: Randevunuz oluşturuldu."),
+      deps(),
+    );
+    expect(await flagsOf("flags_off")).toMatchObject({ flags: null, flaggedAt: null });
+  });
+
+  it("flags an unbacked booking claim and an emergency, with an audit entry", async () => {
+    await handleCallEvent(
+      await analyzed("flags_on", "User: Nefes alamıyorum.\nAgent: Randevunuz oluşturuldu."),
+      deps({ postCallFlags: true }),
+    );
+    const row = await flagsOf("flags_on");
+    expect(row?.flags).toEqual(["unbacked_claim", "emergency"]);
+    const events = await db
+      .select({ action: auditEvents.action, metadata: auditEvents.metadata })
+      .from(auditEvents)
+      .where(eq(auditEvents.targetId, row!.id));
+    expect(events).toEqual([
+      { action: "call.flagged", metadata: { flags: ["unbacked_claim", "emergency"] } },
+    ]);
+  });
+
+  it("stores an empty list for a clean call", async () => {
+    await handleCallEvent(
+      await analyzed(
+        "flags_clean",
+        "User: Çalışma saatleriniz nedir?\nAgent: Hafta içi dokuzdan altıya.",
+      ),
+      deps({ postCallFlags: true }),
+    );
+    expect((await flagsOf("flags_clean"))?.flags).toEqual([]);
   });
 });

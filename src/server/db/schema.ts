@@ -451,6 +451,9 @@ export const calls = pgTable(
     transcript: text(),
     recordingUrl: text(),
     costUsd: numeric({ precision: 10, scale: 4 }),
+    /** Post-call flags (CALL_FLAGS); null until checked, empty when nothing was found. */
+    flags: text().array(),
+    flaggedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
