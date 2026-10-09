@@ -3,8 +3,12 @@
  *
  *   pnpm dev            # local app on the dev database
  *   pnpm dev:tunnel     # public URL for Retell, dev agent re-pointed
- *   pnpm voice:eval [--only id1,id2] [--profile <id>]
- *   pnpm voice:eval --plan     # profiles and estimated cost, no calls
+ *   pnpm voice:eval [--only id1,id2] [--profile <id> | --profiles a,b | --stage 1] [--budget 12]
+ *   pnpm voice:eval --plan     # profiles, stages and estimated cost, no calls
+ *
+ * A run stops cleanly before the budget (default: the estimate + 20%) would
+ * be exceeded, when Retell reports no credit, or on Ctrl+C; the dev assistant
+ * is always switched back to the env configuration.
  *
  * Every scenario is a real Retell web call with the dev clinic's assistant:
  * the caller's lines are spoken by Windows TTS (tts.ps1) and fed to Playwright's
@@ -44,7 +48,8 @@ import { addLocalDays, localToday, utcToLocal } from "@/server/domain/time";
 import { retellClient, retellConfig } from "@/server/voice/providers/retell/config";
 import { syncClinicVoiceAgent } from "@/server/voice/providers/retell/sync";
 
-import { estimatedCost, profiles, type EvalProfile } from "./profiles";
+import { budgetAllows, cautiousCallEstimate, isCreditExhausted } from "./budget";
+import { estimatedCost, profiles, STAGES, type EvalProfile } from "./profiles";
 import { invariants, scenarios, type CallOutcome, type Scenario, type ToolCall } from "./scenarios";
 
 config({ path: [".env.local", ".env"], quiet: true });
@@ -367,6 +372,19 @@ function argValue(name: string): string | undefined {
 
 function printPlan(count: number) {
   console.info(`${count} scenarios per run\n`);
+  for (const [stage, ids] of Object.entries(STAGES)) {
+    const total = ids.reduce(
+      (sum, id) =>
+        sum +
+        estimatedCost(
+          profiles.find((p) => p.id === id)!,
+          count,
+        ),
+      0,
+    );
+    console.info(`stage ${stage}: ${ids.join(" + ")} ≈ $${total.toFixed(2)}`);
+  }
+  console.info("");
   for (const p of profiles) {
     console.info(`${p.id.padEnd(16)} ${p.title}`);
     console.info(
@@ -403,11 +421,22 @@ async function main() {
     printPlan(selected.length);
     process.exit(0);
   }
-  const profileId = argValue("--profile");
-  const profile = profileId ? profiles.find((p) => p.id === profileId) : null;
-  if (profileId && !profile) {
-    throw new Error(`Unknown profile "${profileId}" (pnpm voice:eval --plan).`);
-  }
+  const stage = argValue("--stage");
+  const ids = stage
+    ? STAGES[stage]
+    : (argValue("--profiles")?.split(",") ??
+      (argValue("--profile") ? [argValue("--profile")!] : []));
+  if (stage && !ids) throw new Error(`Unknown stage "${stage}" (pnpm voice:eval --plan).`);
+  const chosen = (ids ?? []).map((id) => {
+    const found = profiles.find((p) => p.id === id);
+    if (!found) throw new Error(`Unknown profile "${id}" (pnpm voice:eval --plan).`);
+    return found;
+  });
+  const estimate = (chosen.length > 0 ? chosen : [profiles[0]!]).reduce(
+    (sum, p) => sum + estimatedCost(p, selected.length),
+    0,
+  );
+  const budget = Number(argValue("--budget") ?? (estimate * 1.2).toFixed(2));
   guard();
   const [clinic] = await db().select().from(clinics).where(eq(clinics.slug, CLINIC_SLUG));
   if (!clinic) throw new Error(`Clinic ${CLINIC_SLUG} not found.`);
@@ -418,16 +447,39 @@ async function main() {
   const health = await fetch(new URL("/api/health", process.env.APP_URL)).catch(() => null);
   if (!health?.ok) throw new Error("APP_URL is not reachable: start pnpm dev and pnpm dev:tunnel.");
 
-  if (profile) {
-    await syncDevAgent(clinic.id, profile);
-    console.info(`Profile ${profile.id}: ${profile.title}`);
+  console.info(`Budget $${budget.toFixed(2)} (estimate $${estimate.toFixed(2)})`);
+  let interrupted = false;
+  process.on("SIGINT", () => {
+    if (interrupted) process.exit(130);
+    interrupted = true;
+    console.info("\nStopping after the current call; the dev assistant will be switched back.");
+  });
+
+  let spent = 0;
+  const runs: (EvalProfile | null)[] = chosen.length > 0 ? chosen : [null];
+  for (const profile of runs) {
+    if (interrupted) break;
+    if (profile) {
+      await syncDevAgent(clinic.id, profile);
+      console.info(`\nProfile ${profile.id}: ${profile.title}`);
+    }
+    try {
+      const outcome = await runScenarios(selected, clinic.id, agent.externalAgentId, profile, {
+        budgetLeft: budget - spent,
+        perCall: cautiousCallEstimate(estimatedCost(profile ?? profiles[0]!, 1)),
+        stopRequested: () => interrupted,
+      });
+      spent += outcome.spent;
+      if (outcome.stopped) {
+        console.info(`Stopped cleanly: ${outcome.stopped}.`);
+        break;
+      }
+    } finally {
+      // The dev agent goes back to the env configuration whatever happened.
+      if (profile) await syncDevAgent(clinic.id, null);
+    }
   }
-  try {
-    await runScenarios(selected, clinic.id, agent.externalAgentId, profile);
-  } finally {
-    // The dev agent goes back to the env configuration even after a failed run.
-    if (profile) await syncDevAgent(clinic.id, null);
-  }
+  console.info(`\nTotal spent ≈ $${spent.toFixed(2)} of $${budget.toFixed(2)}`);
   process.exit(0);
 }
 
@@ -436,7 +488,10 @@ async function runScenarios(
   clinicId: string,
   agentId: string,
   profile: EvalProfile | null | undefined,
-) {
+  limits: { budgetLeft: number; perCall: number; stopRequested: () => boolean },
+): Promise<{ spent: number; stopped: string | null }> {
+  let spent = 0;
+  let stopped: string | null = null;
   const seeded = await resetData(clinicId);
   const results: Array<Record<string, unknown> & { passed: boolean; costCents: number }> = [];
   mkdirSync(WORK_DIR, { recursive: true });
@@ -449,8 +504,25 @@ async function runScenarios(
       JSON.stringify({ agent: agentId, profile: profile ?? "env", results }, null, 2),
     );
   for (const scenario of selected) {
+    if (limits.stopRequested()) {
+      stopped = "interrupted";
+      break;
+    }
+    if (!budgetAllows(spent, limits.perCall, limits.budgetLeft)) {
+      stopped = "budget reached";
+      break;
+    }
     process.stdout.write(`▶ ${scenario.id} … `);
-    const { callId, startedAt, details } = await runCall(scenario, agentId, clinicId);
+    let call: Awaited<ReturnType<typeof runCall>>;
+    try {
+      call = await runCall(scenario, agentId, clinicId);
+    } catch (error) {
+      if (!isCreditExhausted(error)) throw error;
+      console.info("no credit");
+      stopped = "Retell credit exhausted";
+      break;
+    }
+    const { callId, startedAt, details } = call;
     const outcome: CallOutcome = {
       ...outcomeOf(details),
       ...(await effects(scenario, clinicId, startedAt, seeded)),
@@ -458,6 +530,7 @@ async function runScenarios(
     const failures = [...scenario.check(outcome), ...invariants(outcome)];
     const latency = (details.latency ?? {}) as Record<string, Latency>;
     const cost = (details.call_cost as { combined_cost?: number } | undefined)?.combined_cost ?? 0;
+    spent += cost / 100;
     results.push({
       id: scenario.id,
       title: scenario.title,
@@ -479,6 +552,7 @@ async function runScenarios(
   const passed = results.filter((r) => r.passed).length;
   const cost = results.reduce((sum, r) => sum + r.costCents, 0) / 100;
   console.info(`\n${passed}/${results.length} passed · cost $${cost.toFixed(2)} · ${file}`);
+  return { spent, stopped };
 }
 
 main().catch((error) => {

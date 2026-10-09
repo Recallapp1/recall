@@ -106,6 +106,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - C5 · [PHONE-LINE-OPTIONS.md](docs/07-sales/PHONE-LINE-OPTIONS.md): Retell'in özel SIP gereksinimleri (resmî belge), Verimor ve Netgsm seçenekleri ve kaynaklı fiyatlar, doğrulanmamış noktalar işaretli, maliyet varsayımları, öneri ve ilk görüşme için 10 soru.
 - C6 · [docs/legal-drafts/](docs/legal-drafts/README.md) (hepsi TASLAK, yayınlanmadı): avukat brifi (19 soru), Mermaid veri akışı ve alt işleyen tablosu, KVKK aydınlatma metni (klinik adına), Recall gizlilik politikası, klinik hizmet koşulları, DPA iskeleti, görüşme başı anons metni; taslak işaretini ve yayınlanmadığını denetleyen test.
 - C7 · [COST-MODEL.md](docs/06-operations/COST-MODEL.md) ölçülen değerlerle yeniden yazıldı: dakika başı 0,120 $ liste / 0,153 $ faturalanan, ADR-003 seçenekleri, SIP/SMS/e-posta/Sentry/Neon/Vercel kalemleri, klinik başı 3 senaryo ve hassasiyet (hepsi varsayım); PRICING.md'ye taban fiyat notu.
+- C8 · değerlendirme kademeli: `--stage 1` (baseline + Gemini Flash ≈ 9,65 $), `--stage 2` (≈ 14,53 $), `--profiles`, `--budget`; bütçe, kredi bitti (402) ve Ctrl+C durumunda temiz durur, dev ajanı her durumda env ayarlarına döner. `--plan` maliyetleri VOICE-EVAL.md'de. Arama yapılmadı, kredi harcanmadı.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

@@ -75,3 +75,12 @@ export const MEASURED = { minutesPerCall: 1.26, billedOverListed: 0.153 / 0.12 }
 export function estimatedCost(profile: EvalProfile, calls: number): number {
   return calls * MEASURED.minutesPerCall * profile.listPricePerMinute * MEASURED.billedOverListed;
 }
+
+/**
+ * The staged plan (VOICE-EVAL.md): stage 1 answers the main question cheaply
+ * (today's setup against the cheapest fast model); stage 2 measures the rest.
+ */
+export const STAGES: Record<string, string[]> = {
+  "1": ["baseline", "option-c-gemini"],
+  "2": ["option-a", "option-hardening", "option-c-gpt"],
+};
