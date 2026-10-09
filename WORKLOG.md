@@ -101,6 +101,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - B6 · belgeler koda göre: `DEMO_REQUEST_NOTIFY_EMAIL` DEPLOYMENT'ta, ADR-003'e güçlendirme profili ve kademeli ölçüm, eskimiş plan maddeleri tarihli notla işaretlendi (F1.8 elle 20 senaryo, ASR/TTS karşılaştırması, `voice:attach-number`); her env değişkeninin belgelendiğini denetleyen test. COST-MODEL C7'de.
 - C1 · izleme: Sentry olay metinlerinde telefon/e-posta/anahtar maskeleme (CI ile aynı kurallar, eşlik testi); MONITORING.md'ye sağlık sözleşmesi, alarm ve log uyarı listesi, isteğe bağlı `HEALTH_JOBS_TOKEN` adımları. Sentry `SENTRY_DSN` olmadan kapalı.
 - C2 · [BACKUP-RESTORE.md](docs/06-operations/BACKUP-RESTORE.md): bugünkü durum (Free, 6 saat), Launch önerisi ve maliyet tahmini (kaynaklı), RPO/RTO, geri yükleme provası ve gerçek geri yükleme adımları; `pnpm db:export` (yalnızca dev, veri yazdırmaz); `outputs/` .gitignore'da; dev veritabanı güncel migration'lara getirildi.
+- C3 · [INCIDENT-RESPONSE.md](docs/06-operations/INCIDENT-RESPONSE.md) (dereceler, roller, Retell/LLM/ElevenLabs/Neon/Vercel senaryoları, KVKK 72 saat akışı, Türkçe bildirim şablonları, olay kaydı şablonu) ve [SUPPORT-PROCESS.md](docs/06-operations/SUPPORT-PROCESS.md) (kanallar, yanıt hedefleri, sık talepler, KVKK talepleri, triage).
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 
