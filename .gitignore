@@ -52,3 +52,6 @@ next-env.d.ts
 
 # Voice evaluation (scripts/voice-eval/): caller audio and raw results
 /.voice-eval/
+
+# Local exports and review packages (never committed)
+outputs/
