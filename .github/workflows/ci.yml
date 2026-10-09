@@ -31,6 +31,8 @@ jobs:
       - run: pnpm audit --prod --audit-level high
       - run: pnpm lint
       - run: pnpm lint:tokens
+      # Secret-like strings in tracked files fail the build (B5).
+      - run: pnpm lint:secrets
       - run: pnpm typecheck
       - run: pnpm format:check
       - run: pnpm test

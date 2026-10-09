@@ -31,7 +31,9 @@
     "dev:tunnel": "tsx --conditions=react-server scripts/dev-tunnel.ts",
     "clinic:member": "tsx --conditions=react-server scripts/clinic-member.ts",
     "platform:admin": "tsx --conditions=react-server scripts/platform-admin.ts",
-    "lint:tokens": "tsx scripts/check-design-tokens.ts"
+    "lint:tokens": "tsx scripts/check-design-tokens.ts",
+    "lint:secrets": "tsx scripts/secret-scan.ts lint",
+    "review:package": "tsx scripts/secret-scan.ts package"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

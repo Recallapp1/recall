@@ -97,6 +97,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - B2 · CI açıklamalarında kişisel görünümlü veri maskelenir (`scripts/redact-log.mjs`: telefon, e-posta, anahtar, bağlantı dizesi, yetki başlığı); Playwright raporu 3 gün saklanır.
 - B3 · güvenlik başlıkları canlıda doğrulandı (CSP, frame-ancestors, DENY, referrer, HSTS, nosniff, oturum ve dinamik sayfalarda no-store); hata sayfaları ayrıntı göstermiyor; CSV dışa aktarma yok. Değişiklik gerekmedi; başlıkları sabitleyen test eklendi.
 - B4 · bağımlılıklar: `pnpm audit --prod` (1 orta: esbuild, yalnızca geliştirme sunucusu); kütüphaneler güncellendi (dotenv 18.0.6, lucide-react 1.53.0, retell-sdk 6.2.4, @sentry/nextjs 11.5.0); çatı güncellemesi ayrı partide; büyük sürümler (TypeScript 7, ESLint 10, @types/node 26) yalnızca listelendi.
+- B5 · `pnpm lint:secrets` (CI adımı: HEAD'deki izlenen dosyalarda gizli değer benzeri dize varsa başarısız; değerler maskelenir) ve `pnpm review:package` (git archive + tarama raporu, `outputs/`, hiçbir yere gönderilmez); `NEXT_PUBLIC_` değişkeni yok.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

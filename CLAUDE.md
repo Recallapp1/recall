@@ -41,6 +41,8 @@ pnpm dev            # lokal geliştirme (http://localhost:3000)
 pnpm build          # production build
 pnpm lint           # ESLint
 pnpm lint:tokens    # DESIGN.md token kuralı: hex/rgb/hazır palet yasak
+pnpm lint:secrets   # izlenen dosyalarda anahtar/token/parola benzeri dize (CI'da)
+pnpm review:package # dış inceleme paketi: git archive HEAD + tarama raporu (outputs/, hiçbir yere gönderilmez)
 pnpm typecheck      # tsc --noEmit
 pnpm test           # Vitest
 pnpm format         # Prettier
