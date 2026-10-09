@@ -133,9 +133,9 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 ### F1.8 Uçtan uca POC
 
 - [x] Tünel (cloudflared) ile lokal → Retell'de demo klinik ajanı senkronize edildi (2026-10-04; ilk denemede başarılı, idempotent, imzalı tool çağrısı canlı doğrulandı)
-- [ ] Retell **web call** ile 20 senaryodan ([CONVERSATION-SCENARIOS.md](02-voice-agent/CONVERSATION-SCENARIOS.md)) en az 10'u elle denenir
-- [ ] Model karşılaştırması: Retell'in desteklediği 2–3 Claude modeli. Ölçülenler: başarı, tur gecikmesi, maliyet. Sonuç [ADR-003](decisions/ADR-003-llm-model.md)'e işlenir
-- [ ] ASR ve TTS karşılaştırması (Türkçe): Deepgram, Azure, Soniox × ElevenLabs, Cartesia. Sonuç [VOICE-AND-LANGUAGE.md](02-voice-agent/VOICE-AND-LANGUAGE.md)'ye işlenir
+- [x] ~~Retell **web call** ile 20 senaryodan en az 10'u elle denenir~~ — 2026-10-09: yerine otomatik 26 senaryoluk ses değerlendirmesi (`pnpm voice:eval`, [VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md)); ilk koşu 12/24
+- [ ] Model karşılaştırması — 2026-10-09: profillerle (`baseline`, `option-a`, `option-hardening`, `option-c-gemini`, `option-c-gpt`) aynı senaryolar; kredi yüklenince kademeli plan ([VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md)), sonuç [ADR-003](decisions/ADR-003-llm-model.md)'e
+- [ ] ~~ASR ve TTS karşılaştırması (Deepgram, Azure, Soniox × ElevenLabs, Cartesia)~~ — 2026-10-09: Retell'in sunduklarıyla sınırlı; ADR-003 seçenek D (standart sesler) olarak ele alınır, ayrı iş değil
 - [ ] Custom function gecikmesi (Retell → Vercel `fra1`) ölçülür
 
 **F1 çıkış kriterleri:** Webhook'lar imzalı ve testli; demo kliniğin ajanı tek komutla senkronize ediliyor; web call ile randevu panelsiz olarak DB'ye düşüyor; 20 senaryodan ≥ 18'i başarılı; tool yanıtı p95 < 300 ms.
@@ -155,7 +155,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [ ] Netgsm'de SIP trunk; origination → `sip:sip.retellai.com` (TCP, mümkünse TLS)
 - [ ] Retell IP aralıklarının operatör tarafında izin listesine alınması
 - [ ] Retell **Import Phone Number**: termination URI, kimlik bilgileri, `inbound_webhook_url = /api/voice/retell/inbound`
-- [ ] `phone_numbers` kaydı ve panel/CLI ile numara–klinik eşlemesi (`pnpm voice:attach-number --clinic <slug> --number +90…`)
+- [ ] `phone_numbers` kaydı ve numara–klinik eşlemesi — 2026-10-09: konsolda hazır (Klinik → Numara ekle, `addPhoneNumberAction`); ayrı CLI gerekmez. Kalan: SIP hattı ve Retell'e numara aktarımı
 - [ ] Testler: gelen arama, caller ID, gizli numara, transfer (SIP REFER) ve ses kalitesi
 - [ ] Yönlendirme senaryoları ([CALL-ROUTING.md](03-telephony/CALL-ROUTING.md)): her zaman, meşgul/cevapsız, mesai dışı; devir döngüsü kontrolü
 

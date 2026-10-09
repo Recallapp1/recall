@@ -124,3 +124,9 @@ pnpm voice:eval --profile option-c-gpt
 Her koşu 26 senaryo, ~4,5–5 $ (toplam ~19 $). Profil yalnızca dev kliniğinin ajanını koşu süresince değiştirir ve sonunda env ayarlarına geri döndürür. Yeni iki senaryo (`slow-speaker`, `hesitant-caller`) cümle içinde 1,5 ve 2,5 sn duraksar; asistan araya girerse transkriptteki arayan turu sayısı satır sayısını aşar ve senaryo düşer.
 
 **Production'a alma (ölçüm A'yı doğrularsa):** Vercel'de `VOICE_PROMPT_VARIANT=compact` ve `RETELL_DYNAMIC_RESPONSIVENESS=true` → yeniden deploy (build ajanları senkronlar) → bir test araması. **Geri alma:** iki değişkeni silip yeniden deploy. Karar kesinleşince kullanılmayan prompt varyantı koddan kaldırılır.
+
+## Güncelleme 2026-10-09: güçlendirme varyantı ve kademeli ölçüm
+
+- Yeni değerlendirme profili `option-hardening`: Haiku + tam prompt + `VOICE_PROMPT_HARDENING` (A9: önce değişmez güvenlik kuralları, klinik metni güvenilmeyen veri, kayıt itirazı ve sistem hatası kuralları, örnek ad/numara yok). Hiçbir yerde açık değil; bugünkü prompt bayt bayt aynı kaldı (canlı ajanın özeti değişmedi).
+- Ölçüm sırası ve maliyeti: [VOICE-EVAL.md → Kademeli plan](../02-voice-agent/VOICE-EVAL.md). Önce `baseline` ve `option-c-gemini`, sonra kalan profiller. Her koşu Recall Dev çalışma alanının kredisini kullanır.
+- Değişmeyenler: production modeli `claude-4.5-haiku`, ses `eleven_flash_v2_5`; seçenek A ayarları ve güçlendirme kapalı. Model değişikliği ürün ekibinin onayını bekler.

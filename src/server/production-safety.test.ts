@@ -284,3 +284,17 @@ describe("CI supply chain (B1)", () => {
     expect(code).not.toMatch(/pull_request_target|secrets\./);
   });
 });
+
+describe("configuration documentation (B6)", () => {
+  // Every variable the app reads is documented for local setup and for production.
+  const keys = [...readFileSync("src/lib/env.ts", "utf8").matchAll(/^\s{2}([A-Z][A-Z0-9_]+):/gm)]
+    .map((m) => m[1]!)
+    .filter((key) => key !== "NODE_ENV");
+  const example = readFileSync(".env.example", "utf8");
+  const deployment = readFileSync("docs/06-operations/DEPLOYMENT.md", "utf8");
+
+  it.each(keys)("%s is in .env.example and DEPLOYMENT.md", (key) => {
+    expect(example).toMatch(new RegExp(`^#? ?${key}=`, "m"));
+    expect(deployment).toContain(key);
+  });
+});
