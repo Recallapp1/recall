@@ -433,3 +433,28 @@ describe("voice booking limits", () => {
     });
   });
 });
+
+describe("booking under concurrency (A10)", () => {
+  it("lets exactly one of two simultaneous bookings for the same slot through", async () => {
+    const clinic = await createTestClinic(db);
+    const results = await Promise.allSettled([
+      book(clinic, { time: "15:00", patientPhone: "+905320000096", patientName: "Bir Hasta" }),
+      book(clinic, { time: "15:00", patientPhone: "+905320000097", patientName: "İki Hasta" }),
+    ]);
+    const created = results.filter((r) => r.status === "fulfilled");
+    const refused = results.filter((r) => r.status === "rejected");
+    expect(created).toHaveLength(1);
+    expect(refused).toHaveLength(1);
+    expect((refused[0] as PromiseRejectedResult).reason).toMatchObject({
+      code: "SLOT_UNAVAILABLE",
+    });
+  });
+});
+
+describe("dates at the edges (A10)", () => {
+  it("refuses a date in the past and one beyond the booking window", async () => {
+    const clinic = await createTestClinic(db);
+    await expect(book(clinic, { date: "2026-10-01" })).rejects.toBeInstanceOf(DomainError);
+    await expect(book(clinic, { date: "2027-10-05" })).rejects.toBeInstanceOf(DomainError);
+  });
+});

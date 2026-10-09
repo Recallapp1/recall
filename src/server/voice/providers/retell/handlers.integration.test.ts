@@ -1184,3 +1184,33 @@ describe("request-keyed idempotency (VOICE_TOOL_IDEMPOTENCY)", () => {
     expect(await requestsFor("idem_fail")).toEqual([]);
   });
 });
+
+describe("every Retell route (A10)", () => {
+  const handlers = { inbound: handleInbound, tools: handleFunctionCall, events: handleCallEvent };
+
+  it.each(Object.keys(handlers))(
+    "%s checks the signature before reading the body (bad JSON unsigned is 401, not 400)",
+    async (route) => {
+      const handler = handlers[route as keyof typeof handlers];
+      const garbage = new Request("https://recall.test/x", { method: "POST", body: "{not json" });
+      expect((await handler(garbage, deps())).status).toBe(401);
+      const signedGarbage = new Request("https://recall.test/x", {
+        method: "POST",
+        headers: { "x-retell-signature": await sign("{not json", API_KEY) },
+        body: "{not json",
+      });
+      expect((await handler(signedGarbage, deps())).status).toBe(400);
+    },
+  );
+
+  it("refuses tool calls from an unknown agent or with another clinic's stamp", async () => {
+    const unknown = await tool("check_availability", {}, { agent_id: "agent_unknown" });
+    expect(unknown.status).toBe(404);
+    const mismatched = await tool(
+      "check_availability",
+      {},
+      { metadata: { clinic_id: other.ctx.clinic.id } },
+    );
+    expect(mismatched.status).toBe(404);
+  });
+});

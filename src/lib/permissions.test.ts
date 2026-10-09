@@ -67,3 +67,46 @@ describe("Takip permissions (TAKIP.md §G)", () => {
     expect(builtInRolesAllow("practitioner", { followUps: ["read"] })).toBe(false);
   });
 });
+
+/**
+ * Every clinic resource and action, for every built-in role (audit A10). A
+ * change to the role definitions must change this table on purpose.
+ */
+const EXHAUSTIVE: Record<string, Record<string, RoleName[]>> = {
+  appointments: {
+    read: ["owner", "admin", "staff", "practitioner"],
+    create: ["owner", "admin", "staff"],
+    update: ["owner", "admin", "staff", "practitioner"],
+    cancel: ["owner", "admin", "staff"],
+  },
+  patients: {
+    read: ["owner", "admin", "staff", "practitioner"],
+    update: ["owner", "admin", "staff"],
+    anonymize: ["owner", "admin"],
+    export: ["owner", "admin"],
+  },
+  calls: { read: ["owner", "admin", "staff"], listen_recording: ["owner", "admin"] },
+  callbacks: { read: ["owner", "admin", "staff"], update: ["owner", "admin", "staff"] },
+  followUps: { read: ["owner", "admin", "staff"], manage: ["owner", "admin", "staff"] },
+  clinicSettings: {
+    read: ["owner", "admin", "staff", "practitioner"],
+    update: ["owner", "admin"],
+  },
+  assistantSettings: { read: ["owner", "admin", "staff"], update: ["owner", "admin"] },
+  billing: { read: ["owner", "admin"], manage: ["owner"] },
+  audit: { read: ["owner", "admin"] },
+};
+
+describe("exhaustive clinic permission matrix", () => {
+  const roles: RoleName[] = ["owner", "admin", "staff", "practitioner"];
+  for (const [resource, actions] of Object.entries(EXHAUSTIVE)) {
+    for (const [action, allowed] of Object.entries(actions)) {
+      for (const role of roles) {
+        const expected = allowed.includes(role);
+        it(`${role} ${expected ? "can" : "cannot"} ${resource}.${action}`, () => {
+          expect(builtInRolesAllow(role, { [resource]: [action] } as Permissions)).toBe(expected);
+        });
+      }
+    }
+  }
+});
