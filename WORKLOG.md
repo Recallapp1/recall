@@ -104,6 +104,7 @@ Kurallar: her yeni davranış kapalı (env/variant), canlı ayarlara dokunulmaz,
 - C3 · [INCIDENT-RESPONSE.md](docs/06-operations/INCIDENT-RESPONSE.md) (dereceler, roller, Retell/LLM/ElevenLabs/Neon/Vercel senaryoları, KVKK 72 saat akışı, Türkçe bildirim şablonları, olay kaydı şablonu) ve [SUPPORT-PROCESS.md](docs/06-operations/SUPPORT-PROCESS.md) (kanallar, yanıt hedefleri, sık talepler, KVKK talepleri, triage).
 - C4 · [CLINIC-ONBOARDING.md](docs/07-sales/CLINIC-ONBOARDING.md): ön koşullar, keşif bilgileri, konsol ve panel adımları (bugünkü ekranlara göre), numara ve asistan, 8 test senaryosu, yönlendirme, canlıya geçiş, ilk hafta, pilot anahtar önerisi, ayrılma.
 - C5 · [PHONE-LINE-OPTIONS.md](docs/07-sales/PHONE-LINE-OPTIONS.md): Retell'in özel SIP gereksinimleri (resmî belge), Verimor ve Netgsm seçenekleri ve kaynaklı fiyatlar, doğrulanmamış noktalar işaretli, maliyet varsayımları, öneri ve ilk görüşme için 10 soru.
+- C6 · [docs/legal-drafts/](docs/legal-drafts/README.md) (hepsi TASLAK, yayınlanmadı): avukat brifi (19 soru), Mermaid veri akışı ve alt işleyen tablosu, KVKK aydınlatma metni (klinik adına), Recall gizlilik politikası, klinik hizmet koşulları, DPA iskeleti, görüşme başı anons metni; taslak işaretini ve yayınlanmadığını denetleyen test.
 
 ### 2026-10-09 · Gizli değer rotasyonu · F8
 

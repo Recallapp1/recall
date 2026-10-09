@@ -298,3 +298,20 @@ describe("configuration documentation (B6)", () => {
     expect(deployment).toContain(key);
   });
 });
+
+describe("legal drafts (C6)", () => {
+  const files = readdirSync("docs/legal-drafts").filter((f) => f.endsWith(".md"));
+
+  it.each(files)("%s is marked as an unreviewed draft", (file) => {
+    expect(readFileSync(`docs/legal-drafts/${file}`, "utf8")).toContain(
+      "DRAFT, not reviewed by a lawyer",
+    );
+  });
+
+  it("is not published: no app route serves these texts", () => {
+    const appFiles = readdirSync("src/app", { recursive: true }) as string[];
+    expect(appFiles.some((f) => /kvkk|gizlilik|kullanim-kosullari|aydinlatma/i.test(f))).toBe(
+      false,
+    );
+  });
+});
