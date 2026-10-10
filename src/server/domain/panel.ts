@@ -48,6 +48,7 @@ import { practitionerDisplayName, type ClinicContext } from "./clinics";
 import { DomainError } from "./errors";
 import { recomputePlansForAppointment } from "./follow-ups";
 import { detachPatientNotifications } from "./notifications";
+import { patientsPerName } from "./patients-per-name";
 import { enqueueProviderDeletions } from "./provider-deletions";
 import { addLocalDays, localToUtc, localToday, utcToLocal, type LocalDate } from "./time";
 
@@ -484,10 +485,29 @@ export interface PanelCall {
   patientName: string | null;
 }
 
+/**
+ * The one patient shown for a call, even when several patients share the
+ * caller's number (P-12): the oldest patient on that number, which is what
+ * the old join on phone returned under the unique (clinic_id, phone) index.
+ * With PATIENTS_PER_NAME the patient the call was about (call_patients) on
+ * that number comes first.
+ */
+function callPatientId(perName: boolean) {
+  const oldest = sql`(select op.id from ${patients} op
+    where op.clinic_id = ${calls.clinicId} and op.phone = ${calls.fromNumber}
+    order by op.created_at, op.id limit 1)`;
+  if (!perName) return oldest;
+  const linked = sql`(select lp.id from ${callPatients} cp join ${patients} lp on lp.id = cp.patient_id
+    where cp.call_id = ${calls.id} and lp.clinic_id = ${calls.clinicId} and lp.phone = ${calls.fromNumber}
+    order by lp.created_at, lp.id limit 1)`;
+  return sql`coalesce(${linked}, ${oldest})`;
+}
+
 export async function listCalls(
   exec: Executor,
   clinicId: string,
   options: { outcome?: NonNullable<Call["outcome"]>; limit: number; offset: number },
+  perName: boolean = patientsPerName(),
 ): Promise<{ rows: PanelCall[]; total: number }> {
   const conditions = [
     eq(calls.clinicId, clinicId),
@@ -512,7 +532,7 @@ export async function listCalls(
       .from(calls)
       .leftJoin(
         patients,
-        and(eq(patients.clinicId, calls.clinicId), eq(patients.phone, calls.fromNumber)),
+        and(eq(patients.clinicId, calls.clinicId), eq(patients.id, callPatientId(perName))),
       )
       .where(and(...conditions))
       .orderBy(desc(calls.createdAt))
@@ -543,13 +563,14 @@ export async function getCall(
   exec: Executor,
   scope: PanelScope,
   callId: string,
+  perName: boolean = patientsPerName(),
 ): Promise<PanelCallDetail | null> {
   const [row] = await exec
     .select({ call: calls, patientId: patients.id, patientName: patients.fullName })
     .from(calls)
     .leftJoin(
       patients,
-      and(eq(patients.clinicId, calls.clinicId), eq(patients.phone, calls.fromNumber)),
+      and(eq(patients.clinicId, calls.clinicId), eq(patients.id, callPatientId(perName))),
     )
     .where(and(eq(calls.clinicId, scope.clinicId), eq(calls.id, callId)));
   if (!row) return null;
