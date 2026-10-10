@@ -12,8 +12,11 @@ import {
   ilike,
   inArray,
   isNotNull,
+  isNull,
   lt,
   lte,
+  ne,
+  notInArray,
   notLike,
   or,
   sql,
@@ -774,6 +777,52 @@ export async function updatePatientNotes(
   if (updated.length === 0) throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
 }
 
+/**
+ * Calls from a shared number that belong only to other patients on it (P-12):
+ * linked to one of them and not to the patient being erased. Empty while the
+ * number has one patient, which is always the case before migration 0019.
+ */
+async function familyCallIds(
+  tx: Executor,
+  clinicId: string,
+  patientId: string,
+  phone: string,
+  ownCallIds: string[],
+): Promise<string[]> {
+  const family = await tx
+    .select({ id: patients.id })
+    .from(patients)
+    .where(
+      and(eq(patients.clinicId, clinicId), eq(patients.phone, phone), ne(patients.id, patientId)),
+    );
+  if (family.length === 0) return [];
+  const familyIds = family.map((member) => member.id);
+  const [linked, creating] = await Promise.all([
+    tx
+      .select({ callId: callPatients.callId })
+      .from(callPatients)
+      .where(and(eq(callPatients.clinicId, clinicId), inArray(callPatients.patientId, familyIds))),
+    tx
+      .select({ callId: appointments.callId })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.clinicId, clinicId),
+          inArray(appointments.patientId, familyIds),
+          isNotNull(appointments.callId),
+        ),
+      ),
+  ]);
+  const own = new Set(ownCallIds);
+  return [
+    ...new Set(
+      [...linked, ...creating].flatMap((row) =>
+        row.callId && !own.has(row.callId) ? [row.callId] : [],
+      ),
+    ),
+  ];
+}
+
 /** Replaces a callback note's free text, which may describe a complaint. */
 export const ANONYMIZED_CALLBACK_REASON = "(anonimleştirildi)";
 
@@ -788,6 +837,11 @@ export const ANONYMIZED_CALLBACK_REASON = "(anonimleştirildi)";
  * that created its appointments. Callback notes from those calls or that
  * number lose name, number and text. The provider's copies (audio) are queued
  * for deletion in the same transaction (audit P-10).
+ *
+ * Family members with their own records on the same number (P-12): a call
+ * from the number that is linked only to one of them is theirs and is kept,
+ * with its recording and callback notes; a call linked to this patient, or to
+ * nobody, is erased. With one patient per number nothing differs.
  *
  * Returns the provider ids of the erased calls.
  */
@@ -826,6 +880,7 @@ export async function anonymizePatient(
     const linkedCallIds = [
       ...new Set([...linked, ...creating].flatMap((row) => (row.callId ? [row.callId] : []))),
     ];
+    const keptCallIds = await familyCallIds(tx, clinicId, patientId, patient.phone, linkedCallIds);
 
     const erasedCalls = await tx
       .update(calls)
@@ -834,7 +889,10 @@ export async function anonymizePatient(
         and(
           eq(calls.clinicId, clinicId),
           or(
-            eq(calls.fromNumber, patient.phone),
+            and(
+              eq(calls.fromNumber, patient.phone),
+              keptCallIds.length > 0 ? notInArray(calls.id, keptCallIds) : undefined,
+            ),
             linkedCallIds.length > 0 ? inArray(calls.id, linkedCallIds) : undefined,
           ),
         ),
@@ -848,7 +906,15 @@ export async function anonymizePatient(
         and(
           eq(callbackRequests.clinicId, clinicId),
           or(
-            eq(callbackRequests.phone, patient.phone),
+            and(
+              eq(callbackRequests.phone, patient.phone),
+              keptCallIds.length > 0
+                ? or(
+                    isNull(callbackRequests.callId),
+                    notInArray(callbackRequests.callId, keptCallIds),
+                  )
+                : undefined,
+            ),
             erasedCallIds.length > 0 ? inArray(callbackRequests.callId, erasedCallIds) : undefined,
           ),
         ),
