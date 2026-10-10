@@ -77,6 +77,22 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-10 · Aynı numarada birden çok hasta, 1. adım (kod, anahtar kapalı) · P-12
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dallar:** `feat/P-12a-patient-find-first`, `fix/P-12b-call-patient`, `feat/P-12c-search-optout`, `test/P-12d-migration-guard` · **Commit'ler:** `3f672f6`, `5a189d1`, `add769e`, bu dal
+
+**Ne yapıldı**
+
+- Randevu kaydı hastayı önce arar (numara başına danışma kilidi), `ON CONFLICT (clinic_id, phone)` yok: benzersiz indeksle de indekssiz de çalışır. Yeni anahtar `PATIENTS_PER_NAME` (kapalı): farklı adla gelen aile bireyi ayrı kayıt alır; indeks dururken mevcut hastaya düşer ve adı `booked_for_name`'de kalır. Tanımsız = numara başına tek hasta (iki şemada test).
+- Arama listesi ve ayrıntısı arama başına tek hasta gösterir (numaradaki en eski hasta; anahtarla aramanın konusu olan hasta), satır çoğalmaz.
+- Anahtarla: randevu araması `booked_for_name`'i de bulur; SMS reddi numaraya uygulanır. Takip araması zaten hasta kimliğiyle (değişiklik yok; öneri belgesindeki hata düzeltildi).
+- CI koruması: `patients_clinic_id_phone_index`'i kaldıran bir migration, kodda hastayı `ON CONFLICT` ile kaydeden yer varken CI'ı düşürür; bugün o kod sıfır.
+
+**Açık kalanlar / dikkat**
+
+- Migration 0019 eklenmedi, production'a hiçbir şey uygulanmadı; öneri `docs/P-12-shared-number-proposal` dalında (birleştirilmedi).
+- Panel `booked_for_name`'i henüz göstermez; KVKK silmesi numaradaki aramaları siler (aynı numaradaki diğer aile bireyini de etkiler) — 2. adımda ele alınmalı.
+
 ### 2026-10-09 · Otonom yayın öncesi sağlamlaştırma (Tier A–C) · F7, F8
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** parti başına ayrı dal · **Commit'ler:** aşağıda, parti parti

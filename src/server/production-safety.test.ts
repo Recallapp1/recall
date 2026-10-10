@@ -8,6 +8,7 @@ import { env } from "@/lib/env";
 import { GET as notificationsCron } from "../app/api/cron/notifications/route";
 import { GET as retentionCron } from "../app/api/cron/retention/route";
 import { rejectUnauthorizedCron } from "./cron-auth";
+import { dropsPatientNumberIndex, relyOnPatientNumberIndex } from "./patient-number-guard";
 import { resetSmsProviderForTests, smsProvider, smsTemplates } from "./notifications/sms";
 
 /**
@@ -313,5 +314,77 @@ describe("legal drafts (C6)", () => {
     expect(appFiles.some((f) => /kvkk|gizlilik|kullanim-kosullari|aydinlatma/i.test(f))).toBe(
       false,
     );
+  });
+});
+
+// ─── P-12: the unique patient-number index ───────────────────────────────────
+
+/** Non-test TypeScript under src/ and scripts/. */
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) return name === "node_modules" ? [] : sourceFiles(path);
+    return /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) ? [path] : [];
+  });
+}
+
+describe("unique patient-number index (P-12)", () => {
+  const allMigrations = readdirSync("drizzle").filter((name) => /^\d{4}_.*\.sql$/.test(name));
+  const dropping = allMigrations.filter((name) =>
+    dropsPatientNumberIndex(readFileSync(join("drizzle", name), "utf8")),
+  );
+  const relying = [...sourceFiles("src"), ...sourceFiles("scripts")].flatMap((file) =>
+    relyOnPatientNumberIndex(readFileSync(file, "utf8")).map((line) => `${file}:${line}`),
+  );
+
+  it("is not dropped by any migration while code still saves patients with ON CONFLICT on it", () => {
+    if (dropping.length > 0) expect(relying, `dropped by ${dropping.join(", ")}`).toEqual([]);
+  });
+
+  it("no code relies on it today (P-12 step 1: patients are looked up first)", () => {
+    expect(relying).toEqual([]);
+  });
+
+  it("guard self-test: recognises the drop and the old save", () => {
+    expect(dropsPatientNumberIndex('DROP INDEX IF EXISTS "patients_clinic_id_phone_index";')).toBe(
+      true,
+    );
+    expect(dropsPatientNumberIndex("drop index concurrently patients_clinic_id_phone_index")).toBe(
+      true,
+    );
+    expect(dropsPatientNumberIndex('DROP INDEX "patients_clinic_id_id_key";')).toBe(false);
+    expect(
+      dropsPatientNumberIndex('CREATE INDEX "patients_clinic_id_phone_idx" ON "patients"'),
+    ).toBe(false);
+
+    // The booking save before P-12 step 1 (appointments.ts, 2026-10-09).
+    const before = [
+      "const [patient] = await tx",
+      "  .insert(patients)",
+      "  .values({ clinicId: clinic.id, fullName: personName(input.patientName), phone })",
+      "  .onConflictDoUpdate({",
+      "    target: [patients.clinicId, patients.phone],",
+      "    set: { updatedAt: sql`now()` },",
+      "  })",
+      "  .returning({ id: patients.id });",
+    ].join(String.fromCharCode(10));
+    expect(relyOnPatientNumberIndex(before)).toEqual([2]);
+    expect(
+      relyOnPatientNumberIndex("db.insert(schema.patients).values(rows).onConflictDoNothing();"),
+    ).toEqual([1]);
+    expect(
+      relyOnPatientNumberIndex(
+        'INSERT INTO "patients" (clinic_id, phone) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      ),
+    ).toEqual([1]);
+    // Today's save and other tables' conflicts are fine.
+    expect(
+      relyOnPatientNumberIndex(
+        "await exec.insert(patients).values({ clinicId }).returning({ id: patients.id });",
+      ),
+    ).toEqual([]);
+    expect(
+      relyOnPatientNumberIndex("db.insert(callPatients).values(row).onConflictDoNothing();"),
+    ).toEqual([]);
   });
 });
