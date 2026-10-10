@@ -69,6 +69,11 @@ export default async function AppointmentPage({ params }: PageProps<"/panel/rand
           <dl className="grid gap-5 sm:grid-cols-2">
             <Detail icon={UserRound} label="Hasta">
               {appointment.patientName}
+              {appointment.bookedForName && (
+                <span className="block text-sm text-body">
+                  Randevu {appointment.bookedForName} adına alındı
+                </span>
+              )}
               <span className="block text-sm text-body tabular-nums">
                 {formatPhone(appointment.patientPhone)}
               </span>

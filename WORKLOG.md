@@ -77,6 +77,20 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-11 · Aynı numarada birden çok hasta, 2. adım · P-12
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dallar:** `fix/P-12e-erasure-scope`, `feat/P-12f-booked-for-panel` · **Commit'ler:** `cd43093`, bu dal
+
+**Ne yapıldı**
+
+- KVKK silmesi: paylaşılan numarada yalnızca başka bir hastaya bağlı aramalar (kayıt, geri arama notu, Retell silme kuyruğu dahil) korunur; silinen hastaya, ikisine ya da kimseye bağlı aramalar silinir. Veriye bağlı (numarada başka hasta varsa); 0019 öncesi davranış aynı (test).
+- Panel: anahtar açıkken randevu listesinde "… adına", ayrıntıda "Randevu … adına alındı". Kapalıyken hiçbir şey görünmez. Bellek içi E2E veritabanıyla lokal tarayıcıda doğrulandı (geçici, temizlendi).
+
+**Açık kalanlar / dikkat**
+
+- Hasta dışa aktarma (F-02) aramaları ve geri arama notlarını hâlâ numarayla eşleştirir: paylaşılan numarada aile bireyinin aramaları da gelir. 3. adım.
+- Migration 0019 eklenmedi; production'a hiçbir şey uygulanmadı.
+
 ### 2026-10-10 · Aynı numarada birden çok hasta, 1. adım (kod, anahtar kapalı) · P-12
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dallar:** `feat/P-12a-patient-find-first`, `fix/P-12b-call-patient`, `feat/P-12c-search-optout`, `test/P-12d-migration-guard` · **Commit'ler:** `3f672f6`, `5a189d1`, `add769e`, bu dal

@@ -7,7 +7,7 @@ import type { Database } from "../db";
 import { appointments, patients } from "../db/schema";
 import { bookAppointment } from "./appointments";
 import { enqueueAppointmentMessage } from "./notifications";
-import { listAppointments, scopeFor } from "./panel";
+import { getAppointment, listAppointments, scopeFor } from "./panel";
 import { patientsPerName } from "./patients-per-name";
 
 // Sunday 2026-10-04 12:00 Istanbul; the next day is Monday 2026-10-05.
@@ -228,5 +228,48 @@ describe("SMS opt-out on a shared number (P-12 step 1)", () => {
     expect((await enqueue("appointment_confirmation")).optedOut).toBe(false);
     switchEnv(true);
     expect((await enqueue("appointment_rescheduled")).optedOut).toBe(true);
+  });
+});
+
+describe("booked-for name in the panel (P-12 step 2)", () => {
+  it("shows who a booking was for only with the switch, and only when it differs", async () => {
+    const clinic = await createTestClinic(today);
+    await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
+    const mehmet = await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
+    const scope = scopeFor(clinic.ctx);
+    const list = () =>
+      listAppointments(today, scope, { from: MONDAY, to: "2026-10-06" }, { perName: false });
+
+    switchEnv(false);
+    expect((await getAppointment(today, scope, mehmet.appointment.id))?.bookedForName).toBeNull();
+    expect((await list()).rows.every((row) => row.bookedForName === null)).toBe(true);
+
+    switchEnv(true);
+    const detail = await getAppointment(today, scope, mehmet.appointment.id);
+    expect(detail).toMatchObject({ patientName: "Ayşe Yılmaz", bookedForName: "Mehmet Yılmaz" });
+    const rows = (await list()).rows;
+    expect(rows.find((row) => row.id === mehmet.appointment.id)?.bookedForName).toBe(
+      "Mehmet Yılmaz",
+    );
+    // Ayşe's own booking: no booked-for name to show.
+    expect(rows.find((row) => row.id !== mehmet.appointment.id)?.bookedForName).toBeNull();
+  });
+
+  it("hides a booked-for name that is the patient's own (speech-tolerant)", async () => {
+    const clinic = await createTestClinic(today);
+    const first = await bookAppointment(today, clinic.ctx, {
+      serviceId: clinic.serviceId,
+      practitionerId: clinic.practitionerId,
+      date: MONDAY,
+      time: "12:00",
+      patientName: "Ayşe Yılmaz",
+      patientPhone: PHONE,
+      bookedForName: "ayse yilmaz",
+      source: "voice",
+      now: NOW,
+    });
+    switchEnv(true);
+    const detail = await getAppointment(today, scopeFor(clinic.ctx), first.appointment.id);
+    expect(detail?.bookedForName).toBeNull();
   });
 });

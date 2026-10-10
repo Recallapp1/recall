@@ -47,6 +47,7 @@ import {
   services,
   type Call,
 } from "../db/schema";
+import { sameFullName } from "./appointments";
 import { practitionerDisplayName, type ClinicContext } from "./clinics";
 import { DomainError } from "./errors";
 import { recomputePlansForAppointment } from "./follow-ups";
@@ -86,6 +87,11 @@ export interface PanelAppointment {
   patientId: string;
   patientName: string;
   patientPhone: string;
+  /**
+   * PATIENTS_PER_NAME: who the booking was for, when that differs from the
+   * patient record (a family member on a shared number). Null otherwise.
+   */
+  bookedForName: string | null;
   practitionerId: string;
   practitionerName: string;
   serviceId: string;
@@ -116,6 +122,7 @@ function appointmentQuery(exec: Executor) {
       patientId: patients.id,
       patientName: patients.fullName,
       patientPhone: patients.phone,
+      bookedForName: appointments.bookedForName,
       practitionerId: practitioners.id,
       practitionerName: practitioners.name,
       practitionerTitle: practitioners.title,
@@ -137,7 +144,11 @@ function minuteOfDay(instant: Date, timeZone: string): number {
   return h! * 60 + m!;
 }
 
-function toPanelAppointment(row: AppointmentRow, timeZone: string): PanelAppointment {
+function toPanelAppointment(
+  row: AppointmentRow,
+  timeZone: string,
+  perName: boolean = patientsPerName(),
+): PanelAppointment {
   const startMinute = minuteOfDay(row.startsAt, timeZone);
   const date = utcToLocal(row.startsAt, timeZone).date;
   // An appointment never spans midnight in practice; clamp just in case.
@@ -156,6 +167,10 @@ function toPanelAppointment(row: AppointmentRow, timeZone: string): PanelAppoint
     patientId: row.patientId,
     patientName: row.patientName,
     patientPhone: row.patientPhone,
+    bookedForName:
+      perName && row.bookedForName && !sameFullName(row.bookedForName, row.patientName)
+        ? row.bookedForName
+        : null,
     practitionerId: row.practitionerId,
     practitionerName: practitionerDisplayName({
       name: row.practitionerName,

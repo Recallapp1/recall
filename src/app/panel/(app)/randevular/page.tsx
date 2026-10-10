@@ -244,6 +244,9 @@ export default async function AppointmentsPage({ searchParams }: PageProps<"/pan
                   >
                     {row.patientName}
                   </Link>
+                  {row.bookedForName && (
+                    <span className="block text-xs text-body">{row.bookedForName} adına</span>
+                  )}
                   <span className="block text-xs text-body tabular-nums">
                     {formatPhone(row.patientPhone)}
                   </span>
