@@ -210,9 +210,12 @@ export async function listAppointments(
     offset?: number;
     order?: "asc" | "desc";
     sort?: Sort<AppointmentSortKey>;
+    /** PATIENTS_PER_NAME: the search also matches who a booking was for. */
+    perName?: boolean;
   } = {},
 ): Promise<{ rows: PanelAppointment[]; total: number }> {
   const { start, end } = dayRange(scope, filter.from, filter.to);
+  const perName = options.perName ?? patientsPerName();
   const search = filter.search?.trim();
   const digits = search?.replace(/\D/g, "");
   const conditions = [
@@ -227,6 +230,7 @@ export async function listAppointments(
           or(
             ilike(patients.fullName, `%${search}%`),
             ...(digits && digits.length >= 3 ? [ilike(patients.phone, `%${digits}%`)] : []),
+            ...(perName ? [ilike(appointments.bookedForName, `%${search}%`)] : []),
           )!,
         ]
       : []),

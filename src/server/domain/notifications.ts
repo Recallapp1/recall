@@ -34,6 +34,7 @@ import { SMS_TEMPLATE_KEYS, smsTemplates } from "../notifications/sms";
 import { parseClinicSettings, type ClinicSettings } from "./clinic-settings";
 import { REMINDER_OFFSETS_DAYS } from "./follow-up-logic";
 import { recomputeStalePlans } from "./follow-ups";
+import { patientsPerName } from "./patients-per-name";
 import { beginRun, endRun, finishedClinicIds, recordClinic, type RunStatus } from "./job-runs";
 import { addLocalDays, localToday, localToUtc, utcToLocal, timeToMinutes } from "./time";
 
@@ -187,7 +188,7 @@ export async function enqueueAppointmentMessage(
   },
 ): Promise<{ queued: boolean; optedOut: boolean }> {
   const [patient] = await exec
-    .select({ smsOptOutAt: patients.smsOptOutAt })
+    .select({ phone: patients.phone, smsOptOutAt: patients.smsOptOutAt })
     .from(patients)
     .where(and(eq(patients.clinicId, input.clinicId), eq(patients.id, input.patientId)));
   const inserted = await exec
@@ -203,7 +204,37 @@ export async function enqueueAppointmentMessage(
     })
     .onConflictDoNothing({ target: notifications.dedupeKey })
     .returning({ id: notifications.id });
-  return { queued: inserted.length > 0, optedOut: Boolean(patient?.smsOptOutAt) };
+  return {
+    queued: inserted.length > 0,
+    optedOut: patient ? await isOptedOut(exec, input.clinicId, patient) : false,
+  };
+}
+
+/**
+ * Whether messages to this patient are opted out. With PATIENTS_PER_NAME the
+ * opt-out follows the number (P-12): family members share the phone, and a
+ * "stop" from any of them stops messages to it. Off: the patient's own flag.
+ */
+async function isOptedOut(
+  exec: Executor,
+  clinicId: string,
+  patient: { phone: string; smsOptOutAt: Date | null },
+  perName: boolean = patientsPerName(),
+): Promise<boolean> {
+  if (patient.smsOptOutAt) return true;
+  if (!perName) return false;
+  const [other] = await exec
+    .select({ id: patients.id })
+    .from(patients)
+    .where(
+      and(
+        eq(patients.clinicId, clinicId),
+        eq(patients.phone, patient.phone),
+        isNotNull(patients.smsOptOutAt),
+      ),
+    )
+    .limit(1);
+  return Boolean(other);
 }
 
 /** Sends one clinic's due messages right away (after a call's tool runs). */
@@ -512,7 +543,7 @@ async function resolvePatientPhone(
       and(eq(patients.clinicId, notification.clinicId), eq(patients.id, notification.patientId)),
     );
   if (!patient) return { skip: "patient_removed" };
-  if (patient.smsOptOutAt) return { skip: "opted_out" };
+  if (await isOptedOut(db, notification.clinicId, patient)) return { skip: "opted_out" };
   const phone = normalizePhone(patient.phone);
   if (!phone) return { skip: "invalid_phone" };
   return { phone };

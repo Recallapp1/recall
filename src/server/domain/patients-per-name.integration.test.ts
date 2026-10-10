@@ -4,8 +4,10 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
 import type { Database } from "../db";
-import { patients } from "../db/schema";
+import { appointments, patients } from "../db/schema";
 import { bookAppointment } from "./appointments";
+import { enqueueAppointmentMessage } from "./notifications";
+import { listAppointments, scopeFor } from "./panel";
 import { patientsPerName } from "./patients-per-name";
 
 // Sunday 2026-10-04 12:00 Istanbul; the next day is Monday 2026-10-05.
@@ -23,7 +25,7 @@ beforeAll(async () => {
   today = a.db;
   dropped = b.db;
   closers.push(a.close, b.close);
-  // docs/proposals/P-12-shared-number/up.sql, applied to the second database only.
+  // up.sql of the P-12 proposal (branch docs/P-12-shared-number-proposal), second database only.
   await dropped.execute(
     sql.raw(
       `CREATE INDEX IF NOT EXISTS "patients_clinic_id_phone_idx" ON "patients" ("clinic_id", "phone")`,
@@ -156,5 +158,75 @@ describe("switch on", () => {
     const rows = await onNumber(dropped, clinic);
     expect(rows).toHaveLength(2);
     expect(third.appointment.patientId).toBe(rows[0]!.id);
+  });
+});
+
+async function bookedFor(db: Database, appointmentId: string) {
+  const [row] = await db
+    .select({ bookedForName: appointments.bookedForName })
+    .from(appointments)
+    .where(sql`${appointments.id} = ${appointmentId}`);
+  return row!.bookedForName;
+}
+
+function switchEnv(on: boolean) {
+  // A minimal valid environment, so the default is read through env().
+  process.env.APP_URL = "http://localhost:3000";
+  process.env.DATABASE_URL = "postgres://test@localhost/test";
+  if (on) process.env.PATIENTS_PER_NAME = "true";
+  else delete process.env.PATIENTS_PER_NAME;
+}
+
+describe("finding family members by name (P-12 step 1)", () => {
+  it("today's schema: a fallback booking keeps the family member's name on the appointment", async () => {
+    const clinic = await createTestClinic(today);
+    await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
+    const mehmet = await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
+    expect(await bookedFor(today, mehmet.appointment.id)).toBe("Mehmet Yılmaz");
+    // Switch unset: nothing recorded, as before.
+    const unset = await book(today, clinic, "12:00", "Zeynep Yılmaz");
+    expect(await bookedFor(today, unset.appointment.id)).toBeNull();
+  });
+
+  it("the appointment search matches who a booking was for only with the switch", async () => {
+    const clinic = await createTestClinic(today);
+    await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
+    await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
+    const search = (perName: boolean) =>
+      listAppointments(
+        today,
+        scopeFor(clinic.ctx),
+        { from: MONDAY, to: "2026-10-06", search: "Mehmet" },
+        { perName },
+      );
+    expect((await search(false)).rows).toHaveLength(0);
+    const on = await search(true);
+    expect(on.rows).toHaveLength(1);
+    expect(on.total).toBe(1);
+  });
+});
+
+describe("SMS opt-out on a shared number (P-12 step 1)", () => {
+  it("follows the number only with the switch; unset keeps the patient's own flag", async () => {
+    const clinic = await createTestClinic(dropped);
+    await book(dropped, clinic, "10:00", "Ayşe Yılmaz", true);
+    const mehmet = await book(dropped, clinic, "11:00", "Mehmet Yılmaz", true);
+    await dropped.execute(
+      sql`update patients set sms_opt_out_at = now()
+          where clinic_id = ${clinic.ctx.clinic.id} and full_name = 'Ayşe Yılmaz'`,
+    );
+    const enqueue = (kind: "appointment_confirmation" | "appointment_rescheduled") =>
+      enqueueAppointmentMessage(dropped, {
+        clinicId: clinic.ctx.clinic.id,
+        kind,
+        appointmentId: mehmet.appointment.id,
+        patientId: mehmet.appointment.patientId,
+        now: NOW,
+      });
+
+    switchEnv(false);
+    expect((await enqueue("appointment_confirmation")).optedOut).toBe(false);
+    switchEnv(true);
+    expect((await enqueue("appointment_rescheduled")).optedOut).toBe(true);
   });
 });

@@ -19,7 +19,7 @@ beforeAll(async () => {
   today = a.db;
   dropped = b.db;
   closers.push(a.close, b.close);
-  // docs/proposals/P-12-shared-number/up.sql, second database only.
+  // up.sql of the P-12 proposal (branch docs/P-12-shared-number-proposal), second database only.
   await dropped.execute(
     sql.raw(
       `CREATE INDEX IF NOT EXISTS "patients_clinic_id_phone_idx" ON "patients" ("clinic_id", "phone")`,

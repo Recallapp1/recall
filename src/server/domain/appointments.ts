@@ -141,13 +141,17 @@ export async function bookAppointment(
 
   try {
     const appointmentId = await db.transaction(async (tx) => {
+      const perName = input.patientsPerName ?? patientsPerName();
       const patient = await patientForBooking(
         tx,
         clinic.id,
         phone,
         personName(input.patientName),
-        input.patientsPerName ?? patientsPerName(),
+        perName,
       );
+      // A family member filed under the number's patient (unique index still
+      // there) keeps their name on the appointment, so search can find it.
+      const bookedFor = input.bookedForName ?? (patient.fellBack ? input.patientName : undefined);
 
       const [created] = await tx
         .insert(appointments)
@@ -161,7 +165,7 @@ export async function bookAppointment(
           source: input.source,
           callId: input.callId ?? null,
           notes: input.notes,
-          ...(input.bookedForName && { bookedForName: personName(input.bookedForName) }),
+          ...(bookedFor && { bookedForName: personName(bookedFor) }),
         })
         .returning({ id: appointments.id });
       // Follow-up (Takip): attach to the patient's plan when exactly one fits.
@@ -196,7 +200,7 @@ async function patientForBooking(
   phone: string,
   fullName: string,
   perName: boolean,
-): Promise<{ id: string }> {
+): Promise<{ id: string; fellBack?: true }> {
   // Serialises bookings for one number: two calls cannot both create its patient.
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${clinicId}), hashtext(${phone}))`);
   const onNumber = await tx
@@ -230,7 +234,7 @@ async function patientForBooking(
     return await tx.transaction((savepoint) => insert(savepoint));
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
-    return touch(first.id);
+    return { ...(await touch(first.id)), fellBack: true };
   }
 }
 
