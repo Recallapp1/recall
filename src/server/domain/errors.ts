@@ -40,6 +40,11 @@ export class DomainError extends Error {
   }
 }
 
+/** PostgreSQL unique_violation. */
+export function isUniqueViolation(error: unknown): boolean {
+  return pgErrorCode(error) === "23505";
+}
+
 /** PostgreSQL exclusion_violation, raised by the appointment overlap constraint. */
 export function isOverlapViolation(error: unknown): boolean {
   return pgErrorCode(error) === "23P01";

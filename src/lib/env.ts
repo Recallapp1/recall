@@ -89,6 +89,13 @@ const envSchema = z.object({
   AUDIT_STRICT: optionalFlag,
   /** "true": owners and admins see a read-only "Kullanım ve sınırlar" page (audit A8). Off by default. */
   PANEL_LIMITS_VIEW: optionalFlag,
+  /**
+   * "true": family members sharing a number get their own patient records
+   * (P-12), and the call list, search and SMS opt-out follow the number. Off by
+   * default; until the unique (clinic_id, phone) index is dropped a second
+   * record falls back to the number's existing patient.
+   */
+  PATIENTS_PER_NAME: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

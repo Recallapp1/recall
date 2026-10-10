@@ -5,7 +5,7 @@ import { and, asc, count, eq, gt, gte, inArray, lt, sql } from "drizzle-orm";
 import { personName } from "@/lib/names";
 import { normalizePhone } from "@/lib/phone";
 
-import type { Database } from "../db";
+import type { Database, Executor } from "../db";
 import {
   ACTIVE_APPOINTMENT_STATUSES,
   appointments,
@@ -16,8 +16,9 @@ import {
 } from "../db/schema";
 import type { ClinicContext } from "./clinics";
 import { practitionerDisplayName } from "./clinics";
-import { DomainError, isOverlapViolation } from "./errors";
+import { DomainError, isOverlapViolation, isUniqueViolation } from "./errors";
 import { autoLinkAppointment, moveFollowUpLink, recomputePlansForAppointment } from "./follow-ups";
+import { patientsPerName } from "./patients-per-name";
 import { findAvailability } from "./scheduling";
 import { numberToWords } from "./speech";
 import { isLocalTime, utcToLocal, type LocalDate, type LocalTime } from "./time";
@@ -53,6 +54,8 @@ export interface BookAppointmentInput {
   /** Recorded only with VOICE_SHARED_NUMBER_CHECK: who this appointment is for. */
   bookedForName?: string;
   callId?: string | null;
+  /** PATIENTS_PER_NAME (P-12); defaults to the env switch. */
+  patientsPerName?: boolean;
   now: Date;
 }
 
@@ -138,14 +141,13 @@ export async function bookAppointment(
 
   try {
     const appointmentId = await db.transaction(async (tx) => {
-      const [patient] = await tx
-        .insert(patients)
-        .values({ clinicId: clinic.id, fullName: personName(input.patientName), phone })
-        .onConflictDoUpdate({
-          target: [patients.clinicId, patients.phone],
-          set: { updatedAt: sql`now()` },
-        })
-        .returning({ id: patients.id });
+      const patient = await patientForBooking(
+        tx,
+        clinic.id,
+        phone,
+        personName(input.patientName),
+        input.patientsPerName ?? patientsPerName(),
+      );
 
       const [created] = await tx
         .insert(appointments)
@@ -177,6 +179,58 @@ export async function bookAppointment(
       throw new DomainError("SLOT_UNAVAILABLE", "Bu saat az önce doldu.");
     }
     throw error;
+  }
+}
+
+/**
+ * The patient a booking is filed under. Looked up first instead of
+ * `ON CONFLICT (clinic_id, phone)`, so it works with and without that unique
+ * index (P-12). Off: the number's patient, as before (the oldest if there are
+ * several). PATIENTS_PER_NAME: the patient on this number with the same name,
+ * else a new record for a family member; while the unique index still exists
+ * that insert is refused and the number's patient is used, as today.
+ */
+async function patientForBooking(
+  tx: Executor,
+  clinicId: string,
+  phone: string,
+  fullName: string,
+  perName: boolean,
+): Promise<{ id: string }> {
+  // Serialises bookings for one number: two calls cannot both create its patient.
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${clinicId}), hashtext(${phone}))`);
+  const onNumber = await tx
+    .select({ id: patients.id, fullName: patients.fullName })
+    .from(patients)
+    .where(and(eq(patients.clinicId, clinicId), eq(patients.phone, phone)))
+    .orderBy(asc(patients.createdAt), asc(patients.id));
+
+  const touch = async (id: string) => {
+    await tx
+      .update(patients)
+      .set({ updatedAt: sql`now()` })
+      .where(eq(patients.id, id));
+    return { id };
+  };
+  const insert = async (exec: Executor) => {
+    const [created] = await exec
+      .insert(patients)
+      .values({ clinicId, fullName, phone })
+      .returning({ id: patients.id });
+    return { id: created!.id };
+  };
+
+  const first = onNumber[0];
+  if (!first) return insert(tx);
+  if (!perName) return touch(first.id);
+  const sameName = onNumber.find((patient) => sameFullName(patient.fullName, fullName));
+  if (sameName) return touch(sameName.id);
+  try {
+    // Savepoint: a refused insert must not abort the booking.
+    return await tx.transaction((savepoint) => insert(savepoint));
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+    return touch(first.id);
   }
 }
 
