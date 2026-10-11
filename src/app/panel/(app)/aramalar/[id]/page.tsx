@@ -14,9 +14,11 @@ import { formatMinutes, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import { can, requirePanelScope } from "@/server/auth/session";
 import { db } from "@/server/db";
-import { getCall } from "@/server/domain/panel";
+import { env } from "@/lib/env";
+import { getCall, listCallReports } from "@/server/domain/panel";
 
 import { RecordingPlayer } from "../recording-player";
+import { CallReportForm } from "./call-report";
 
 export const metadata: Metadata = { title: "Arama" };
 
@@ -29,6 +31,8 @@ export default async function CallPage({ params }: PageProps<"/panel/aramalar/[i
     can({ calls: ["listen_recording"] }),
     can({ patients: ["read"] }),
   ]);
+  const reviewOn = env().CALL_REVIEW === true;
+  const reports = reviewOn ? await listCallReports(db(), context.clinic.id, call.id) : [];
   const when = new Intl.DateTimeFormat("tr-TR", {
     dateStyle: "long",
     timeStyle: "short",
@@ -82,6 +86,12 @@ export default async function CallPage({ params }: PageProps<"/panel/aramalar/[i
             </section>
           )}
 
+          {reviewOn && (
+            <CallReportForm
+              callId={call.id}
+              reports={reports.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }))}
+            />
+          )}
           {call.appointments.length > 0 && (
             <section className="flex flex-col gap-3 rounded-card border border-hairline bg-paper p-6">
               <h2 className="text-label text-body">Bu aramada oluşan randevular</h2>

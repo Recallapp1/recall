@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { builtInRolesAllow, type Permissions } from "@/lib/permissions";
@@ -661,6 +661,68 @@ describe("role escalation through team actions (R2 4g)", () => {
         update({ memberId: await memberIdOf(user), role: "admin", practitionerId: null }),
       ).rejects.toBeInstanceOf(ForbiddenSignal);
     }
+  });
+});
+
+describe("reporting wrong assistant behaviour (CALL_REVIEW, R2 5d)", () => {
+  const report = async (input: Record<string, unknown>) =>
+    (await import("./panel/(app)/aramalar/actions")).reportCall(input);
+  const callInA = async () => {
+    const [row] = await actionState.db
+      .insert(schema.calls)
+      .values({
+        clinicId: a.ctx.clinic.id,
+        provider: "retell",
+        providerCallId: `report-${Math.random()}`,
+      })
+      .returning();
+    return row!.id;
+  };
+
+  it("is refused while the switch is unset", async () => {
+    vi.stubEnv("CALL_REVIEW", "");
+    actAs(users.staff);
+    expect(await report({ callId: await callInA(), reason: "wrong_info" })).toEqual({
+      ok: false,
+      message: "Bu özellik kapalı.",
+    });
+  });
+
+  it("staff report with a reason from the list; the audit holds the reason only", async () => {
+    vi.stubEnv("CALL_REVIEW", "true");
+    onTestFinished(() => void vi.stubEnv("CALL_REVIEW", ""));
+    const callId = await callInA();
+    actAs(users.staff);
+    expect(await report({ callId, reason: "misunderstood" })).toMatchObject({ ok: true });
+    expect(await report({ callId, reason: "serbest metin" })).toEqual({
+      ok: false,
+      message: "Bir sebep seçin.",
+    });
+    const audits = await actionState.db
+      .select()
+      .from(schema.auditEvents)
+      .where(eq(schema.auditEvents.targetId, callId));
+    expect(audits.map((x) => [x.action, x.metadata])).toEqual([
+      ["call.reported", { reason: "misunderstood" }],
+    ]);
+    const { listCallReports } = await import("@/server/domain/panel");
+    expect(
+      (await listCallReports(actionState.db, a.ctx.clinic.id, callId)).map((r) => r.reason),
+    ).toEqual(["misunderstood"]);
+  });
+
+  it("practitioners cannot report; another clinic's call is not found", async () => {
+    vi.stubEnv("CALL_REVIEW", "true");
+    onTestFinished(() => void vi.stubEnv("CALL_REVIEW", ""));
+    actAs(users.practitioner);
+    await expect(report({ callId: await callInA(), reason: "other" })).rejects.toBeInstanceOf(
+      ForbiddenSignal,
+    );
+    actAs(users.owner);
+    expect(await report({ callId: bRows.callId, reason: "other" })).toEqual({
+      ok: false,
+      message: "Arama bulunamadı.",
+    });
   });
 });
 

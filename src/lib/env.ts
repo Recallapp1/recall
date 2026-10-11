@@ -120,6 +120,11 @@ const envSchema = z.object({
   HOURLY_REMINDERS: optionalFlag,
   /** "true": owners and admins see the read-only "Yayına hazırlık" page (R2 5c). Off by default. */
   PANEL_GO_LIVE_CHECK: optionalFlag,
+  /**
+   * "true": staff who can read calls report a call as wrong assistant
+   * behaviour with a reason from a fixed list; audited (R2 5d). Off by default.
+   */
+  CALL_REVIEW: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

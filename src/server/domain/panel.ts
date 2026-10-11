@@ -30,7 +30,7 @@ import {
   type AppointmentStatus,
 } from "@/lib/contracts/appointment";
 
-import type { CallFlag } from "@/lib/contracts/call";
+import { CALL_REPORT_REASONS, type CallFlag, type CallReportReason } from "@/lib/contracts/call";
 import { personName } from "@/lib/names";
 import { normalizePhone } from "@/lib/phone";
 import type { AppointmentSortKey, PatientSortKey, Sort } from "@/lib/contracts/sorting";
@@ -38,6 +38,7 @@ import type { AppointmentSortKey, PatientSortKey, Sort } from "@/lib/contracts/s
 import type { Executor } from "../db";
 import {
   appointments,
+  auditEvents,
   callbackRequests,
   callPatients,
   calls,
@@ -1287,4 +1288,25 @@ export async function setPatientSmsOptOut(
         ),
       );
   }
+}
+
+/** Staff reports of wrong assistant behaviour on one call (CALL_REVIEW, R2 5d). */
+export async function listCallReports(exec: Executor, clinicId: string, callId: string) {
+  const rows = await exec
+    .select({ metadata: auditEvents.metadata, createdAt: auditEvents.createdAt })
+    .from(auditEvents)
+    .where(
+      and(
+        eq(auditEvents.clinicId, clinicId),
+        eq(auditEvents.action, "call.reported"),
+        eq(auditEvents.targetId, callId),
+      ),
+    )
+    .orderBy(desc(auditEvents.createdAt));
+  return rows.flatMap((row) => {
+    const reason = (row.metadata as { reason?: unknown }).reason;
+    return (CALL_REPORT_REASONS as readonly unknown[]).includes(reason)
+      ? [{ reason: reason as CallReportReason, createdAt: row.createdAt }]
+      : [];
+  });
 }
