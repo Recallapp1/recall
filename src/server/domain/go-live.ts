@@ -35,6 +35,9 @@ const SWITCHES = [
   { key: "VOICE_PROMPT_HARDENING", label: "Güçlendirilmiş asistan metni" },
   { key: "DELETION_QUEUE_HOURLY", label: "Saatlik silme kuyruğu" },
   { key: "HOURLY_REMINDERS", label: "Saatlik hatırlatmalar" },
+  { key: "CALL_REVIEW", label: "Asistan hatası bildirme" },
+  { key: "TEST_CALL_FLAG", label: "Test araması işareti" },
+  { key: "PANEL_LIMITS_VIEW", label: "Kullanım ve sınırlar sayfası" },
 ] as const satisfies readonly { key: keyof Env; label: string }[];
 
 /**

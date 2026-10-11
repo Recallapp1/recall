@@ -22,6 +22,9 @@ const OFF = {
   VOICE_PROMPT_HARDENING: undefined,
   DELETION_QUEUE_HOURLY: undefined,
   HOURLY_REMINDERS: undefined,
+  CALL_REVIEW: undefined,
+  TEST_CALL_FLAG: undefined,
+  PANEL_LIMITS_VIEW: undefined,
 };
 
 let db: Database;
