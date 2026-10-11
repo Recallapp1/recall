@@ -216,3 +216,52 @@ describe("account provisioning", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("session and invitation hardening (R2 4g)", () => {
+  const STAFF = { email: "sekreter@klinik.test", password: "sekreter-parola-1" };
+
+  it("every sign-in gets a fresh session token (no fixation)", async () => {
+    const first = await signIn(STAFF.email, STAFF.password);
+    const second = await signIn(STAFF.email, STAFF.password);
+    expect(first.get("cookie")).not.toEqual(second.get("cookie"));
+    // A made-up token is no session.
+    const forged = new Headers({ cookie: "better-auth.session_token=forged.value" });
+    expect(await modules.auth().api.getSession({ headers: forged })).toBeNull();
+  });
+
+  it("a password reset ends every existing session", async () => {
+    const before = await signIn(STAFF.email, STAFF.password);
+    expect(await modules.auth().api.getSession({ headers: before })).not.toBeNull();
+    await modules.auth().api.requestPasswordReset({ body: { email: STAFF.email } });
+    const token = lastLink(/sifre-belirle\?token=([\w-]+)/);
+    await modules
+      .auth()
+      .api.resetPassword({ body: { token, newPassword: "sekreter-yeni-parola-2" } });
+    expect(await modules.auth().api.getSession({ headers: before })).toBeNull();
+    // The link is single use.
+    await expect(
+      modules.auth().api.resetPassword({ body: { token, newPassword: "ucuncu-parola-333" } }),
+    ).rejects.toThrow();
+  });
+
+  it("an expired invitation can be neither seen nor accepted", async () => {
+    const ownerHeaders = await signIn(OWNER.email, OWNER.password);
+    await modules.auth().api.createInvitation({
+      body: { email: "gec-kalan@klinik.test", role: "staff" },
+      headers: ownerHeaders,
+    });
+    const invitationId = lastLink(/davet\/([0-9a-f-]{36})/);
+    await testDb
+      .update(schema.invitations)
+      .set({ expiresAt: new Date(Date.now() - 60_000) })
+      .where(eq(schema.invitations.id, invitationId));
+    expect(await modules.accounts.findOpenInvitation(invitationId)).toBeNull();
+    await expect(
+      modules.accounts.acceptInvitationAsNewUser({
+        invitationId,
+        name: "Geç Kalan",
+        password: "gec-kalan-parola-1",
+      }),
+    ).rejects.toMatchObject({ code: "INVITATION_INVALID" });
+  });
+});

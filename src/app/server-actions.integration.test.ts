@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { builtInRolesAllow, type Permissions } from "@/lib/permissions";
@@ -615,6 +615,52 @@ describe("clinic actions: permission, validation and tenant isolation", () => {
     expect(await updateCallback({ callbackId: own!.id, status: "done" })).toMatchObject({
       ok: true,
     });
+  });
+});
+
+describe("role escalation through team actions (R2 4g)", () => {
+  const memberIdOf = async (user: TestUser) => {
+    const [row] = await actionState.db
+      .select({ id: schema.members.id })
+      .from(schema.members)
+      .where(eq(schema.members.userId, user.id));
+    return row!.id;
+  };
+  const update = async (input: Record<string, unknown>) =>
+    (await import("./panel/(app)/ayarlar/ekip/actions")).updateMember(input);
+
+  it("a clinic admin can make nobody owner, not even themselves, and cannot change an owner", async () => {
+    const clinicAdmin = await createMember(a, "admin");
+    actAs(clinicAdmin);
+    expect(
+      await update({
+        memberId: await memberIdOf(clinicAdmin),
+        role: "owner",
+        practitionerId: null,
+      }),
+    ).toEqual({
+      ok: false,
+      message: "Bu rolü atama yetkiniz yok.",
+    });
+    expect(
+      await update({
+        memberId: await memberIdOf(users.owner),
+        role: "staff",
+        practitionerId: null,
+      }),
+    ).toEqual({
+      ok: false,
+      message: "Bu rolü atama yetkiniz yok.",
+    });
+  });
+
+  it("staff and practitioners cannot change roles at all", async () => {
+    for (const user of [users.staff, users.practitioner]) {
+      actAs(user);
+      await expect(
+        update({ memberId: await memberIdOf(user), role: "admin", practitionerId: null }),
+      ).rejects.toBeInstanceOf(ForbiddenSignal);
+    }
   });
 });
 
