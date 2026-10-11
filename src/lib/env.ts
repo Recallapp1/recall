@@ -107,6 +107,11 @@ const envSchema = z.object({
    * in the panel (KVKK m.11 correction, gap review G-02). Off by default.
    */
   PANEL_PATIENT_EDIT: optionalFlag,
+  /**
+   * "true": /api/cron/provider-deletions processes the Retell deletion queue
+   * (R2 5a). Needs an hourly cron entry (Vercel Pro); off by default.
+   */
+  DELETION_QUEUE_HOURLY: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

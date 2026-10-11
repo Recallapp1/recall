@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "@/lib/env";
 
 import { GET as notificationsCron } from "../app/api/cron/notifications/route";
+import { GET as providerDeletionsCron } from "../app/api/cron/provider-deletions/route";
 import { GET as retentionCron } from "../app/api/cron/retention/route";
 import { rejectUnauthorizedCron } from "./cron-auth";
 import { dropsPatientNumberIndex, relyOnPatientNumberIndex } from "./patient-number-guard";
@@ -179,6 +180,7 @@ describe("cron authorization", () => {
   it.each([
     ["notifications", notificationsCron],
     ["retention", retentionCron],
+    ["provider-deletions", providerDeletionsCron],
   ])("the %s route refuses callers without the secret", async (_name, handler) => {
     vi.stubEnv("CRON_SECRET", "s3cret");
     expect((await handler(request())).status).toBe(401);
@@ -188,10 +190,19 @@ describe("cron authorization", () => {
   it.each([
     ["notifications", notificationsCron],
     ["retention", retentionCron],
+    ["provider-deletions", providerDeletionsCron],
   ])("the %s route does not run without CRON_SECRET", async (_name, handler) => {
     expect((await handler(request("Bearer anything"))).status).toBe(503);
   });
 
+  it("the hourly deletion queue route stays off without DELETION_QUEUE_HOURLY (R2 5a)", async () => {
+    vi.stubEnv("CRON_SECRET", "s3cret");
+    const response = await providerDeletionsCron(request("Bearer s3cret"));
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ status: "disabled" });
+  });
+
+  // The hourly-ready routes (R2 5a, 5b) are not scheduled: Hobby allows daily cron only.
   it("both jobs are scheduled", () => {
     const config = JSON.parse(readFileSync("vercel.json", "utf8")) as {
       crons: { path: string }[];
