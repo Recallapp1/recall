@@ -14,6 +14,9 @@ import { patientsPerName } from "./patients-per-name";
 const NOW = new Date("2026-10-04T09:00:00Z");
 const MONDAY = "2026-10-05";
 const PHONE = "+905320000071";
+// pnpm test:p12-rehearsal runs the suite on the schema without the unique
+// index; these tests observe the fallback that only that index produces.
+const rehearsal = process.env.TEST_SCHEMA === "p12-dropped";
 
 let today: Database; // today's schema: unique (clinic_id, phone)
 let dropped: Database; // after the proposed migration 0019
@@ -120,15 +123,18 @@ describe.each([
 });
 
 describe("switch on", () => {
-  it("today's schema: a family member's booking falls back to the number's patient (no error)", async () => {
-    const clinic = await createTestClinic(today);
-    await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
-    const second = await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
-    const rows = await onNumber(today, clinic);
-    expect(rows).toHaveLength(1);
-    expect(second.created).toBe(true);
-    expect(second.appointment.patientId).toBe(rows[0]!.id);
-  });
+  it.skipIf(rehearsal)(
+    "today's schema: a family member's booking falls back to the number's patient (no error)",
+    async () => {
+      const clinic = await createTestClinic(today);
+      await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
+      const second = await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
+      const rows = await onNumber(today, clinic);
+      expect(rows).toHaveLength(1);
+      expect(second.created).toBe(true);
+      expect(second.appointment.patientId).toBe(rows[0]!.id);
+    },
+  );
 
   it("after migration 0019: a family member gets their own record", async () => {
     const clinic = await createTestClinic(dropped);
@@ -178,32 +184,38 @@ function switchEnv(on: boolean) {
 }
 
 describe("finding family members by name (P-12 step 1)", () => {
-  it("today's schema: a fallback booking keeps the family member's name on the appointment", async () => {
-    const clinic = await createTestClinic(today);
-    await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
-    const mehmet = await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
-    expect(await bookedFor(today, mehmet.appointment.id)).toBe("Mehmet Yılmaz");
-    // Switch unset: nothing recorded, as before.
-    const unset = await book(today, clinic, "12:00", "Zeynep Yılmaz");
-    expect(await bookedFor(today, unset.appointment.id)).toBeNull();
-  });
+  it.skipIf(rehearsal)(
+    "today's schema: a fallback booking keeps the family member's name on the appointment",
+    async () => {
+      const clinic = await createTestClinic(today);
+      await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
+      const mehmet = await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
+      expect(await bookedFor(today, mehmet.appointment.id)).toBe("Mehmet Yılmaz");
+      // Switch unset: nothing recorded, as before.
+      const unset = await book(today, clinic, "12:00", "Zeynep Yılmaz");
+      expect(await bookedFor(today, unset.appointment.id)).toBeNull();
+    },
+  );
 
-  it("the appointment search matches who a booking was for only with the switch", async () => {
-    const clinic = await createTestClinic(today);
-    await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
-    await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
-    const search = (perName: boolean) =>
-      listAppointments(
-        today,
-        scopeFor(clinic.ctx),
-        { from: MONDAY, to: "2026-10-06", search: "Mehmet" },
-        { perName },
-      );
-    expect((await search(false)).rows).toHaveLength(0);
-    const on = await search(true);
-    expect(on.rows).toHaveLength(1);
-    expect(on.total).toBe(1);
-  });
+  it.skipIf(rehearsal)(
+    "the appointment search matches who a booking was for only with the switch",
+    async () => {
+      const clinic = await createTestClinic(today);
+      await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
+      await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
+      const search = (perName: boolean) =>
+        listAppointments(
+          today,
+          scopeFor(clinic.ctx),
+          { from: MONDAY, to: "2026-10-06", search: "Mehmet" },
+          { perName },
+        );
+      expect((await search(false)).rows).toHaveLength(0);
+      const on = await search(true);
+      expect(on.rows).toHaveLength(1);
+      expect(on.total).toBe(1);
+    },
+  );
 });
 
 describe("SMS opt-out on a shared number (P-12 step 1)", () => {
@@ -232,28 +244,31 @@ describe("SMS opt-out on a shared number (P-12 step 1)", () => {
 });
 
 describe("booked-for name in the panel (P-12 step 2)", () => {
-  it("shows who a booking was for only with the switch, and only when it differs", async () => {
-    const clinic = await createTestClinic(today);
-    await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
-    const mehmet = await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
-    const scope = scopeFor(clinic.ctx);
-    const list = () =>
-      listAppointments(today, scope, { from: MONDAY, to: "2026-10-06" }, { perName: false });
+  it.skipIf(rehearsal)(
+    "shows who a booking was for only with the switch, and only when it differs",
+    async () => {
+      const clinic = await createTestClinic(today);
+      await book(today, clinic, "10:00", "Ayşe Yılmaz", true);
+      const mehmet = await book(today, clinic, "11:00", "Mehmet Yılmaz", true);
+      const scope = scopeFor(clinic.ctx);
+      const list = () =>
+        listAppointments(today, scope, { from: MONDAY, to: "2026-10-06" }, { perName: false });
 
-    switchEnv(false);
-    expect((await getAppointment(today, scope, mehmet.appointment.id))?.bookedForName).toBeNull();
-    expect((await list()).rows.every((row) => row.bookedForName === null)).toBe(true);
+      switchEnv(false);
+      expect((await getAppointment(today, scope, mehmet.appointment.id))?.bookedForName).toBeNull();
+      expect((await list()).rows.every((row) => row.bookedForName === null)).toBe(true);
 
-    switchEnv(true);
-    const detail = await getAppointment(today, scope, mehmet.appointment.id);
-    expect(detail).toMatchObject({ patientName: "Ayşe Yılmaz", bookedForName: "Mehmet Yılmaz" });
-    const rows = (await list()).rows;
-    expect(rows.find((row) => row.id === mehmet.appointment.id)?.bookedForName).toBe(
-      "Mehmet Yılmaz",
-    );
-    // Ayşe's own booking: no booked-for name to show.
-    expect(rows.find((row) => row.id !== mehmet.appointment.id)?.bookedForName).toBeNull();
-  });
+      switchEnv(true);
+      const detail = await getAppointment(today, scope, mehmet.appointment.id);
+      expect(detail).toMatchObject({ patientName: "Ayşe Yılmaz", bookedForName: "Mehmet Yılmaz" });
+      const rows = (await list()).rows;
+      expect(rows.find((row) => row.id === mehmet.appointment.id)?.bookedForName).toBe(
+        "Mehmet Yılmaz",
+      );
+      // Ayşe's own booking: no booked-for name to show.
+      expect(rows.find((row) => row.id !== mehmet.appointment.id)?.bookedForName).toBeNull();
+    },
+  );
 
   it("hides a booked-for name that is the patient's own (speech-tolerant)", async () => {
     const clinic = await createTestClinic(today);

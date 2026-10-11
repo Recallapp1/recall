@@ -23,6 +23,12 @@ declare module "vitest" {
 export default async function setup(project: TestProject) {
   const client = new PGlite({ extensions: { btree_gist } });
   await migrate(drizzle({ client, casing: "snake_case" }), { migrationsFolder: "./drizzle" });
+  // Rehearsal of the P-12 schema change (pnpm test:p12-rehearsal): the unique
+  // (clinic_id, phone) index replaced by a plain one, as in the proposal's up.sql.
+  if (process.env.TEST_SCHEMA === "p12-dropped") {
+    await client.exec(`CREATE INDEX IF NOT EXISTS "patients_clinic_id_phone_idx" ON "patients" ("clinic_id", "phone");
+      DROP INDEX IF EXISTS "patients_clinic_id_phone_index";`);
+  }
   const snapshot = await client.dumpDataDir("none");
   await client.close();
 
