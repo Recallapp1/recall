@@ -170,8 +170,10 @@ export default async function PatientPage({ params }: PageProps<"/panel/hastalar
               {canAnonymize && (
                 <>
                   <p className="text-xs text-body">
-                    Hasta silme talebinde ad, telefon, notlar, bu numaradan gelen aramaların dökümü
-                    ve ses kayıtları kalıcı olarak silinir. Randevu geçmişi istatistik için anonim
+                    Hasta silme talebinde ad, telefon, notlar, bu hastayla ilgili aramaların dökümü
+                    ve ses kayıtları kalıcı olarak silinir: hastaya bağlı aramalar ve bu numaradan
+                    gelen aramalar. Numarayı ayrı kaydı olan başka hastalar da kullanıyorsa,
+                    yalnızca onlara ait aramalar korunur. Randevu geçmişi istatistik için anonim
                     kalır.
                   </p>
                   <AnonymizeButton patientId={patient.id} />
