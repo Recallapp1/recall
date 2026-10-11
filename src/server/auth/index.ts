@@ -32,6 +32,22 @@ export const INVITATION_DAYS = 7;
 /** Long enough for a new account's "set your password" email to be opened the next day. */
 export const PASSWORD_LINK_HOURS = 24;
 
+/**
+ * Session lifetime and refresh interval in seconds. PANEL_SESSION_HOURS
+ * (gap review G-05) shortens it; unset keeps 7 days, refreshed daily.
+ */
+export function sessionLifetime(hours: number | undefined): {
+  expiresIn: number;
+  updateAge: number;
+} {
+  if (hours === undefined) {
+    return { expiresIn: SESSION_DAYS * 24 * 60 * 60, updateAge: 24 * 60 * 60 };
+  }
+  const expiresIn = hours * 60 * 60;
+  // Refresh within the lifetime, so an active session does not lapse mid-shift.
+  return { expiresIn, updateAge: Math.min(24 * 60 * 60, Math.floor(expiresIn / 4)) };
+}
+
 /** Origin used for links in emails and as Better Auth's base URL. */
 export function panelOrigin(): string {
   const config = env();
@@ -66,10 +82,7 @@ function createAuth() {
       },
     }),
     advanced: { database: { generateId: "uuid" } },
-    session: {
-      expiresIn: SESSION_DAYS * 24 * 60 * 60,
-      updateAge: 24 * 60 * 60,
-    },
+    session: sessionLifetime(config.PANEL_SESSION_HOURS),
     emailAndPassword: {
       enabled: true,
       // Accounts only come from invitations or the Recall team (ADR-009).

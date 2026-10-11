@@ -130,6 +130,15 @@ const envSchema = z.object({
    * their bookings are left out of the "Bugün" numbers (R2 5e). Off by default.
    */
   TEST_CALL_FLAG: optionalFlag,
+  /**
+   * Panel session lifetime in hours, 1–168 (gap review G-05): shorter sessions
+   * for reception computers shared between shifts. Unset: 7 days, as today.
+   */
+  PANEL_SESSION_HOURS: z
+    .string()
+    .optional()
+    .transform((value) => (value ? Number(value) : undefined))
+    .pipe(z.number().int().min(1).max(168).optional()),
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**
