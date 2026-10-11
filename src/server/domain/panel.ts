@@ -251,9 +251,9 @@ export async function listAppointments(
     ...(search
       ? [
           or(
-            ilike(patients.fullName, `%${search}%`),
+            ilike(patients.fullName, containing(search)),
             ...(digits && digits.length >= 3 ? [ilike(patients.phone, `%${digits}%`)] : []),
-            ...(perName ? [ilike(appointments.bookedForName, `%${search}%`)] : []),
+            ...(perName ? [ilike(appointments.bookedForName, containing(search))] : []),
           )!,
         ]
       : []),
@@ -320,6 +320,14 @@ export async function isTestCall(exec: Executor, clinicId: string, callId: strin
     .from(calls)
     .where(and(eq(calls.clinicId, clinicId), eq(calls.id, callId)));
   return row?.test === true;
+}
+
+/**
+ * An ILIKE pattern that matches the text literally anywhere: "%" and "_" in
+ * what staff type are not wildcards (audit P-23, gap review G-07).
+ */
+export function containing(text: string): string {
+  return `%${text.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
 }
 
 /** The "Bugün" screen: today's calendar and the numbers above it. */
@@ -715,7 +723,7 @@ export async function listPatients(
     ...(search
       ? [
           or(
-            ilike(patients.fullName, `%${search}%`),
+            ilike(patients.fullName, containing(search)),
             ...(digits && digits.length >= 3 ? [ilike(patients.phone, `%${digits}%`)] : []),
           )!,
         ]
