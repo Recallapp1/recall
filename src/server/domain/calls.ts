@@ -7,7 +7,9 @@ import { normalizePhone } from "@/lib/phone";
 
 import type { Executor } from "../db";
 import { callbackRequests, calls, type Call } from "../db/schema";
+import { sameFullName } from "./appointments";
 import { DomainError } from "./errors";
+import { patientsPerName } from "./patients-per-name";
 
 export interface CallIdentity {
   clinicId: string;
@@ -132,6 +134,11 @@ export const CALLBACK_REASON_MAX = 500;
  * One open note per call and number: a retried or repeated tool call returns
  * the note that is already there (`created: false`). With `onlyIfExisting`
  * nothing is inserted.
+ *
+ * PATIENTS_PER_NAME (P-12): when the note is for a different person on the
+ * same number (a family member in the same call), their name and reason are
+ * appended to the open note instead of being dropped (`appended: true`); the
+ * unique open-note index (clinic, call, number) stays as it is.
  */
 export async function createCallbackRequest(
   exec: Executor,
@@ -142,13 +149,18 @@ export async function createCallbackRequest(
     patientName?: string | null;
     phone?: string | null;
   },
-  options: { onlyIfExisting?: boolean } = {},
-): Promise<{ id: string; created: boolean } | null> {
+  options: { onlyIfExisting?: boolean; perName?: boolean } = {},
+): Promise<{ id: string; created: boolean; appended?: true } | null> {
   const phone = normalizePhone(input.phone);
+  const perName = options.perName ?? patientsPerName();
   const findExisting = async () => {
     if (!input.callId || !phone) return null;
     const [row] = await exec
-      .select({ id: callbackRequests.id })
+      .select({
+        id: callbackRequests.id,
+        patientName: callbackRequests.patientName,
+        reason: callbackRequests.reason,
+      })
       .from(callbackRequests)
       .where(
         and(
@@ -158,11 +170,34 @@ export async function createCallbackRequest(
           eq(callbackRequests.status, "open"),
         ),
       );
-    return row ? { id: row.id, created: false } : null;
+    return row ?? null;
+  };
+  const appendFamilyMember = async (note: {
+    id: string;
+    patientName: string | null;
+    reason: string;
+  }) => {
+    const name = input.patientName?.trim() ? personName(input.patientName) : null;
+    const reason = input.reason.trim();
+    const otherPerson =
+      perName && name && note.patientName && !sameFullName(name, note.patientName);
+    // A retried tool call for the same person must not add the text twice.
+    if (!otherPerson || note.reason.includes(`${name}: ${reason}`)) {
+      return { id: note.id, created: false };
+    }
+    await exec
+      .update(callbackRequests)
+      .set({
+        reason: `${note.reason}
+${name}: ${reason}`.slice(0, CALLBACK_REASON_MAX),
+      })
+      .where(and(eq(callbackRequests.clinicId, input.clinicId), eq(callbackRequests.id, note.id)));
+    return { id: note.id, created: false, appended: true as const };
   };
 
   const existing = await findExisting();
-  if (existing || options.onlyIfExisting) return existing;
+  if (existing) return appendFamilyMember(existing);
+  if (options.onlyIfExisting) return null;
   const [row] = await exec
     .insert(callbackRequests)
     .values({
@@ -175,5 +210,7 @@ export async function createCallbackRequest(
     // A concurrent duplicate loses the race on the partial unique index.
     .onConflictDoNothing()
     .returning({ id: callbackRequests.id });
-  return row ? { id: row.id, created: true } : await findExisting();
+  if (row) return { id: row.id, created: true };
+  const raced = await findExisting();
+  return raced ? appendFamilyMember(raced) : null;
 }

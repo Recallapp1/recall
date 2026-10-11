@@ -51,7 +51,7 @@ export const createCallbackRequestTool = defineTool({
 
     return {
       ok: true,
-      alreadyExisted: !note?.created,
+      alreadyExisted: !note?.created && !note?.appended,
       hint: "Hastaya klinik ekibinin en kısa sürede geri arayacağını söyle.",
     };
   },
