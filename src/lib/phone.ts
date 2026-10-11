@@ -8,8 +8,14 @@ export function normalizePhone(input: string | null | undefined): string | null 
 
   const trimmed = input.trim();
   const hasPlus = trimmed.startsWith("+");
-  const digits = trimmed.replace(/\D/g, "");
+  let digits = trimmed.replace(/\D/g, "");
   if (digits.length === 0) return null;
+  // "+90 0532 …", "0090 0532 …", "90 0532 …": the trunk 0 after the Turkish
+  // country code is not part of the number (audit P-22, gap review G-06).
+  const withoutIntl = digits.startsWith("00") ? digits.slice(2) : digits;
+  if (withoutIntl.length === 13 && withoutIntl.startsWith("900")) {
+    digits = `${digits.startsWith("00") ? "00" : ""}90${withoutIntl.slice(3)}`;
+  }
 
   if (hasPlus) {
     return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : null;
