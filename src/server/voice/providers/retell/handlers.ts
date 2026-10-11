@@ -4,6 +4,7 @@ import { and, eq, isNotNull } from "drizzle-orm";
 import { verify } from "retell-sdk";
 import type { z } from "zod";
 
+import { safeError } from "@/lib/safe-error";
 import { normalizePhone } from "@/lib/phone";
 
 import type { Database } from "../../../db";
@@ -42,6 +43,11 @@ export interface RetellHandlerDeps {
   sharedNumberCheck?: boolean;
   /** VOICE_TOOL_IDEMPOTENCY: mutating tools run once per request key. Unset means off. */
   toolIdempotency?: boolean;
+  /**
+   * VOICE_TOOL_FAILSAFE (gap review G-03): a failure before the tool runs
+   * (database down) answers an honest ok: false instead of HTTP 500. Unset means off.
+   */
+  toolFailsafe?: boolean;
   /** Dispatches one clinic's queued messages (locks, opt-out, window, caps). */
   dispatchClinic: (clinicId: string) => Promise<void>;
   /** Removes the call (audio included) from the provider. */
@@ -117,7 +123,32 @@ export async function handleInbound(request: Request, deps: RetellHandlerDeps) {
 export async function handleFunctionCall(request: Request, deps: RetellHandlerDeps) {
   const parsed = await readVerified(request, deps.apiKey, functionCall);
   if (!parsed.ok) return parsed.response;
-  const { name, args, call } = parsed.data;
+  const signature = request.headers.get("x-retell-signature") ?? "";
+  if (!deps.toolFailsafe) return runFunctionCall(parsed.data, signature, deps);
+  try {
+    return await runFunctionCall(parsed.data, signature, deps);
+  } catch (error) {
+    log("error", "retell.tool.unavailable", { tool: parsed.data.name, error: safeError(error) });
+    return Response.json(TOOL_UNAVAILABLE);
+  }
+}
+
+/**
+ * What the assistant gets when the tool could not even start: never a claim
+ * of success, the same honest wording a failing tool returns (tools/index.ts).
+ */
+export const TOOL_UNAVAILABLE = {
+  ok: false,
+  error: "INTERNAL_ERROR",
+  message: "Sistemde kısa bir sorun yaşıyorum. Hastaya geri arama notu bırakmayı öner.",
+} as const;
+
+async function runFunctionCall(
+  data: z.infer<typeof functionCall>,
+  signature: string,
+  deps: RetellHandlerDeps,
+) {
+  const { name, args, call } = data;
 
   const ctx = await resolveClinic(deps.db, call);
   if (!ctx) return errorResponse(404, "CLINIC_NOT_FOUND", "No clinic for this agent");
@@ -126,7 +157,6 @@ export async function handleFunctionCall(request: Request, deps: RetellHandlerDe
   // byte-identical request is a replay: it is answered, never executed twice.
   // Retell retries are re-signed, and the mutating tools are idempotent anyway.
   const now = deps.now();
-  const signature = request.headers.get("x-retell-signature") ?? "";
   const firstSighting = await consumeRateLimit(
     deps.db,
     `retell-replay:${hashKey(signature)}`,
@@ -181,7 +211,7 @@ export async function handleFunctionCall(request: Request, deps: RetellHandlerDe
       clinicId: ctx.clinic.id,
       callId: callRow.id,
       tool: name,
-      requestKey: requestKey(name, args, providerToolCallId(parsed.data, name, args)),
+      requestKey: requestKey(name, args, providerToolCallId(data, name, args)),
     },
     now,
     run,

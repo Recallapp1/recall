@@ -37,6 +37,7 @@ export function withRetell(handler: Handler) {
       postCallFlags: env().POST_CALL_FLAGS === true,
       sharedNumberCheck: env().VOICE_SHARED_NUMBER_CHECK === true,
       toolIdempotency: env().VOICE_TOOL_IDEMPOTENCY === true,
+      toolFailsafe: env().VOICE_TOOL_FAILSAFE === true,
       dispatchClinic: async (clinicId) => {
         const config = env();
         try {

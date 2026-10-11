@@ -78,6 +78,12 @@ const envSchema = z.object({
    */
   VOICE_TOOL_IDEMPOTENCY: optionalFlag,
   /**
+   * "true": a voice tool request that fails before the tool runs (database
+   * down) answers ok: false with an honest message instead of HTTP 500
+   * (gap review G-03). Off by default.
+   */
+  VOICE_TOOL_FAILSAFE: optionalFlag,
+  /**
    * When set, /api/health/jobs shows job details only with the
    * `x-health-token` header; others get the status alone (audit A6).
    */
