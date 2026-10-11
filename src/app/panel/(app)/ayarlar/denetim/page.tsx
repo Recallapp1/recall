@@ -35,6 +35,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   "patient.exported": "Hasta verilerini indirdi",
   "call.flagged": "Arama işaretlendi",
   "call.reported": "Asistan hatası bildirildi",
+  "call.marked_test": "Test araması işareti değişti",
   "call.recording_played": "Arama kaydını dinledi",
   "appointment.created": "Randevu oluşturdu",
   "appointment.updated": "Randevuyu güncelledi",

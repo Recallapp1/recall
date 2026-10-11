@@ -85,3 +85,39 @@ export async function reportCall(
   revalidatePath(`/panel/aramalar/${call.id}`);
   return { ok: true, message: "Bildiriminiz kaydedildi. Recall ekibi inceleyecek." };
 }
+
+/**
+ * Marks or unmarks a call as a test call (TEST_CALL_FLAG, R2 5e). Owners
+ * and admins (assistantSettings.update), who make the test calls; audited.
+ */
+export async function markTestCall(
+  input: unknown,
+): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
+  const { context, scope } = await requirePanelScope({ assistantSettings: ["update"] });
+  if (env().TEST_CALL_FLAG !== true) return { ok: false, message: "Bu özellik kapalı." };
+  const parsed = z.object({ callId: z.uuid(), test: z.boolean() }).safeParse(input);
+  if (!parsed.success) return { ok: false, message: "İstek geçersiz." };
+  const call = await getCall(db(), scope, parsed.data.callId);
+  if (!call) return { ok: false, message: "Arama bulunamadı." };
+  try {
+    await recordAudit(db(), {
+      clinicId: context.clinic.id,
+      actorUserId: context.session.user.id,
+      action: "call.marked_test",
+      targetType: "call",
+      targetId: call.id,
+      metadata: { test: parsed.data.test },
+    });
+  } catch (error) {
+    console.error(JSON.stringify({ msg: "panel.call_test_mark.failed", error: safeError(error) }));
+    return { ok: false, message: "İşaret şu anda kaydedilemedi." };
+  }
+  revalidatePath(`/panel/aramalar/${call.id}`);
+  revalidatePath("/panel");
+  return {
+    ok: true,
+    message: parsed.data.test
+      ? "Test araması olarak işaretlendi; günlük sayılara katılmaz."
+      : "Test işareti kaldırıldı.",
+  };
+}

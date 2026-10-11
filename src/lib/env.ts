@@ -125,6 +125,11 @@ const envSchema = z.object({
    * behaviour with a reason from a fixed list; audited (R2 5d). Off by default.
    */
   CALL_REVIEW: optionalFlag,
+  /**
+   * "true": owners and admins mark a call as a test call; marked calls and
+   * their bookings are left out of the "Bugün" numbers (R2 5e). Off by default.
+   */
+  TEST_CALL_FLAG: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

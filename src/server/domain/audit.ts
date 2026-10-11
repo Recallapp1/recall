@@ -29,6 +29,7 @@ export type AuditAction =
   | "call.recording_played"
   | "call.flagged"
   | "call.reported"
+  | "call.marked_test"
   | "appointment.created"
   | "appointment.updated"
   | "appointment.status_changed"

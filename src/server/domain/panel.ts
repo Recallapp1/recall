@@ -16,6 +16,7 @@ import {
   lt,
   lte,
   ne,
+  not,
   notInArray,
   notLike,
   or,
@@ -56,6 +57,7 @@ import { DomainError, isUniqueViolation } from "./errors";
 import { recomputePlansForAppointment } from "./follow-ups";
 import { detachPatientNotifications } from "./notifications";
 import { patientsPerName } from "./patients-per-name";
+import { testCallFlag } from "./test-calls";
 import { enqueueProviderDeletions } from "./provider-deletions";
 import { addLocalDays, localToUtc, localToday, utcToLocal, type LocalDate } from "./time";
 
@@ -297,11 +299,36 @@ export interface TodayOverview {
   };
 }
 
+/**
+ * Whether the call with this id is currently marked as a test call
+ * (TEST_CALL_FLAG, R2 5e): the latest "call.marked_test" audit event decides.
+ */
+function markedTest(callId: '"calls"."id"' | '"appointments"."call_id"') {
+  // Qualified by hand: without a join Drizzle prints a bare "id", which the
+  // subquery would read as the audit row's own id.
+  return sql`coalesce((
+    select ae.metadata->>'test' from ${auditEvents} ae
+    where ae.action = 'call.marked_test' and ae.target_id = (${sql.raw(callId)})::text
+    order by ae.created_at desc limit 1
+  ), 'false') = 'true'`;
+}
+
+/** Whether a call is marked as a test call (TEST_CALL_FLAG, R2 5e). */
+export async function isTestCall(exec: Executor, clinicId: string, callId: string) {
+  const [row] = await exec
+    .select({ test: markedTest('"calls"."id"') })
+    .from(calls)
+    .where(and(eq(calls.clinicId, clinicId), eq(calls.id, callId)));
+  return row?.test === true;
+}
+
 /** The "Bugün" screen: today's calendar and the numbers above it. */
 export async function todayOverview(
   exec: Executor,
   scope: PanelScope,
   now: Date,
+  /** TEST_CALL_FLAG: calls marked as tests, and their bookings, are not counted. */
+  excludeTestCalls: boolean = testCallFlag(),
 ): Promise<TodayOverview> {
   const date = localToday(now, scope.timeZone);
   const { start, end } = dayRange(scope, date, addLocalDays(date, 1));
@@ -317,6 +344,9 @@ export async function todayOverview(
           eq(appointments.source, "voice"),
           gte(appointments.createdAt, start),
           lt(appointments.createdAt, end),
+          excludeTestCalls
+            ? or(isNull(appointments.callId), not(markedTest('"appointments"."call_id"')))
+            : undefined,
         ),
       ),
     exec
@@ -327,6 +357,7 @@ export async function todayOverview(
           eq(calls.clinicId, scope.clinicId),
           gte(calls.createdAt, start),
           lt(calls.createdAt, end),
+          excludeTestCalls ? not(markedTest('"calls"."id"')) : undefined,
         ),
       ),
     exec

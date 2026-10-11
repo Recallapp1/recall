@@ -726,6 +726,47 @@ describe("reporting wrong assistant behaviour (CALL_REVIEW, R2 5d)", () => {
   });
 });
 
+describe("marking test calls (TEST_CALL_FLAG, R2 5e)", () => {
+  const mark = async (input: Record<string, unknown>) =>
+    (await import("./panel/(app)/aramalar/actions")).markTestCall(input);
+  const callInA = async () => {
+    const [row] = await actionState.db
+      .insert(schema.calls)
+      .values({
+        clinicId: a.ctx.clinic.id,
+        provider: "retell",
+        providerCallId: `mark-${Math.random()}`,
+      })
+      .returning();
+    return row!.id;
+  };
+
+  it("is refused while the switch is unset", async () => {
+    vi.stubEnv("TEST_CALL_FLAG", "");
+    actAs(users.owner);
+    expect(await mark({ callId: await callInA(), test: true })).toEqual({
+      ok: false,
+      message: "Bu özellik kapalı.",
+    });
+  });
+
+  it("owners mark and unmark; staff may not; another clinic's call is not found", async () => {
+    vi.stubEnv("TEST_CALL_FLAG", "true");
+    onTestFinished(() => void vi.stubEnv("TEST_CALL_FLAG", ""));
+    const callId = await callInA();
+    actAs(users.owner);
+    expect(await mark({ callId, test: true })).toMatchObject({ ok: true });
+    const { isTestCall } = await import("@/server/domain/panel");
+    expect(await isTestCall(actionState.db, a.ctx.clinic.id, callId)).toBe(true);
+    expect(await mark({ callId: bRows.callId, test: true })).toEqual({
+      ok: false,
+      message: "Arama bulunamadı.",
+    });
+    actAs(users.staff);
+    await expect(mark({ callId, test: false })).rejects.toBeInstanceOf(ForbiddenSignal);
+  });
+});
+
 describe("patient correction (KVKK m.11, G-02)", () => {
   const save = async (values: Record<string, string>) =>
     (await import("./panel/(app)/hastalar/actions")).savePatientIdentity(

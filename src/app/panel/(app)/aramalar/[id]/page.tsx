@@ -9,16 +9,18 @@ import {
   OutcomeBadge,
   PageHeader,
 } from "@/components/panel";
+import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/contracts/call";
 import { formatMinutes, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import { can, requirePanelScope } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { env } from "@/lib/env";
-import { getCall, listCallReports } from "@/server/domain/panel";
+import { getCall, isTestCall, listCallReports } from "@/server/domain/panel";
 
 import { RecordingPlayer } from "../recording-player";
 import { CallReportForm } from "./call-report";
+import { TestCallToggle } from "./test-call-toggle";
 
 export const metadata: Metadata = { title: "Arama" };
 
@@ -27,10 +29,13 @@ export default async function CallPage({ params }: PageProps<"/panel/aramalar/[i
   const { context, scope } = await requirePanelScope({ calls: ["read"] });
   const call = /^[0-9a-f-]{36}$/i.test(id) ? await getCall(db(), scope, id) : null;
   if (!call) notFound();
-  const [canListen, canSeePatients] = await Promise.all([
+  const testFlagOn = env().TEST_CALL_FLAG === true;
+  const [canListen, canSeePatients, canMarkTest] = await Promise.all([
     can({ calls: ["listen_recording"] }),
     can({ patients: ["read"] }),
+    testFlagOn ? can({ assistantSettings: ["update"] }) : false,
   ]);
+  const isTest = testFlagOn ? await isTestCall(db(), context.clinic.id, call.id) : false;
   const reviewOn = env().CALL_REVIEW === true;
   const reports = reviewOn ? await listCallReports(db(), context.clinic.id, call.id) : [];
   const when = new Intl.DateTimeFormat("tr-TR", {
@@ -55,6 +60,7 @@ export default async function CallPage({ params }: PageProps<"/panel/aramalar/[i
           <span className="inline-flex flex-wrap gap-1">
             <OutcomeBadge outcome={call.outcome} />
             <CallFlagBadges flags={call.flags} />
+            {isTest && <Badge variant="secondary">Test araması</Badge>}
           </span>
         }
       />
@@ -141,6 +147,7 @@ export default async function CallPage({ params }: PageProps<"/panel/aramalar/[i
               Geri ara
             </a>
           )}
+          {canMarkTest && <TestCallToggle callId={call.id} isTest={isTest} />}
           {call.patientId && canSeePatients && (
             <Link
               href={`/panel/hastalar/${call.patientId}`}

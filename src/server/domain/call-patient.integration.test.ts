@@ -104,3 +104,23 @@ describe("the patient shown for a call (P-12 step 1)", () => {
     expect((await getCall(dropped, scope, aboutMehmet.id, true))?.patientId).toBe(mehmet.id);
   });
 });
+
+describe("the same number in two clinics (R2 5e review)", () => {
+  it("each clinic's call list shows its own patient, never the other clinic's", async () => {
+    const mine = await createTestClinic(today);
+    const theirs = await createTestClinic(today);
+    // The other clinic's record is older, so an unscoped "oldest" would pick it.
+    await patient(today, theirs, "Başka Klinik Hasta", 5);
+    const own = await patient(today, mine, "Kendi Hastam", 1);
+    await call(today, mine);
+    for (const perName of [false, true]) {
+      const { rows } = await listCalls(
+        today,
+        mine.ctx.clinic.id,
+        { limit: 50, offset: 0 },
+        perName,
+      );
+      expect(rows[0]).toMatchObject({ patientId: own.id, patientName: "Kendi Hastam" });
+    }
+  });
+});
