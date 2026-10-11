@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 
 import { GET as notificationsCron } from "../app/api/cron/notifications/route";
 import { GET as providerDeletionsCron } from "../app/api/cron/provider-deletions/route";
+import { GET as remindersCron } from "../app/api/cron/reminders/route";
 import { GET as retentionCron } from "../app/api/cron/retention/route";
 import { rejectUnauthorizedCron } from "./cron-auth";
 import { dropsPatientNumberIndex, relyOnPatientNumberIndex } from "./patient-number-guard";
@@ -181,6 +182,7 @@ describe("cron authorization", () => {
     ["notifications", notificationsCron],
     ["retention", retentionCron],
     ["provider-deletions", providerDeletionsCron],
+    ["reminders", remindersCron],
   ])("the %s route refuses callers without the secret", async (_name, handler) => {
     vi.stubEnv("CRON_SECRET", "s3cret");
     expect((await handler(request())).status).toBe(401);
@@ -191,6 +193,7 @@ describe("cron authorization", () => {
     ["notifications", notificationsCron],
     ["retention", retentionCron],
     ["provider-deletions", providerDeletionsCron],
+    ["reminders", remindersCron],
   ])("the %s route does not run without CRON_SECRET", async (_name, handler) => {
     expect((await handler(request("Bearer anything"))).status).toBe(503);
   });
@@ -198,6 +201,13 @@ describe("cron authorization", () => {
   it("the hourly deletion queue route stays off without DELETION_QUEUE_HOURLY (R2 5a)", async () => {
     vi.stubEnv("CRON_SECRET", "s3cret");
     const response = await providerDeletionsCron(request("Bearer s3cret"));
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ status: "disabled" });
+  });
+
+  it("the hourly reminders route stays off without HOURLY_REMINDERS (R2 5b)", async () => {
+    vi.stubEnv("CRON_SECRET", "s3cret");
+    const response = await remindersCron(request("Bearer s3cret"));
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ status: "disabled" });
   });
@@ -241,6 +251,8 @@ describe("single SMS path", () => {
     expect(users.sort()).toEqual(
       [
         "src/app/api/cron/notifications/route.ts",
+        // Hourly reminders (R2 5b): sends only through dispatchNotifications.
+        "src/app/api/cron/reminders/route.ts",
         "src/server/notifications/sms.ts",
         "src/server/voice/providers/retell/deps.ts",
       ].sort(),

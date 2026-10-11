@@ -5,6 +5,7 @@ import {
   asc,
   count,
   eq,
+  gt,
   gte,
   inArray,
   isNotNull,
@@ -169,6 +170,97 @@ export async function planAppointmentReminders(
     : [];
 
   return { planned: planned.length, tooLate: tooLate.length };
+}
+
+/** Below this, a reminder is no longer worth sending (recorded as "too_late"). */
+export const REMINDER_MIN_LEAD_MS = 60 * 60 * 1000;
+
+/**
+ * Hourly reminders (HOURLY_REMINDERS, R2 5b; needs an hourly cron, so
+ * Vercel Pro). An appointment is planned when it enters the clinic's window
+ * (`smsReminderHoursBefore`), or at the next run when it was booked inside
+ * it; with less than an hour to go it is recorded as too late. The dedupe key
+ * is the daily planner's, so no appointment is reminded twice.
+ */
+export async function planDueReminders(
+  exec: Executor,
+  clinic: ClinicRow,
+  now: Date,
+): Promise<{ planned: number; tooLate: number }> {
+  const hours = clinic.settings.notifications.smsReminderHoursBefore;
+  if (hours === null) return { planned: 0, tooLate: 0 };
+  const due = await exec
+    .select({
+      id: appointments.id,
+      patientId: appointments.patientId,
+      startsAt: appointments.startsAt,
+    })
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.clinicId, clinic.id),
+        inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
+        gt(appointments.startsAt, now),
+        lte(appointments.startsAt, new Date(now.getTime() + hours * 60 * 60 * 1000)),
+      ),
+    );
+  if (due.length === 0) return { planned: 0, tooLate: 0 };
+  const rows = due.map((appointment) => {
+    const late = appointment.startsAt.getTime() - now.getTime() < REMINDER_MIN_LEAD_MS;
+    return {
+      clinicId: clinic.id,
+      patientId: appointment.patientId,
+      kind: "appointment_reminder" as const,
+      subjectId: appointment.id,
+      dedupeKey: appointmentReminderKey(appointment.id, appointment.startsAt),
+      templateKey: SMS_TEMPLATE_KEYS.appointmentReminder,
+      status: late ? ("skipped" as const) : ("pending" as const),
+      skipReason: late ? ("too_late" as const) : null,
+      scheduledFor: now,
+    };
+  });
+  const inserted = await exec
+    .insert(notifications)
+    .values(rows)
+    .onConflictDoNothing({ target: notifications.dedupeKey })
+    .returning({ status: notifications.status });
+  return {
+    planned: inserted.filter((row) => row.status === "pending").length,
+    tooLate: inserted.filter((row) => row.status === "skipped").length,
+  };
+}
+
+/** One clinic's hourly reminder pass: plan what is due, then send it (locks apply). */
+export async function runHourlyReminders(
+  db: Database,
+  deps: DispatchDeps,
+  log: (failure: { clinicId: string; error: unknown }) => void = () => {},
+): Promise<{ clinics: number; planned: number; tooLate: number; failedClinics: number }> {
+  const result = { clinics: 0, planned: 0, tooLate: 0, failedClinics: 0 };
+  const rows = await db
+    .select({
+      id: clinics.id,
+      name: clinics.name,
+      timezone: clinics.timezone,
+      address: clinics.address,
+      settings: clinics.settings,
+    })
+    .from(clinics)
+    .orderBy(asc(clinics.createdAt));
+  for (const row of rows) {
+    result.clinics += 1;
+    try {
+      const clinic: ClinicRow = { ...row, settings: parseClinicSettings(row.settings) };
+      const plan = await planDueReminders(db, clinic, deps.now);
+      result.planned += plan.planned;
+      result.tooLate += plan.tooLate;
+      await dispatchNotifications(db, clinic, deps);
+    } catch (error) {
+      result.failedClinics += 1;
+      log({ clinicId: row.id, error });
+    }
+  }
+  return result;
 }
 
 /**
@@ -660,6 +752,8 @@ export interface JobResult {
 export interface JobOptions {
   /** Stop starting new clinics after this long; the rest go to a continuation. */
   budgetMs?: number;
+  /** HOURLY_REMINDERS: appointment reminders come from the hourly job, not this one. */
+  hourlyReminders?: boolean;
   /** Milliseconds, for tests. */
   clock?: () => number;
 }
@@ -713,9 +807,11 @@ export async function runNotificationJob(
     result.clinics += 1;
     try {
       const clinic: ClinicRow = { ...row, settings: parseClinicSettings(row.settings) };
-      const plan = await planAppointmentReminders(db, clinic, deps.now);
-      result.planned += plan.planned;
-      result.tooLate += plan.tooLate;
+      if (!options.hourlyReminders) {
+        const plan = await planAppointmentReminders(db, clinic, deps.now);
+        result.planned += plan.planned;
+        result.tooLate += plan.tooLate;
+      }
       if (clinic.settings.features.followUp) {
         // Passed appointments count by time alone; refresh before deciding reminders.
         await recomputeStalePlans(db, { clinicId: clinic.id, timeZone: clinic.timezone }, deps.now);

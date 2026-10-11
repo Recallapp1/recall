@@ -42,7 +42,7 @@ export async function GET(request: Request) {
             error: safeError(error),
           }),
         ),
-      { budgetMs: BUDGET_MS },
+      { budgetMs: BUDGET_MS, hourlyReminders: config.HOURLY_REMINDERS === true },
     );
     // Counts only; no recipients, no message text.
     console.info(JSON.stringify({ msg: "cron.notifications", ...result }));

@@ -112,6 +112,12 @@ const envSchema = z.object({
    * (R2 5a). Needs an hourly cron entry (Vercel Pro); off by default.
    */
   DELETION_QUEUE_HOURLY: optionalFlag,
+  /**
+   * "true": appointment reminders come from /api/cron/reminders (hourly,
+   * honouring smsReminderHoursBefore) instead of the daily job (R2 5b).
+   * Needs an hourly cron entry (Vercel Pro); off by default.
+   */
+  HOURLY_REMINDERS: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**
