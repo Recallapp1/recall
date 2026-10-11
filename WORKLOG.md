@@ -77,6 +77,20 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-11 · Aynı numarada birden çok hasta, 3. adım: hasta dışa aktarma · P-12, F-02
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `fix/P-12g-export-scope` · **Commit'ler:** bu dal
+
+**Ne yapıldı**
+
+- KVKK dışa aktarma: hastaya bağlı aramalar (gizli numaralılar dahil) ve notları her zaman; numarada tek hastaysa numaradan gelen her şey (bugünkü gibi); numara paylaşılıyorsa yalnızca bağlı olanlar, hiçbir hastaya bağlanamayanlar dosyaya eklenmez ve `eklenmeyenler` altında sayı ve Türkçe açıklamayla belirtilir. Aile bireyinin aramaları hiç görünmez.
+- Telefonla eşleşen diğer yerler tarandı (karar 83): arama listesi, arama, SMS reddi, silme önceki adımlarda düzeltildi; geri arama listesi, bugün özeti, saklama, bildirimler sızdırmıyor; CSV dışa aktarma yok.
+
+**Açık kalanlar / dikkat**
+
+- 0019 öncesi akraba adına alınmış randevular ilk hastanın kaydında kalır (taşımak veri yeniden yazar); sesli asistan `VOICE_SHARED_NUMBER_CHECK` kapalıyken numaradaki tüm randevuları listeler; bir aramadaki aynı numaralı iki geri arama talebi birleşir; paylaşılan telefona giden SMS aile bireyinin randevu saatini gösterir; hasta sayfasındaki silme açıklaması 0019 sonrası güncellenmeli.
+- Migration 0019 eklenmedi; production'a hiçbir şey uygulanmadı.
+
 ### 2026-10-11 · Aynı numarada birden çok hasta, 2. adım · P-12
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dallar:** `fix/P-12e-erasure-scope`, `feat/P-12f-booked-for-panel` · **Commit'ler:** `cd43093`, bu dal

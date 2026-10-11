@@ -961,6 +961,93 @@ export async function anonymizePatient(
   });
 }
 
+/** Calls linked to a patient: call_patients and calls that created its appointments. */
+async function ownCallIds(exec: Executor, clinicId: string, patientId: string): Promise<string[]> {
+  const [linked, creating] = await Promise.all([
+    exec
+      .select({ callId: callPatients.callId })
+      .from(callPatients)
+      .where(and(eq(callPatients.clinicId, clinicId), eq(callPatients.patientId, patientId))),
+    exec
+      .select({ callId: appointments.callId })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.clinicId, clinicId),
+          eq(appointments.patientId, patientId),
+          isNotNull(appointments.callId),
+        ),
+      ),
+  ]);
+  return [...new Set([...linked, ...creating].flatMap((row) => (row.callId ? [row.callId] : [])))];
+}
+
+/**
+ * Which calls and callback notes an export may contain (F-02, P-12).
+ *
+ * Always: calls linked to the patient, from any number (also withheld), and
+ * notes from those calls. While the patient is the only one on the number:
+ * also every call and note from the number, as before. When other patients
+ * share the number: only the linked ones; calls and notes from the number
+ * that are linked to nobody are left out and counted, and those linked only
+ * to the others are left out silently (they are theirs).
+ */
+async function exportCallScope(exec: Executor, clinicId: string, patientId: string, phone: string) {
+  const own = await ownCallIds(exec, clinicId, patientId);
+  const family = await exec
+    .select({ id: patients.id })
+    .from(patients)
+    .where(
+      and(eq(patients.clinicId, clinicId), eq(patients.phone, phone), ne(patients.id, patientId)),
+    );
+  if (family.length === 0) {
+    return {
+      calls: or(eq(calls.fromNumber, phone), own.length > 0 ? inArray(calls.id, own) : undefined),
+      callbacks: (callIds: string[]) =>
+        or(
+          eq(callbackRequests.phone, phone),
+          callIds.length > 0 ? inArray(callbackRequests.callId, callIds) : undefined,
+        ),
+      omitted: { calls: 0, callbacks: 0 },
+    };
+  }
+
+  const familyCalls = (
+    await Promise.all(family.map((member) => ownCallIds(exec, clinicId, member.id)))
+  ).flat();
+  const attributed = [...new Set([...own, ...familyCalls])];
+  const [[unlinkedCalls], [unlinkedNotes]] = await Promise.all([
+    exec
+      .select({ value: count() })
+      .from(calls)
+      .where(
+        and(
+          eq(calls.clinicId, clinicId),
+          eq(calls.fromNumber, phone),
+          attributed.length > 0 ? notInArray(calls.id, attributed) : undefined,
+        ),
+      ),
+    exec
+      .select({ value: count() })
+      .from(callbackRequests)
+      .where(
+        and(
+          eq(callbackRequests.clinicId, clinicId),
+          eq(callbackRequests.phone, phone),
+          attributed.length > 0
+            ? or(isNull(callbackRequests.callId), notInArray(callbackRequests.callId, attributed))
+            : undefined,
+        ),
+      ),
+  ]);
+  return {
+    calls: own.length > 0 ? inArray(calls.id, own) : sql`false`,
+    callbacks: (callIds: string[]) =>
+      callIds.length > 0 ? inArray(callbackRequests.callId, callIds) : sql`false`,
+    omitted: { calls: unlinkedCalls?.value ?? 0, callbacks: unlinkedNotes?.value ?? 0 },
+  };
+}
+
 /**
  * KVKK access request (m.11): everything the clinic holds on one patient, in
  * a portable shape. Labels are Turkish because the file goes to the patient.
@@ -969,21 +1056,24 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
   const found = await getPatient(exec, scope, patientId);
   if (!found) return null;
   const { patient } = found;
+  const callScope = await exportCallScope(exec, scope.clinicId, patient.id, patient.phone);
 
-  const [callRows, callbackRows, notificationRows, planRows, visitRows] = await Promise.all([
-    exec
-      .select({
-        startedAt: calls.startedAt,
-        createdAt: calls.createdAt,
-        durationSeconds: calls.durationSeconds,
-        outcome: calls.outcome,
-        summary: calls.summary,
-        transcript: calls.transcript,
-        hasRecording: sql<boolean>`${calls.recordingUrl} is not null`,
-      })
-      .from(calls)
-      .where(and(eq(calls.clinicId, scope.clinicId), eq(calls.fromNumber, patient.phone)))
-      .orderBy(desc(calls.createdAt)),
+  const callRows = await exec
+    .select({
+      id: calls.id,
+      startedAt: calls.startedAt,
+      createdAt: calls.createdAt,
+      durationSeconds: calls.durationSeconds,
+      outcome: calls.outcome,
+      summary: calls.summary,
+      transcript: calls.transcript,
+      hasRecording: sql<boolean>`${calls.recordingUrl} is not null`,
+    })
+    .from(calls)
+    .where(and(eq(calls.clinicId, scope.clinicId), callScope.calls))
+    .orderBy(desc(calls.createdAt));
+
+  const [callbackRows, notificationRows, planRows, visitRows] = await Promise.all([
     exec
       .select({
         createdAt: callbackRequests.createdAt,
@@ -995,7 +1085,7 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
       .where(
         and(
           eq(callbackRequests.clinicId, scope.clinicId),
-          eq(callbackRequests.phone, patient.phone),
+          callScope.callbacks(callRows.map((c) => c.id)),
         ),
       )
       .orderBy(desc(callbackRequests.createdAt)),
@@ -1110,6 +1200,14 @@ export async function exportPatientData(exec: Executor, scope: PanelScope, patie
       durum: c.status,
       kapanis: c.resolvedAt,
     })),
+    ...(callScope.omitted.calls + callScope.omitted.callbacks > 0 && {
+      eklenmeyenler: {
+        aramalar: callScope.omitted.calls,
+        geriAramaTalepleri: callScope.omitted.callbacks,
+        aciklama:
+          "Bu telefon numarası kliniğin başka hastalarınca da kullanılıyor. Numaradan gelen ama hiçbir hastaya bağlanamayan aramalar ve geri arama talepleri, başka birine ait olabileceği için bu dosyaya eklenmedi. Gerekirse klinik bunları sizinle birlikte inceleyebilir.",
+      },
+    }),
   };
 }
 
