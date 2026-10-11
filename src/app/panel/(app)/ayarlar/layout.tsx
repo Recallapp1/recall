@@ -50,6 +50,12 @@ const SECTIONS: {
     permission: { billing: ["read"] },
     enabled: () => env().PANEL_LIMITS_VIEW === true,
   },
+  {
+    href: "/panel/ayarlar/yayina-hazirlik",
+    label: "Yayına hazırlık",
+    permission: { billing: ["read"] },
+    enabled: () => env().PANEL_GO_LIVE_CHECK === true,
+  },
 ];
 
 export default async function SettingsLayout({ children }: LayoutProps<"/panel/ayarlar">) {

@@ -118,6 +118,8 @@ const envSchema = z.object({
    * Needs an hourly cron entry (Vercel Pro); off by default.
    */
   HOURLY_REMINDERS: optionalFlag,
+  /** "true": owners and admins see the read-only "Yayına hazırlık" page (R2 5c). Off by default. */
+  PANEL_GO_LIVE_CHECK: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**
