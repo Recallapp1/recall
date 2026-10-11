@@ -45,15 +45,28 @@ function speakerLines(transcript: string | null, speaker: "agent" | "user"): str
     .join("\n");
 }
 
+/**
+ * "Randevunuz(u) … <done>" with up to four words between ("randevunuzu
+ * perşembeye taşıdım"), past or formal tense, first person or passive; never
+ * a question ("oluşturuldu mu") or an offer ("oluşturmamı ister misiniz").
+ */
+function claim(verbs: string): RegExp {
+  return new RegExp(String.raw`randevunuzu? (?:\S+ ){0,4}?(?:${verbs})(?![a-z])(?!\s*m[iu]\b)`);
+}
+
 const CLAIMS: Array<{ fact: keyof CallFacts; pattern: RegExp }> = [
   {
     fact: "booked",
-    pattern: /randevunuz (basariyla )?(olusturuldu|alindi|kaydedildi|onaylandi)/,
+    pattern: claim(
+      "olusturuldu|olusturulmustur|olusturdum|alindi|alinmistir|aldim|kaydedildi|kaydedilmistir|kaydettim|onaylandi|onaylanmistir",
+    ),
   },
-  { fact: "cancelled", pattern: /randevunuz (basariyla )?iptal edildi/ },
+  { fact: "cancelled", pattern: claim("iptal edildi|iptal edilmistir|iptal ettim") },
   {
     fact: "rescheduled",
-    pattern: /randevunuz (basariyla )?(guncellendi|tasindi|ertelendi|degistirildi)/,
+    pattern: claim(
+      "guncellendi|guncellenmistir|guncelledim|tasindi|tasinmistir|tasidim|ertelendi|erteledim|degistirildi|degistirdim",
+    ),
   },
 ];
 
@@ -74,13 +87,21 @@ export function unbackedClaims(text: CallText, facts: CallFacts): Array<keyof Ca
 /** Life-threatening: the caller should be on the phone with 112, not the clinic. */
 const EMERGENCY: RegExp[] = [
   /\bgog(us|s)(um|unde|umde|u)? (cok )?(agri|sikis)/,
+  /\bgog(us|s)\S* (\S+ ){0,2}(agri|sikis)/,
+  /\bkalbim (\S+ )?(sikis|agri)/,
+  /\bnefes(im)? (kesil|daral|tikan)/,
+  /\bkan (durmuyor|dinmiyor|kesilmiyor)/,
+  /\bkendime zarar ver/,
+  /\bolmek istiyorum/,
+  /\byuz on iki/,
   /\bkalp krizi/,
   /\bnefes ala?m(iyor|adi|iyo)/,
   /\bnefes almakta zorlan/,
   /\bnefes darligi/,
   /\bkanama(m|si|sı)? (durmuyor|dinmiyor|kesilmiyor)/,
   /\b(cok|durmadan) kan (geliyor|kaybed)/,
-  /\bbayil(di|dim|iyor|acak)/,
+  // Not "bayıldım": colloquially "I loved it".
+  /\bbayil(di|iyor|acak|mis)\b/,
   /\bbilinc(i|ini)? (kaybi|kapali|yok|kaybetti)/,
   /\balerji(k)? (reaksiyon|sok)/,
   /\banafilaksi/,
@@ -101,8 +122,12 @@ const MEDICAL_RISK: RegExp[] = [
   /\bkaniyor/,
   /\bsislik/,
   /\bsis(ti|mis|iyor)\b/,
-  /\b(yuksek )?ates(im|i)? (var|cikti|yukseldi)/,
-  /\birin/,
+  // Not "Ateş" the surname ("Doktor Ateş var mı").
+  /\b(yuksek ates|atesim (var|cikti|yukseldi|cok)|atesi (var|cikti|yukseldi)|ates (cikti|yukseldi))/,
+  // Not the name "İrina".
+  /\birin(li)?\b/,
+  /\biltihap/,
+  /\b(coumadin|kumadin|warfarin|xarelto|eliquis)/,
   /\bapse/,
   /\bdayanilmaz agri/,
   /\bagri kesici (ise yaramiyor|etmiyor)/,
@@ -126,7 +151,9 @@ function matches(text: string, patterns: RegExp[]): boolean {
 export function medicalFlags(text: CallText): Array<"emergency" | "medical_risk"> {
   const caller = fold(`${speakerLines(text.transcript, "user")}\n${text.summary ?? ""}`);
   const assistant = fold(speakerLines(text.transcript, "agent"));
-  if (matches(caller, EMERGENCY) || /(^|[^\d])112([^\d]|$)/.test(assistant)) return ["emergency"];
+  if (matches(caller, EMERGENCY) || /(^|[^\d])112([^\d]|$)|\byuz on iki/.test(assistant)) {
+    return ["emergency"];
+  }
   if (matches(caller, MEDICAL_RISK)) return ["medical_risk"];
   return [];
 }
