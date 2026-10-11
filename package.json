@@ -25,6 +25,7 @@
     "db:seed": "tsx src/server/db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "db:export": "tsx --conditions=react-server scripts/db-export.ts",
+    "db:restore-verify": "tsx scripts/db-restore-verify.ts",
     "voice:sync": "tsx --conditions=react-server scripts/voice-sync.ts",
     "voice:voices": "tsx --conditions=react-server scripts/voice-voices.ts",
     "voice:eval": "tsx --conditions=react-server scripts/voice-eval/run.ts",

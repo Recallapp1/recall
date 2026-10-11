@@ -59,6 +59,8 @@ IP kısıtı yalnızca Scale'de ve Vercel tarafında sabit çıkış IP'si de ge
 
 `pnpm db:export` dev veritabanını tablo başına JSON Lines olarak `outputs/db-export-<zaman>/` altına yazar; ekrana yalnızca tablo adları ve satır sayıları basılır. Production uç noktasını görünce çalışmaz: production verisi dizüstüne kopyalanmaz. `outputs/` git'e girmez.
 
+`pnpm db:restore-verify outputs/db-export-<zaman>` bu dışa aktarmayı hiçbir uzak veritabanına değil, bellek içi geçici bir PostgreSQL'e (PGlite, gerçek migration'larla) yükler; tabloları yabancı anahtarların izin verdiği sırayla ekler (her anahtar yeniden denetlenir) ve satır sayılarını karşılaştırır. Yalnızca tablo adları ve sayılar basılır. 2026-10-11 dev dışa aktarması: 33 tablo, 217 satır, eksiksiz (R2 4m).
+
 ## Prova kaydı
 
 | Tarih | Kaynak an | Süre | Sonuç                       | Kim |
