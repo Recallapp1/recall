@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { builtInRolesAllow, type Permissions } from "@/lib/permissions";
 import * as schema from "@/server/db/schema";
@@ -405,6 +405,19 @@ const cases: Array<{ name: string; permission: Permissions; call: () => Promise<
       ),
   },
   {
+    name: "savePatientIdentity (B patient, switch on)",
+    permission: { patients: ["update"] },
+    call: async () => {
+      vi.stubEnv("PANEL_PATIENT_EDIT", "true");
+      // Stubs live until the end of the file: switch it off again afterwards.
+      onTestFinished(() => void vi.stubEnv("PANEL_PATIENT_EDIT", ""));
+      return (await import("./panel/(app)/hastalar/actions")).savePatientIdentity(
+        { status: "idle" },
+        formData({ patientId: bRows.patientId, fullName: "Değiştirildi", phone: "05320000099" }),
+      );
+    },
+  },
+  {
     name: "anonymizePatientAction (B patient)",
     permission: { patients: ["anonymize"] },
     call: async () =>
@@ -602,6 +615,92 @@ describe("clinic actions: permission, validation and tenant isolation", () => {
     expect(await updateCallback({ callbackId: own!.id, status: "done" })).toMatchObject({
       ok: true,
     });
+  });
+});
+
+describe("patient correction (KVKK m.11, G-02)", () => {
+  const save = async (values: Record<string, string>) =>
+    (await import("./panel/(app)/hastalar/actions")).savePatientIdentity(
+      { status: "idle" },
+      formData(values),
+    );
+
+  it("is refused while PANEL_PATIENT_EDIT is unset, and changes nothing", async () => {
+    vi.stubEnv("PANEL_PATIENT_EDIT", "");
+    const [patient] = await actionState.db
+      .insert(schema.patients)
+      .values({ clinicId: a.ctx.clinic.id, fullName: "Kapalı Anahtar", phone: "+905320000081" })
+      .returning();
+    actAs(users.staff);
+    const result = await save({
+      patientId: patient!.id,
+      fullName: "Yeni Ad",
+      phone: "05320000082",
+    });
+    expect(result).toMatchObject({ status: "error", message: "Bu özellik kapalı." });
+    const [row] = await actionState.db
+      .select()
+      .from(schema.patients)
+      .where(eq(schema.patients.id, patient!.id));
+    expect(row).toMatchObject({ fullName: "Kapalı Anahtar", phone: "+905320000081" });
+  });
+
+  it("with the switch: staff correct name and phone; the audit names fields, never values", async () => {
+    vi.stubEnv("PANEL_PATIENT_EDIT", "true");
+    onTestFinished(() => void vi.stubEnv("PANEL_PATIENT_EDIT", ""));
+    const [patient] = await actionState.db
+      .insert(schema.patients)
+      .values({ clinicId: a.ctx.clinic.id, fullName: "Yanlis Ad", phone: "+905320000083" })
+      .returning();
+    actAs(users.staff);
+    const result = await save({
+      patientId: patient!.id,
+      fullName: "doğru ad",
+      phone: "0532 000 00 84",
+    });
+    expect(result).toMatchObject({ status: "success" });
+    const [row] = await actionState.db
+      .select()
+      .from(schema.patients)
+      .where(eq(schema.patients.id, patient!.id));
+    expect(row).toMatchObject({ fullName: "Doğru Ad", phone: "+905320000084" });
+    const audits = await actionState.db
+      .select()
+      .from(schema.auditEvents)
+      .where(eq(schema.auditEvents.targetId, patient!.id));
+    expect(audits).toHaveLength(1);
+    expect(audits[0]!.metadata).toEqual({ fields: ["fullName", "phone"], reason: "correction" });
+    expect(JSON.stringify(audits[0])).not.toContain("0000084");
+    expect(JSON.stringify(audits[0])).not.toContain("Doğru");
+  });
+
+  it("with the switch: a practitioner may not correct; a taken or invalid phone is refused", async () => {
+    vi.stubEnv("PANEL_PATIENT_EDIT", "true");
+    onTestFinished(() => void vi.stubEnv("PANEL_PATIENT_EDIT", ""));
+    const [first, second] = await actionState.db
+      .insert(schema.patients)
+      .values([
+        { clinicId: a.ctx.clinic.id, fullName: "Birinci Hasta", phone: "+905320000085" },
+        { clinicId: a.ctx.clinic.id, fullName: "İkinci Hasta", phone: "+905320000086" },
+      ])
+      .returning();
+    actAs(users.practitioner);
+    await expect(
+      save({ patientId: first!.id, fullName: "Birinci Hasta", phone: "05320000087" }),
+    ).rejects.toBeInstanceOf(ForbiddenSignal);
+
+    actAs(users.owner);
+    expect(
+      await save({ patientId: first!.id, fullName: "Birinci Hasta", phone: "05320000086" }),
+    ).toMatchObject({ status: "error", message: "Bu numara başka bir hastanın kaydında var." });
+    expect(
+      await save({ patientId: first!.id, fullName: "Birinci Hasta", phone: "123" }),
+    ).toMatchObject({ status: "error" });
+    const [row] = await actionState.db
+      .select()
+      .from(schema.patients)
+      .where(eq(schema.patients.id, second!.id));
+    expect(row!.phone).toBe("+905320000086");
   });
 });
 

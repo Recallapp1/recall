@@ -21,7 +21,59 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FormState } from "@/lib/contracts/form-state";
 
-import { anonymizePatientAction, savePatientNotes, setSmsOptOut } from "../actions";
+import type { PatientIdentityField } from "@/lib/contracts/patient";
+
+import {
+  anonymizePatientAction,
+  savePatientIdentity,
+  savePatientNotes,
+  setSmsOptOut,
+} from "../actions";
+
+/** KVKK correction of name and phone (PANEL_PATIENT_EDIT). */
+export function PatientIdentityForm({
+  patientId,
+  fullName,
+  phone,
+}: {
+  patientId: string;
+  fullName: string;
+  phone: string;
+}) {
+  const [state, action, pending] = useActionState<FormState<PatientIdentityField>, FormData>(
+    async (previous, formData) => {
+      const result = await savePatientIdentity(previous, formData);
+      if (result.status === "success") toast.success(result.message ?? "Kaydedildi.");
+      return result;
+    },
+    { status: "idle" },
+  );
+  const fieldError = (field: PatientIdentityField) =>
+    state.status === "error" ? state.fieldErrors?.[field] : undefined;
+  return (
+    <form action={action} className="flex flex-col gap-3">
+      <h2 className="text-label text-body">Bilgileri düzelt</h2>
+      <input type="hidden" name="patientId" value={patientId} />
+      <FormField label="Ad soyad" error={fieldError("fullName")}>
+        <Input name="fullName" defaultValue={fullName} maxLength={100} autoComplete="off" />
+      </FormField>
+      <FormField
+        label="Telefon"
+        error={
+          fieldError("phone") ??
+          (state.status === "error" && !state.fieldErrors ? state.message : undefined)
+        }
+        hint="Hasta bilgisinin düzeltilmesini istediğinde (KVKK). Değişiklik denetim kaydına yazılır."
+      >
+        <Input name="phone" defaultValue={phone} inputMode="tel" autoComplete="off" />
+      </FormField>
+      <Button type="submit" variant="secondary" size="sm" disabled={pending} className="w-fit">
+        {pending && <LoaderCircle className="animate-spin" />}
+        Bilgileri kaydet
+      </Button>
+    </form>
+  );
+}
 
 export function PatientNotesForm({
   patientId,

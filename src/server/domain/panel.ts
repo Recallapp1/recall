@@ -31,6 +31,8 @@ import {
 } from "@/lib/contracts/appointment";
 
 import type { CallFlag } from "@/lib/contracts/call";
+import { personName } from "@/lib/names";
+import { normalizePhone } from "@/lib/phone";
 import type { AppointmentSortKey, PatientSortKey, Sort } from "@/lib/contracts/sorting";
 
 import type { Executor } from "../db";
@@ -49,7 +51,7 @@ import {
 } from "../db/schema";
 import { sameFullName } from "./appointments";
 import { practitionerDisplayName, type ClinicContext } from "./clinics";
-import { DomainError } from "./errors";
+import { DomainError, isUniqueViolation } from "./errors";
 import { recomputePlansForAppointment } from "./follow-ups";
 import { detachPatientNotifications } from "./notifications";
 import { patientsPerName } from "./patients-per-name";
@@ -790,6 +792,51 @@ export async function updatePatientNotes(
     .where(and(eq(patients.clinicId, clinicId), eq(patients.id, input.patientId)))
     .returning({ id: patients.id });
   if (updated.length === 0) throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
+}
+
+/**
+ * Corrects a patient's name and phone (KVKK m.11, gap review G-02). Returns
+ * the names of the fields that changed, for the audit record (never values).
+ * While the unique (clinic_id, phone) index exists, a phone that another
+ * patient already has is refused.
+ */
+export async function updatePatientIdentity(
+  exec: Executor,
+  clinicId: string,
+  input: { patientId: string; fullName: string; phone: string },
+): Promise<("fullName" | "phone")[]> {
+  const phone = normalizePhone(input.phone);
+  if (!phone) {
+    throw new DomainError(
+      "INVALID_PHONE",
+      "Telefon numarası geçersiz; sıfırla başlayan on bir hane girin.",
+    );
+  }
+  const fullName = personName(input.fullName);
+  const [current] = await exec
+    .select({ fullName: patients.fullName, phone: patients.phone })
+    .from(patients)
+    .where(and(eq(patients.clinicId, clinicId), eq(patients.id, input.patientId)));
+  if (!current || current.phone.startsWith(ANONYMIZED_PREFIX)) {
+    throw new DomainError("NOT_FOUND", "Hasta bulunamadı.");
+  }
+  const changed = [
+    ...(current.fullName !== fullName ? (["fullName"] as const) : []),
+    ...(current.phone !== phone ? (["phone"] as const) : []),
+  ];
+  if (changed.length === 0) return [];
+  try {
+    await exec
+      .update(patients)
+      .set({ fullName, phone, updatedAt: sql`now()` })
+      .where(and(eq(patients.clinicId, clinicId), eq(patients.id, input.patientId)));
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new DomainError("PHONE_TAKEN", "Bu numara başka bir hastanın kaydında var.");
+    }
+    throw error;
+  }
+  return changed;
 }
 
 /**

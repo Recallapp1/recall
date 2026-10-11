@@ -96,6 +96,11 @@ const envSchema = z.object({
    * record falls back to the number's existing patient.
    */
   PATIENTS_PER_NAME: optionalFlag,
+  /**
+   * "true": staff with patients.update can correct a patient's name and phone
+   * in the panel (KVKK m.11 correction, gap review G-02). Off by default.
+   */
+  PANEL_PATIENT_EDIT: optionalFlag,
 
   SMS_PROVIDER: z.enum(["console", "netgsm"]).default("console"),
   /**

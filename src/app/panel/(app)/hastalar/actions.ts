@@ -5,13 +5,20 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
 
-import type { FormState } from "@/lib/contracts/form-state";
+import { fieldErrors, type FormState } from "@/lib/contracts/form-state";
+import { patientIdentitySchema, type PatientIdentityField } from "@/lib/contracts/patient";
+import { env } from "@/lib/env";
 import { safeError } from "@/lib/safe-error";
 import { requirePermission } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { recordAudit, withAudit } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
-import { anonymizePatient, setPatientSmsOptOut, updatePatientNotes } from "@/server/domain/panel";
+import {
+  anonymizePatient,
+  setPatientSmsOptOut,
+  updatePatientIdentity,
+  updatePatientNotes,
+} from "@/server/domain/panel";
 import { processProviderDeletions } from "@/server/domain/provider-deletions";
 import { deleteVoiceProviderCall } from "@/server/voice/sync";
 
@@ -48,6 +55,52 @@ export async function savePatientNotes(
     if (error instanceof DomainError) return { status: "error", message: error.userMessage };
     console.error(JSON.stringify({ msg: "panel.patient_notes.failed", error: safeError(error) }));
     return { status: "error", message: "Not şu anda kaydedilemedi." };
+  }
+}
+
+/**
+ * KVKK correction (m.11): name and phone, behind PANEL_PATIENT_EDIT (gap
+ * review G-02). The audit record names the changed fields, never the values.
+ */
+export async function savePatientIdentity(
+  _previous: FormState<PatientIdentityField>,
+  formData: FormData,
+): Promise<FormState<PatientIdentityField>> {
+  const { clinic, session } = await requirePermission({ patients: ["update"] });
+  if (env().PANEL_PATIENT_EDIT !== true) {
+    return { status: "error", message: "Bu özellik kapalı." };
+  }
+  const parsed = patientIdentitySchema.safeParse({
+    patientId: formData.get("patientId") ?? "",
+    fullName: formData.get("fullName") ?? "",
+    phone: formData.get("phone") ?? "",
+  });
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Lütfen alanları kontrol edin.",
+      fieldErrors: fieldErrors(parsed.error),
+    };
+  }
+  try {
+    const changed = await updatePatientIdentity(db(), clinic.id, parsed.data);
+    if (changed.length === 0) return { status: "success", message: "Değişiklik yok." };
+    await recordAudit(db(), {
+      clinicId: clinic.id,
+      actorUserId: session.user.id,
+      action: "patient.updated",
+      targetType: "patient",
+      targetId: parsed.data.patientId,
+      metadata: { fields: changed, reason: "correction" },
+    });
+    revalidatePath(`/panel/hastalar/${parsed.data.patientId}`);
+    return { status: "success", message: "Hasta bilgileri düzeltildi." };
+  } catch (error) {
+    if (error instanceof DomainError) return { status: "error", message: error.userMessage };
+    console.error(
+      JSON.stringify({ msg: "panel.patient_identity.failed", error: safeError(error) }),
+    );
+    return { status: "error", message: "Bilgiler şu anda kaydedilemedi." };
   }
 }
 

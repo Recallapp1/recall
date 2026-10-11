@@ -11,6 +11,7 @@ import {
 } from "@/components/panel";
 import { Button } from "@/components/ui/button";
 import { FOLLOW_UP_STATE_LABELS } from "@/lib/contracts/follow-up";
+import { env } from "@/lib/env";
 import { formatMinutes, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import { can, requirePanelScope } from "@/server/auth/session";
@@ -21,7 +22,12 @@ import { localToday } from "@/server/domain/time";
 
 import { StartFollowUpButton } from "../../takip/start-follow-up";
 
-import { AnonymizeButton, PatientNotesForm, SmsOptOutSwitch } from "./patient-actions";
+import {
+  AnonymizeButton,
+  PatientIdentityForm,
+  PatientNotesForm,
+  SmsOptOutSwitch,
+} from "./patient-actions";
 
 export const metadata: Metadata = { title: "Hasta" };
 
@@ -144,6 +150,13 @@ export default async function PatientPage({ params }: PageProps<"/panel/hastalar
                 />
               )}
             </div>
+          )}
+          {canUpdate && env().PANEL_PATIENT_EDIT === true && (
+            <PatientIdentityForm
+              patientId={patient.id}
+              fullName={patient.fullName}
+              phone={formatPhone(patient.phone)}
+            />
           )}
           <PatientNotesForm
             patientId={patient.id}
