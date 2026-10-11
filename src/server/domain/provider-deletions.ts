@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, inArray, isNull, lte } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
 import { providerDeletions } from "../db/schema";
@@ -40,7 +40,40 @@ export async function enqueueProviderDeletions(
         nextAttemptAt: now,
       })),
     )
-    .onConflictDoNothing();
+    // One row per call. An erasure outranks "recording off": the row then also
+    // marks the call as erased, so late provider events cannot refill it (G-01).
+    .onConflictDoUpdate({
+      target: [providerDeletions.provider, providerDeletions.providerCallId],
+      set: {
+        reason: sql`case when excluded.reason = 'patient_anonymized' then excluded.reason else ${providerDeletions.reason} end`,
+      },
+    });
+}
+
+/**
+ * Whether a provider call belongs to an erased patient (KVKK). Its events
+ * must store nothing more: a retried or late `call_analyzed` would otherwise
+ * write the transcript, summary and recording back (gap review G-01).
+ */
+export async function isErasedProviderCall(
+  exec: Executor,
+  clinicId: string,
+  provider: string,
+  providerCallId: string,
+): Promise<boolean> {
+  const [row] = await exec
+    .select({ id: providerDeletions.id })
+    .from(providerDeletions)
+    .where(
+      and(
+        eq(providerDeletions.clinicId, clinicId),
+        eq(providerDeletions.provider, provider),
+        eq(providerDeletions.providerCallId, providerCallId),
+        eq(providerDeletions.reason, "patient_anonymized"),
+      ),
+    )
+    .limit(1);
+  return Boolean(row);
 }
 
 export interface DeletionRunResult {

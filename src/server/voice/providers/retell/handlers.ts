@@ -21,6 +21,7 @@ import { admitInboundCall } from "../../../domain/voice-limits";
 import { MUTATING_TOOLS, requestKey, runOnce } from "../../../domain/tool-requests";
 import {
   enqueueProviderDeletions,
+  isErasedProviderCall,
   processProviderDeletions,
 } from "../../../domain/provider-deletions";
 import { allow } from "../../../security/rate-limits";
@@ -237,6 +238,11 @@ export async function handleCallEvent(request: Request, deps: RetellHandlerDeps)
   if (!ctx) {
     // Acknowledge anyway: retrying cannot fix an unknown agent.
     log("warn", "retell.event.clinic_not_found", { event });
+    return Response.json({});
+  }
+  // A call of an erased patient takes no more content, whenever its events arrive.
+  if (await isErasedProviderCall(deps.db, ctx.clinic.id, RETELL_PROVIDER, call.call_id)) {
+    log("warn", "retell.event.erased_call_ignored", { clinicId: ctx.clinic.id, event });
     return Response.json({});
   }
 
