@@ -221,10 +221,12 @@ export async function getClinicOverview(exec: Executor, clinicId: string, now: D
       ? exec
           .select({
             memberId: members.id,
+            userId: users.id,
             name: users.name,
             email: users.email,
             role: members.role,
             emailVerified: users.emailVerified,
+            twoFactorEnabled: users.twoFactorEnabled,
           })
           .from(members)
           .innerJoin(users, eq(users.id, members.userId))

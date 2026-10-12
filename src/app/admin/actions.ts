@@ -1,8 +1,11 @@
 "use server";
 
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+
+import { env } from "@/lib/env";
 
 import { fieldErrors, type FormState } from "@/lib/contracts/form-state";
 import {
@@ -15,7 +18,9 @@ import type { SettingsResult } from "@/lib/contracts/settings";
 import { safeError } from "@/lib/safe-error";
 import { addClinicMember } from "@/server/auth/accounts";
 import { requirePlatformAdmin } from "@/server/auth/session";
+import { mayResetTwoFactor, resetTwoFactor } from "@/server/auth/two-factor";
 import { db } from "@/server/db";
+import { clinics, members } from "@/server/db/schema";
 import { recordAudit, withAudit, type AuditInput } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
 import { setClinicFeature } from "@/server/domain/settings";
@@ -278,4 +283,48 @@ export async function setDemoRequestStatusAction(
   }
   revalidatePath("/admin/demo-talepleri");
   return { ok: true, message: "Durum güncellendi." };
+}
+
+const resetSchema = z.object({
+  clinicId: z.uuid(),
+  userId: z.uuid(),
+  calledBack: z.literal(true, { error: "Önce kliniği kayıtlı numarasından geri arayın." }),
+});
+
+/**
+ * Resets someone's two-step sign-in (lost phone and lost recovery codes).
+ * Owner's decision 2026-10-12: only the Recall owner (TWO_FACTOR_RESET_EMAILS),
+ * only after calling the clinic back on its registered number; audited.
+ */
+export async function resetTwoFactorAction(input: unknown): Promise<SettingsResult> {
+  const session = await requirePlatformAdmin();
+  if (!mayResetTwoFactor(session.user.email, env().TWO_FACTOR_RESET_EMAILS)) {
+    return { ok: false, message: "Sıfırlama yalnızca Recall sahibine açık." };
+  }
+  const parsed = resetSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]!.message };
+  const [membership] = await db()
+    .select({ id: members.id })
+    .from(members)
+    .innerJoin(clinics, eq(clinics.organizationId, members.organizationId))
+    .where(and(eq(clinics.id, parsed.data.clinicId), eq(members.userId, parsed.data.userId)));
+  if (!membership) return { ok: false, message: "Bu kişi bu kliniğin ekibinde değil." };
+  try {
+    await withAudit(
+      db(),
+      {
+        clinicId: parsed.data.clinicId,
+        actorUserId: session.user.id,
+        action: "auth.two_factor_reset_by_recall",
+        targetType: "user",
+        targetId: parsed.data.userId,
+        metadata: { calledBackOnRegisteredNumber: true },
+      },
+      (tx) => resetTwoFactor(tx, parsed.data.userId),
+    );
+    revalidatePath(`/admin/klinikler/${parsed.data.clinicId}`);
+    return { ok: true, message: "Sıfırlandı; kişi bir sonraki girişte yeniden kurar." };
+  } catch (error) {
+    return failure("platform.two_factor_reset.failed", error);
+  }
 }

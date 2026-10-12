@@ -40,6 +40,8 @@ export interface TestUser {
   id: string;
   email: string;
   headers: Headers;
+  /** The invented test password (two-step sign-in needs it again). */
+  password?: string;
 }
 
 let counter = 0;
@@ -92,7 +94,7 @@ export async function createMember(clinic: TestClinic, role: string): Promise<Te
     .select({ id: schema.users.id })
     .from(schema.users)
     .where(eq(schema.users.email, email));
-  return { id: user!.id, email, headers: await signIn(email, password) };
+  return { id: user!.id, email, password, headers: await signIn(email, password) };
 }
 
 /** A Recall console user (platform admin) who is not a member of any clinic. */

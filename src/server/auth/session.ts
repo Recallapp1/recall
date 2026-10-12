@@ -13,6 +13,7 @@ import { findClinicById, type ClinicContext } from "../domain/clinics";
 import { scopeFor, type PanelScope } from "../domain/panel";
 import { auth } from ".";
 import { PLATFORM_ADMIN } from "./platform";
+import { ENROLMENT_PATH, enrolmentRequired } from "./two-factor";
 
 /** The signed-in user's session for this request, or null. Cached per request. */
 export const getSession = cache(async () => auth().api.getSession({ headers: await headers() }));
@@ -55,6 +56,12 @@ export const requireClinic = cache(async (): Promise<PanelContext> => {
 
   const context = await findClinicById(db(), row.clinicId);
   if (!context) redirect("/panel/klinik-sec");
+
+  // PANEL_TWO_FACTOR required-*: nothing in the panel before enrolment.
+  const platformRole = (session.user as { role?: string | null }).role ?? null;
+  if (await enrolmentRequired(session.user.id, { memberRole: row.role, platformRole })) {
+    redirect(ENROLMENT_PATH);
+  }
 
   return {
     ...context,
@@ -110,5 +117,8 @@ export async function requirePanelScope(permissions: Permissions): Promise<{
 export async function requirePlatformAdmin(): Promise<Session> {
   const session = await requireSession();
   if ((session.user as { role?: string | null }).role !== PLATFORM_ADMIN) forbidden();
+  if (await enrolmentRequired(session.user.id, { platformRole: PLATFORM_ADMIN })) {
+    redirect(ENROLMENT_PATH);
+  }
   return session;
 }

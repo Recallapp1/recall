@@ -138,6 +138,11 @@ const envSchema = z.object({
    */
   PANEL_TWO_FACTOR: z.enum(["off", "optional", "required-admins", "required-all"]).default("off"),
   /**
+   * Who may reset someone's two-step sign-in from the Recall console: e-mails,
+   * comma separated (owner's decision: the Recall owner only). Unset: nobody.
+   */
+  TWO_FACTOR_RESET_EMAILS: optionalString,
+  /**
    * Panel session lifetime in hours, 1–168 (gap review G-05): shorter sessions
    * for reception computers shared between shifts. Unset: 7 days, as today.
    */

@@ -12,6 +12,11 @@ import { raiseAlarm } from "../observability/alarm";
 /** Audited actions (F3.4). Keep names stable: they are stored and filtered on. */
 export type AuditAction =
   | "auth.sign_in"
+  | "auth.two_factor_enabled"
+  | "auth.two_factor_disabled"
+  | "auth.two_factor_backup_codes_regenerated"
+  | "auth.two_factor_backup_code_used"
+  | "auth.two_factor_reset_by_recall"
   | "security.auth_endpoint_blocked"
   | "team.invitation_created"
   | "team.invitation_cancelled"
@@ -75,6 +80,11 @@ export interface AuditInput {
  * transaction as the change.
  */
 export const CRITICAL_AUDIT_ACTIONS: ReadonlySet<AuditAction> = new Set<AuditAction>([
+  "auth.two_factor_enabled",
+  "auth.two_factor_disabled",
+  "auth.two_factor_backup_codes_regenerated",
+  "auth.two_factor_backup_code_used",
+  "auth.two_factor_reset_by_recall",
   "patient.exported",
   "patient.anonymized",
   "call.recording_played",

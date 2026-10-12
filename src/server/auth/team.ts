@@ -19,6 +19,7 @@ export async function listTeam(exec: Executor, organizationId: string) {
       role: members.role,
       practitionerId: members.practitionerId,
       createdAt: members.createdAt,
+      twoFactorEnabled: users.twoFactorEnabled,
     })
     .from(members)
     .innerJoin(users, eq(users.id, members.userId))

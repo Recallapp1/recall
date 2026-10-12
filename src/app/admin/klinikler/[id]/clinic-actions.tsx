@@ -1,11 +1,23 @@
 "use client";
 
 import { Pause, Play, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 import { SaveButton, useSave } from "../../../panel/(app)/ayarlar/_components/settings-ui";
@@ -16,6 +28,7 @@ import {
   setClinicFeatureAction,
   setClinicStatusAction,
   syncAssistantAction,
+  resetTwoFactorAction,
 } from "../../actions";
 
 export function ClinicStatusButton({
@@ -211,5 +224,68 @@ export function FeatureSwitch({
       />
       {label}
     </label>
+  );
+}
+
+/**
+ * Recall owner only: resets someone's two-step sign-in after calling the
+ * clinic back on its registered number (owner's decision 2026-10-12).
+ */
+export function ResetTwoFactorButton({
+  clinicId,
+  userId,
+  name,
+}: {
+  clinicId: string;
+  userId: string;
+  name: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [calledBack, setCalledBack] = useState(false);
+  const [pending, startTransition] = useTransition();
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          2 adımı sıfırla
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{name}: iki adımlı girişi sıfırla</DialogTitle>
+          <DialogDescription>
+            Kayıtlı kimlik doğrulama ve yedek kodlar silinir, tüm oturumlar kapanır; kişi bir
+            sonraki girişte yeniden kurar. Kayda geçer.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex items-start gap-2.5">
+          <Checkbox
+            id={`called-back-${userId}`}
+            checked={calledBack}
+            onCheckedChange={(value) => setCalledBack(value === true)}
+          />
+          <Label htmlFor={`called-back-${userId}`} className="font-normal text-body">
+            Kliniği sistemdeki kayıtlı numarasından geri arayıp bu talebi doğruladım
+          </Label>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="destructive"
+            disabled={!calledBack || pending}
+            onClick={() =>
+              startTransition(async () => {
+                const result = await resetTwoFactorAction({ clinicId, userId, calledBack });
+                if (result.ok) {
+                  toast.success(result.message);
+                  setOpen(false);
+                } else toast.error(result.message);
+              })
+            }
+          >
+            Sıfırla
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

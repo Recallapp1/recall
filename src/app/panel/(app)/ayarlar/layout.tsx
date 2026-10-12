@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/panel";
 import { env } from "@/lib/env";
 import type { Permissions } from "@/lib/permissions";
 import { can, requirePermission } from "@/server/auth/session";
+import { twoFactorPolicy } from "@/server/auth/two-factor";
 
 import { SettingsNav } from "./settings-nav";
 
@@ -49,6 +50,13 @@ const SECTIONS: {
     label: "Kullanım ve sınırlar",
     permission: { billing: ["read"] },
     enabled: () => env().PANEL_LIMITS_VIEW === true,
+  },
+  {
+    // Personal, outside the panel layout: people who must enrol can always reach it.
+    href: "/iki-adim",
+    label: "İki adımlı giriş",
+    permission: { clinicSettings: ["read"] },
+    enabled: () => twoFactorPolicy() !== "off",
   },
   {
     href: "/panel/ayarlar/yayina-hazirlik",

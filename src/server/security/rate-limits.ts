@@ -26,6 +26,9 @@ export const LIMITS = {
   /** Token guessing on the set-password and invitation forms. */
   setPasswordIp: { limit: 10, windowMs: HOUR },
   invitationIp: { limit: 10, windowMs: HOUR },
+  /** Two-step sign-in codes and enrolment (PANEL_TWO_FACTOR); Better Auth adds its own lockout. */
+  twoFactorIp: { limit: 20, windowMs: 10 * MINUTE },
+  twoFactorUser: { limit: 10, windowMs: 10 * MINUTE },
   /** Public landing form. */
   demoRequestIp: { limit: 5, windowMs: HOUR },
   /** Browser test calls are billed by the voice platform. */

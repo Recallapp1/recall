@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ASSIGNABLE_ROLES, isBuiltInRole, memberRoles } from "@/lib/permissions";
 import { can, requirePermission } from "@/server/auth/session";
 import { listCustomRoles, listPendingInvitations, listTeam } from "@/server/auth/team";
+import { twoFactorPolicy } from "@/server/auth/two-factor";
 import { db } from "@/server/db";
 import { loadClinicDirectory, practitionerDisplayName } from "@/server/domain/clinics";
 
@@ -62,6 +63,7 @@ export default async function TeamPage() {
         assignableRoles={assignable}
         customRoles={customRoles}
         permissions={{ update: canUpdate, remove: canRemove, cancel: canCancel }}
+        twoFactorOn={twoFactorPolicy() !== "off"}
       />
       {(canCreateRole || customRoles.length > 0) && (
         <RolesManager

@@ -8,7 +8,9 @@ import { OutcomeBadge, PageHeader } from "@/components/panel";
 import { Badge } from "@/components/ui/badge";
 import { isBuiltInRole, ROLE_LABELS } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
+import { env } from "@/lib/env";
 import { requirePlatformAdmin } from "@/server/auth/session";
+import { mayResetTwoFactor, twoFactorPolicy } from "@/server/auth/two-factor";
 import { db } from "@/server/db";
 import { parseClinicSettings } from "@/server/domain/clinic-settings";
 import { getClinicOverview } from "@/server/platform/clinics";
@@ -19,6 +21,7 @@ import {
   ClinicStatusButton,
   FeatureSwitch,
   PhoneNumbers,
+  ResetTwoFactorButton,
 } from "./clinic-actions";
 
 export const metadata: Metadata = { title: "Klinik" };
@@ -44,7 +47,9 @@ export default async function ClinicConsolePage({
   searchParams,
 }: PageProps<"/admin/klinikler/[id]">) {
   await connection();
-  await requirePlatformAdmin();
+  const session = await requirePlatformAdmin();
+  const twoFactorOn = twoFactorPolicy() !== "off";
+  const canReset = mayResetTwoFactor(session.user.email, env().TWO_FACTOR_RESET_EMAILS);
   const { id } = await params;
   const created = (await searchParams).olusturuldu === "1";
   const overview = /^[0-9a-f-]{36}$/i.test(id)
@@ -208,6 +213,21 @@ export default async function ClinicConsolePage({
                       .join(", ")}
                   </Badge>
                   {!member.emailVerified && <Badge variant="dashed">Parola bekleniyor</Badge>}
+                  {twoFactorOn &&
+                    (member.twoFactorEnabled ? (
+                      <>
+                        <Badge variant="success">2 adım</Badge>
+                        {canReset && (
+                          <ResetTwoFactorButton
+                            clinicId={clinic.id}
+                            userId={member.userId}
+                            name={member.name}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <Badge variant="dashed">2 adım yok</Badge>
+                    ))}
                 </span>
               </li>
             ))}

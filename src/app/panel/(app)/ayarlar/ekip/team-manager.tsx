@@ -42,6 +42,7 @@ interface Member {
   email: string;
   role: string;
   practitionerId: string | null;
+  twoFactorEnabled?: boolean | null;
 }
 
 const ROLE_HINTS: Record<RoleName, string> = {
@@ -110,7 +111,10 @@ export function TeamManager({
   assignableRoles,
   customRoles,
   permissions,
+  twoFactorOn = false,
 }: {
+  /** PANEL_TWO_FACTOR is not "off": show who has two-step sign-in. */
+  twoFactorOn?: boolean;
   currentUserId: string;
   members: Member[];
   invitations: { id: string; email: string; role: string | null; expiresAt: Date }[];
@@ -232,6 +236,12 @@ export function TeamManager({
                 <span className="flex items-center gap-2">
                   <Badge variant="outline">{roleText(member.role)}</Badge>
                   {practitioner && <Badge variant="soft">{practitioner.name}</Badge>}
+                  {twoFactorOn &&
+                    (member.twoFactorEnabled ? (
+                      <Badge variant="success">2 adım</Badge>
+                    ) : (
+                      <Badge variant="dashed">2 adım yok</Badge>
+                    ))}
                   {permissions.update && !self && (
                     <Button
                       variant="ghost"
