@@ -53,6 +53,8 @@ const ADDED_COLUMNS: Record<string, string[]> = {
     'ALTER TABLE "calls" ADD COLUMN "flagged_at" timestamp with time zone;',
   ],
   "0017_appointment_booked_for": ['ALTER TABLE "appointments" ADD COLUMN "booked_for_name" text;'],
+  // Two-step sign-in (docs/proposals/2FA-TOTP): nullable, so no table rewrite.
+  "0019_two_factor": ['ALTER TABLE "users" ADD COLUMN "two_factor_enabled" boolean DEFAULT false;'],
 };
 
 /**
@@ -366,6 +368,13 @@ describe("unique patient-number index (P-12)", () => {
 
   it("no code relies on it today (P-12 step 1: patients are looked up first)", () => {
     expect(relying).toEqual([]);
+  });
+
+  it("migration 0019 is the two-step sign-in table, not the patient-number change (now 0020)", () => {
+    const twoFactor = readFileSync(join("drizzle", "0019_two_factor.sql"), "utf8");
+    expect(dropsPatientNumberIndex(twoFactor)).toBe(false);
+    expect(twoFactor).not.toMatch(/DROP/i);
+    expect(dropping).toEqual([]);
   });
 
   it("guard self-test: recognises the drop and the old save", () => {

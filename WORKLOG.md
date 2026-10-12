@@ -86,7 +86,7 @@ Kurallar:
 - Gap review (14 bulgu, kritik yok): [GAP-REVIEW-2026-10-10.md](docs/reviews/GAP-REVIEW-2026-10-10.md).
 - Açık düzeltmeler: silinen hastanın aramasına geç gelen olaylar artık içerik yazmıyor (G-01); `+90 0532` numara biçimi (G-06); aramada `%`/`_` (G-07); silme açıklaması.
 - Kapalı anahtarlarla: hasta adı/telefonu düzeltme `PANEL_PATIENT_EDIT` (G-02), tool öncesi hata için dürüst yanıt `VOICE_TOOL_FAILSAFE` (G-03), kısa oturum `PANEL_SESSION_HOURS` (G-05), aile bireyinin geri arama notu (2c), saatlik silme kuyruğu `DELETION_QUEUE_HOURLY` ve saatlik hatırlatmalar `HOURLY_REMINDERS` (vercel.json değişmedi, Pro gerekir), yayına hazırlık sayfası `PANEL_GO_LIVE_CHECK`, asistan hatası bildirme `CALL_REVIEW`, test araması işareti `TEST_CALL_FLAG`.
-- Migration 0019 provası yalnızca production dışında: PGlite'ta tüm test takımı ve dev'de aile senaryosu (16/16), dev geri alındı.
+- Migration 0020 provası yalnızca production dışında: PGlite'ta tüm test takımı ve dev'de aile senaryosu (16/16), dev geri alındı.
 - Testler: olay sırası, yarışlar, takvim kenarları, Türkçe işaret fikstürleri, oturum/davet/rol yükseltme, KVKK uçtan uca, veri bütünlüğü, dürüst hata ve temiz log, yük; telefon genişliğinde E2E. `pnpm db:restore-verify`.
 - Belgeler: COST-MODEL etiketli (tek ölçüm 0,153 $/dk; 50 TL/USD), tam anahtar tablosu, [OPEN-RISKS-BEFORE-PILOT.md](docs/OPEN-RISKS-BEFORE-PILOT.md), `[PLAN: Hobby]` etiketleri, [INDEPENDENT-REVIEW-GUIDE.md](docs/reviews/INDEPENDENT-REVIEW-GUIDE.md), denetim §12.
 
@@ -109,8 +109,8 @@ Kurallar:
 
 **Açık kalanlar / dikkat**
 
-- 0019 öncesi akraba adına alınmış randevular ilk hastanın kaydında kalır (taşımak veri yeniden yazar); sesli asistan `VOICE_SHARED_NUMBER_CHECK` kapalıyken numaradaki tüm randevuları listeler; bir aramadaki aynı numaralı iki geri arama talebi birleşir; paylaşılan telefona giden SMS aile bireyinin randevu saatini gösterir; hasta sayfasındaki silme açıklaması 0019 sonrası güncellenmeli.
-- Migration 0019 eklenmedi; production'a hiçbir şey uygulanmadı.
+- 0020 öncesi akraba adına alınmış randevular ilk hastanın kaydında kalır (taşımak veri yeniden yazar); sesli asistan `VOICE_SHARED_NUMBER_CHECK` kapalıyken numaradaki tüm randevuları listeler; bir aramadaki aynı numaralı iki geri arama talebi birleşir; paylaşılan telefona giden SMS aile bireyinin randevu saatini gösterir; hasta sayfasındaki silme açıklaması 0020 sonrası güncellenmeli.
+- Migration 0020 eklenmedi; production'a hiçbir şey uygulanmadı.
 
 ### 2026-10-11 · Aynı numarada birden çok hasta, 2. adım · P-12
 
@@ -118,13 +118,13 @@ Kurallar:
 
 **Ne yapıldı**
 
-- KVKK silmesi: paylaşılan numarada yalnızca başka bir hastaya bağlı aramalar (kayıt, geri arama notu, Retell silme kuyruğu dahil) korunur; silinen hastaya, ikisine ya da kimseye bağlı aramalar silinir. Veriye bağlı (numarada başka hasta varsa); 0019 öncesi davranış aynı (test).
+- KVKK silmesi: paylaşılan numarada yalnızca başka bir hastaya bağlı aramalar (kayıt, geri arama notu, Retell silme kuyruğu dahil) korunur; silinen hastaya, ikisine ya da kimseye bağlı aramalar silinir. Veriye bağlı (numarada başka hasta varsa); 0020 öncesi davranış aynı (test).
 - Panel: anahtar açıkken randevu listesinde "… adına", ayrıntıda "Randevu … adına alındı". Kapalıyken hiçbir şey görünmez. Bellek içi E2E veritabanıyla lokal tarayıcıda doğrulandı (geçici, temizlendi).
 
 **Açık kalanlar / dikkat**
 
 - Hasta dışa aktarma (F-02) aramaları ve geri arama notlarını hâlâ numarayla eşleştirir: paylaşılan numarada aile bireyinin aramaları da gelir. 3. adım.
-- Migration 0019 eklenmedi; production'a hiçbir şey uygulanmadı.
+- Migration 0020 eklenmedi; production'a hiçbir şey uygulanmadı.
 
 ### 2026-10-10 · Aynı numarada birden çok hasta, 1. adım (kod, anahtar kapalı) · P-12
 
@@ -139,7 +139,7 @@ Kurallar:
 
 **Açık kalanlar / dikkat**
 
-- Migration 0019 eklenmedi, production'a hiçbir şey uygulanmadı; öneri `docs/P-12-shared-number-proposal` dalında (birleştirilmedi).
+- Migration 0020 eklenmedi, production'a hiçbir şey uygulanmadı; öneri `docs/P-12-shared-number-proposal` dalında (birleştirilmedi).
 - Panel `booked_for_name`'i henüz göstermez; KVKK silmesi numaradaki aramaları siler (aynı numaradaki diğer aile bireyini de etkiler) — 2. adımda ele alınmalı.
 
 ### 2026-10-09 · Otonom yayın öncesi sağlamlaştırma (Tier A–C) · F7, F8

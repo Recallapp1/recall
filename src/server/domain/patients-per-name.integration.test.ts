@@ -19,7 +19,7 @@ const PHONE = "+905320000071";
 const rehearsal = process.env.TEST_SCHEMA === "p12-dropped";
 
 let today: Database; // today's schema: unique (clinic_id, phone)
-let dropped: Database; // after the proposed migration 0019
+let dropped: Database; // after the proposed migration 0020
 const closers: (() => Promise<void>)[] = [];
 
 beforeAll(async () => {
@@ -91,7 +91,7 @@ describe("PATIENTS_PER_NAME switch (P-12 step 1)", () => {
 
 describe.each([
   ["today's schema", () => today],
-  ["after migration 0019", () => dropped],
+  ["after migration 0020", () => dropped],
 ])("switch unset, %s: unchanged behaviour (one patient per number)", (_, database) => {
   it("files a second name on the number under the first patient and keeps its name", async () => {
     const db = database();
@@ -136,7 +136,7 @@ describe("switch on", () => {
     },
   );
 
-  it("after migration 0019: a family member gets their own record", async () => {
+  it("after migration 0020: a family member gets their own record", async () => {
     const clinic = await createTestClinic(dropped);
     const a = await book(dropped, clinic, "10:00", "Ayşe Yılmaz", true);
     const b = await book(dropped, clinic, "11:00", "Mehmet Yılmaz", true);
@@ -147,7 +147,7 @@ describe("switch on", () => {
     expect(b.appointment.patientName).toBe("Mehmet Yılmaz");
   });
 
-  it("after migration 0019: the same person (speech-tolerant name) keeps one record", async () => {
+  it("after migration 0020: the same person (speech-tolerant name) keeps one record", async () => {
     const clinic = await createTestClinic(dropped);
     await book(dropped, clinic, "10:00", "Ayşe Yılmaz", true);
     const again = await book(dropped, clinic, "11:00", "ayse yilmaz", true);
@@ -156,7 +156,7 @@ describe("switch on", () => {
     expect(again.appointment.patientId).toBe(rows[0]!.id);
   });
 
-  it("after migration 0019, switched off again: bookings go to the oldest record on the number", async () => {
+  it("after migration 0020, switched off again: bookings go to the oldest record on the number", async () => {
     const clinic = await createTestClinic(dropped);
     await book(dropped, clinic, "10:00", "Ayşe Yılmaz", true);
     await book(dropped, clinic, "11:00", "Mehmet Yılmaz", true);

@@ -101,9 +101,39 @@ export const users = pgTable("users", {
   banned: boolean().notNull().default(false),
   banReason: text(),
   banExpires: timestamp({ withTimezone: true }),
+  /**
+   * Better Auth twoFactor plugin (PANEL_TWO_FACTOR, docs/proposals/2FA-TOTP).
+   * Nullable on purpose: added without rewriting the table; null reads as off.
+   */
+  twoFactorEnabled: boolean().default(false),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
+
+/**
+ * TOTP enrolment per user (Better Auth twoFactor plugin). The secret and the
+ * recovery codes are encrypted by Better Auth with BETTER_AUTH_SECRET:
+ * rotating that secret makes every enrolled authenticator unusable.
+ */
+export const twoFactors = pgTable(
+  "two_factors",
+  {
+    id: id(),
+    secret: text().notNull(),
+    backupCodes: text().notNull(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** False until the first code from the authenticator app is confirmed. */
+    verified: boolean().default(true),
+    /** Brute-force lockout kept by Better Auth. */
+    failedVerificationCount: integer().default(0),
+    lockedUntil: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex().on(t.userId)],
+);
 
 export const sessions = pgTable(
   "sessions",
