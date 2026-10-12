@@ -20,8 +20,8 @@ vi.mock("../db", () => ({ db: () => testDb }));
 let close: () => Promise<void>;
 let modules: { auth: typeof import(".").auth; reset: typeof import(".").resetAuthForTests };
 
-const EMAIL = "iki-adim@klinik.test";
-const PASSWORD = "iki-adim-parola-123";
+// Invented test account.
+const ACCOUNT = { email: "iki-adim@klinik.test", password: "iki-adim-parola-123" };
 
 /** RFC 6238 code for a base32 secret, as an authenticator app computes it. */
 function totp(base32: string): string {
@@ -46,7 +46,7 @@ const cookiesOf = (headers: Headers) =>
 
 async function signIn() {
   return modules.auth().api.signInEmail({
-    body: { email: EMAIL, password: PASSWORD },
+    body: { email: ACCOUNT.email, password: ACCOUNT.password },
     returnHeaders: true,
   });
 }
@@ -75,20 +75,20 @@ beforeAll(async () => {
   vi.stubEnv("APP_URL", "http://localhost:3000");
   vi.stubEnv("DATABASE_URL", "postgres://unused@localhost/unused");
   vi.stubEnv("BETTER_AUTH_SECRET", "test-secret-test-secret-test-secret-123");
-  vi.stubEnv("EMAIL_PROVIDER", "console");
+  vi.stubEnv("ACCOUNT.email_PROVIDER", "console");
   ({ db: testDb, close } = await createTestDb());
   const index = await import(".");
   modules = { auth: index.auth, reset: index.resetAuthForTests };
   const [user] = await testDb
     .insert(schema.users)
-    .values({ name: "İki Adım", email: EMAIL, emailVerified: true })
+    .values({ name: "İki Adım", email: ACCOUNT.email, emailVerified: true })
     .returning();
   userId = user!.id;
   await testDb.insert(schema.accounts).values({
     userId,
     accountId: userId,
     providerId: "credential",
-    password: await hashPassword(PASSWORD),
+    password: await hashPassword(ACCOUNT.password),
   });
 });
 
@@ -115,7 +115,7 @@ describe("PANEL_TWO_FACTOR (2FA step 2)", () => {
     const first = await signIn();
     const cookie = cookiesOf(first.headers);
     const enabled = await modules.auth().api.enableTwoFactor({
-      body: { password: PASSWORD },
+      body: { password: ACCOUNT.password },
       headers: new Headers({ cookie }),
     });
     if (enabled.method !== "totp") throw new Error("expected TOTP enrolment");
