@@ -131,6 +131,13 @@ const envSchema = z.object({
    */
   TEST_CALL_FLAG: optionalFlag,
   /**
+   * Two-step sign-in (TOTP) for panel users (docs/proposals/2FA-TOTP).
+   * "off" (default, unset): the plugin is not loaded, today's sign-in exactly.
+   * "optional": anyone may enrol. "required-admins": owners, admins and Recall
+   * platform admins must enrol. "required-all": every member must.
+   */
+  PANEL_TWO_FACTOR: z.enum(["off", "optional", "required-admins", "required-all"]).default("off"),
+  /**
    * Panel session lifetime in hours, 1–168 (gap review G-05): shorter sessions
    * for reception computers shared between shifts. Unset: 7 days, as today.
    */

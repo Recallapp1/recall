@@ -54,8 +54,9 @@ export async function signIn(
     return { status: "error", message: TOO_MANY_ATTEMPTS };
   }
 
+  let secondStep = false;
   try {
-    await auth().api.signInEmail({
+    const result = await auth().api.signInEmail({
       body: {
         email: parsed.data.email,
         password: parsed.data.password,
@@ -63,6 +64,8 @@ export async function signIn(
       },
       headers: await headers(),
     });
+    // PANEL_TWO_FACTOR: an enrolled user gets no session yet, only the code step.
+    secondStep = (result as { twoFactorRedirect?: boolean }).twoFactorRedirect === true;
   } catch (error) {
     if (tooManyAttempts(error)) {
       return {
@@ -77,7 +80,9 @@ export async function signIn(
     logFailure("auth.sign_in.failed", error);
     return { status: "error", message: TRY_AGAIN };
   }
-  redirect(safeNextPath(formData.get("sonra")));
+  const next = safeNextPath(formData.get("sonra"));
+  if (secondStep) redirect(`/giris/dogrulama?sonra=${encodeURIComponent(next)}`);
+  redirect(next);
 }
 
 export async function requestPasswordLink(

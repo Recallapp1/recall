@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin, organization } from "better-auth/plugins";
+import { admin, organization, twoFactor } from "better-auth/plugins";
 import { and, asc, eq } from "drizzle-orm";
 
 import { env } from "@/lib/env";
@@ -19,6 +19,7 @@ import {
   organizationRoles,
   organizations,
   sessions,
+  twoFactors,
   users,
   verifications,
 } from "../db/schema";
@@ -57,6 +58,8 @@ export function panelOrigin(): string {
 function createAuth() {
   const config = env();
   const origin = panelOrigin();
+  // PANEL_TWO_FACTOR unset ("off"): the plugin is not loaded at all.
+  const twoFactorOn = config.PANEL_TWO_FACTOR !== "off";
 
   return betterAuth({
     appName: "Recall",
@@ -79,6 +82,7 @@ function createAuth() {
         member: members,
         invitation: invitations,
         organizationRole: organizationRoles,
+        twoFactor: twoFactors,
       },
     }),
     advanced: { database: { generateId: "uuid" } },
@@ -125,7 +129,17 @@ function createAuth() {
               data: { ...session, activeOrganizationId: membership?.organizationId ?? null },
             };
           },
-          async after(session) {
+          async after(session, ctx) {
+            // With two-step sign-in the password step creates a session that
+            // the plugin deletes at once; the sign-in is audited when the code
+            // step creates the real one.
+            if (twoFactorOn && ctx?.path === "/sign-in/email") {
+              const [user] = await db()
+                .select({ twoFactorEnabled: users.twoFactorEnabled })
+                .from(users)
+                .where(eq(users.id, session.userId));
+              if (user?.twoFactorEnabled) return;
+            }
             const organizationId = (session as { activeOrganizationId?: string | null })
               .activeOrganizationId;
             const [clinic] = organizationId
@@ -184,6 +198,16 @@ function createAuth() {
           );
         },
       }),
+      ...(twoFactorOn
+        ? [
+            twoFactor({
+              issuer: "Recall",
+              // Codes are always entered; reception computers are shared.
+              trustDeviceMaxAge: 0,
+              backupCodeOptions: { amount: 10, storeBackupCodes: "encrypted" },
+            }),
+          ]
+        : []),
       admin({
         ac: platformAc,
         roles: platformRoles,
@@ -200,6 +224,11 @@ function createAuth() {
 export type Auth = ReturnType<typeof createAuth>;
 
 const globalForAuth = globalThis as unknown as { recallAuth?: Auth };
+
+/** Tests that change PANEL_TWO_FACTOR build a fresh instance. */
+export function resetAuthForTests(): void {
+  globalForAuth.recallAuth = undefined;
+}
 
 /** Lazily created so `next build` does not need runtime secrets or a database. */
 export function auth(): Auth {
