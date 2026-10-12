@@ -49,7 +49,7 @@ Costs are estimates from the linked documents (checked 2026-10-08/09); confirm t
 ## Later, before general sales
 
 6. **Company and invoicing.** Company details are needed for the contracts ([KULLANIM-KOSULLARI.md](legal-drafts/KULLANIM-KOSULLARI.md)), the SIP line, SMS (İYS) and VERBIS. This takes an accountant, 1–3 weeks and their fee.
-7. **Prices.** The floor prices in [COST-MODEL.md](06-operations/COST-MODEL.md) are about 9,800, 22,000 and 57,000 TL a month for 300, 1,000 and 3,000 minutes. Replace the assumptions in it (exchange rate, minutes per call, SIP per clinic) and set the prices in [PRICING.md](00-product/PRICING.md). This is a business decision and takes about 1 hour.
+7. **Prices.** The floor prices in [COST-MODEL.md](06-operations/COST-MODEL.md) are about 10,400, 24,000 and 62,900 TL a month for 300, 1,000 and 3,000 minutes (assumed 1 USD = 50 TL; the only measured input is 0.153 $/min from 12 scripted test calls). Replace the assumptions in it (exchange rate, minutes per call, SIP per clinic) and set the prices in [PRICING.md](00-product/PRICING.md). This is a business decision and takes about 1 hour.
 8. **SMS (Netgsm + İYS).** Open an account, register the sender header and get the İYS answer from the lawyer (question 15). Sending stays off until `SMS_SENDING_ENABLED` is set.
 9. **Renew the local secrets.** In `.env.local`, replace `CRON_SECRET` and `BETTER_AUTH_SECRET` with new random values (`openssl rand -base64 32`). This takes 2 minutes and does not affect production.
 10. **Optional cleanup in the production Retell workspace.** Delete the old dev agent ("Recall · Gülüş Diş Kliniği", which points to a dead tunnel address) and the unused "Conversation Flow Agent". I did not touch them.
