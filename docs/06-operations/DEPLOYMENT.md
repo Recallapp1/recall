@@ -58,6 +58,8 @@ Konsol (`/admin`) → Yeni klinik → klinik sayfasında **Asistanı oluştur** 
 
 ## Ortam değişkenleri
 
+> **Değerleri tam yazın.** Aç/kapa anahtarları yalnızca `true` veya `false` (küçük harf) kabul eder; tanımsız = kapalı. Başka bir değer (`TRUE`, `1`, `yes`, sonda boşluk) ilk istekte ayar denetimini düşürür ve **ayar okuyan her istek hata verir** (panel, ses webhook'ları, cron). Aynısı `PANEL_SESSION_HOURS` (1–168 tam sayı) ve `VOICE_PROMPT_VARIANT` (`full`/`compact`) için de geçerli. Her değişiklikten sonra `/api/health` ve paneli bir kez açın. Tam anahtar tablosu (kabul edilen değerler, tanımsız davranış, Retell senkronu, bağımlılıklar, doğrulama): [NEXT-STEPS-FOR-OWNER.md → Switches](../NEXT-STEPS-FOR-OWNER.md#switches-all-off-in-production-today).
+
 Kaynak gerçek: [`.env.example`](../../.env.example) ve [`src/lib/env.ts`](../../src/lib/env.ts).
 
 | Değişken                                                   | Zorunlu                        | Açıklama                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
