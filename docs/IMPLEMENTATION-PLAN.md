@@ -165,7 +165,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] `notifications` tablosu: `id, clinic_id, appointment_id, type, channel, to (maskeli değil, şifreleme F7), status, provider_message_id, error, sent_at`. Tekil kısıt `(appointment_id, type)` ile idempotency — Bildirim kaydı olarak yapıldı (0008, 0011): tüm SMS'ler buradan geçer, tekillik `dedupe_key` ile (2026-10-07)
 - [ ] Türkçe karakter ve uzunluk ölçümü; şablonlar [NOTIFICATIONS.md](03-telephony/NOTIFICATIONS.md) ile uyumlu
 - [ ] Klinik başına gönderici başlığı (varsayılan: Recall başlığı)
-- [x] Hatırlatma cron'u: `GET /api/cron/reminders` (saatlik, `CRON_SECRET`), idempotent — Günlük `/api/cron/notifications` (Hobby); devam ettirilebilir iş kaydı ve kalp atışı (2026-10-07). Saatlik iş Vercel Pro ile
+- [x] Hatırlatma cron'u: `GET /api/cron/reminders` (saatlik, `CRON_SECRET`), idempotent — Günlük `/api/cron/notifications` (Hobby); devam ettirilebilir iş kaydı ve kalp atışı (2026-10-07). Saatlik iş Vercel Pro ile **[PLAN: Hobby]**
 - [ ] İYS ve ticari ileti ayrımı için hukuki teyit (ürün ekibi)
 
 **F2 çıkış kriterleri:** En az bir Türk numarası Retell'e bağlı ve 20 test aramasında sorunsuz; SMS onay ve hatırlatma gönderiliyor; değerlendirme belgesi en az iki sağlayıcıyla dolu.

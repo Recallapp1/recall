@@ -37,7 +37,7 @@ Costs are estimates from the linked documents (checked 2026-10-08/09); confirm t
 ### 5. Turn on paid hosting, the database plan and monitoring
 
 - **Neon Launch plan:** about 5–19 $ a month. It adds 7 days of restore history instead of 6 hours. Afterwards I run the restore drill in [BACKUP-RESTORE.md](06-operations/BACKUP-RESTORE.md).
-- **Vercel Pro:** 20 $ a month per member. Hobby does not allow commercial use, so Pro is needed before the first paying clinic.
+- **Vercel Pro:** 20 $ a month per member. Hobby does not allow commercial use, so Pro is needed before the first paying clinic. **[PLAN: Hobby]**
 - **Sentry:** free Developer plan.
   - Create a Next.js project, copy its DSN and add `SENTRY_DSN` in Vercel (Production).
   - Error texts are already masked before they are sent.

@@ -212,7 +212,7 @@ describe("cron authorization", () => {
     expect(await response.json()).toEqual({ status: "disabled" });
   });
 
-  // The hourly-ready routes (R2 5a, 5b) are not scheduled: Hobby allows daily cron only.
+  // The hourly-ready routes (R2 5a, 5b) are not scheduled: Hobby [PLAN: Hobby] allows daily cron only.
   it("both jobs are scheduled", () => {
     const config = JSON.parse(readFileSync("vercel.json", "utf8")) as {
       crons: { path: string }[];

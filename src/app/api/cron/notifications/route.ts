@@ -14,7 +14,7 @@ export const maxDuration = 60;
 const BUDGET_MS = 40_000;
 
 /**
- * Daily (vercel.json, 07:00 UTC = 10:00 Istanbul; Hobby fires anywhere in that hour): plans tomorrow's
+ * Daily (vercel.json, 07:00 UTC = 10:00 Istanbul; Hobby [PLAN: Hobby] fires anywhere in that hour): plans tomorrow's
  * appointment reminders and sends what is due. Until SMS_SENDING_ENABLED is
  * "true" every message is recorded as skipped and no provider is called.
  * Progress is kept in today's run: when the budget runs out the job calls

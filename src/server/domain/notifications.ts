@@ -102,7 +102,7 @@ export function isInSendWindow(now: Date, timeZone: string): boolean {
 
 /**
  * Appointment reminders for one clinic. The job runs once a day (Vercel
- * Hobby), so the reminder goes out the day before. An appointment that is
+ * Hobby [PLAN: Hobby]), so the reminder goes out the day before. An appointment that is
  * already today and was never planned (booked after yesterday's run) is
  * recorded as skipped "too_late" instead of being dropped silently.
  */

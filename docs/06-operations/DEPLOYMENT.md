@@ -20,7 +20,7 @@ _Kurulum: 2026-10-05/06_
 
 | Konu       | Değer                                                                                                                                                                                                                                              |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vercel     | Takım `RECALL` (`recall25`), proje `recall`, plan **Hobby** (ilk ücretli klinikten önce **Pro**'ya geçilecek: Hobby ticari kullanıma izin vermez)                                                                                                  |
+| Vercel     | Takım `RECALL` (`recall25`), proje `recall`, plan **Hobby** (ilk ücretli klinikten önce **Pro**'ya geçilecek: Hobby ticari kullanıma izin vermez) **[PLAN: Hobby]**                                                                                |
 | Git        | `recallapp0/recall` bağlı; `main`'e her push production deploy'u başlatır. `main` korumalı: yalnızca `check` ve `e2e` CI kontrolleri geçmiş commit kabul edilir (2026-10-08)                                                                       |
 | Alan adı   | `recalltr.company` (Vercel'den alındı, DNS Vercel'de). `www` → ana alan 308 yönlendirme (`next.config.ts`). Otomatik yenileme ürün ekibince bilerek kapalı: ilk klinikten önce yeni alana taşınılacak ([DOMAIN-MIGRATION.md](DOMAIN-MIGRATION.md)) |
 | Veritabanı | Neon `falling-mud-37269187`, **`production` dalı** (`br-frosty-union-b1y9qd14`; Frankfurt, ücretsiz plan; canlıya geçmeden ücretli plana ve auto-suspend kapatmaya). Bağlantı `sslmode=verify-full`                                                |
@@ -145,4 +145,4 @@ Vercel → Deployments → önceki deploy → **Promote to Production** (anında
 }
 ```
 
-Tanımlı işler: `/api/cron/retention` (03:30 UTC) ve `/api/cron/notifications` (07:00 UTC). Hobby planında her iş günde bir kez, **tanımlı saatin içindeki herhangi bir dakikada** çalışır (ör. 07:00–07:59 UTC; ilk çalışma 7 Ekim 07:44 UTC). Pro'da tam dakikasında çalışır. Runtime logları Hobby'de yaklaşık bir saat tutulur; çalışmayı doğrulamak için `notifications` tablosuna bakın. İkisi de `Authorization: Bearer $CRON_SECRET` ister; secret yoksa 503 döner.
+Tanımlı işler: `/api/cron/retention` (03:30 UTC) ve `/api/cron/notifications` (07:00 UTC). Hobby planında her iş günde bir kez, **tanımlı saatin içindeki herhangi bir dakikada** çalışır (ör. 07:00–07:59 UTC; ilk çalışma 7 Ekim 07:44 UTC). Pro'da tam dakikasında çalışır. Runtime logları Hobby'de yaklaşık bir saat tutulur; çalışmayı doğrulamak için `notifications` tablosuna bakın. İkisi de `Authorization: Bearer $CRON_SECRET` ister; secret yoksa 503 döner. **[PLAN: Hobby]**
