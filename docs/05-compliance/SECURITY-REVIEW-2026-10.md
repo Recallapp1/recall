@@ -32,10 +32,11 @@ Kapsam: tüm kod tabanı (`src/`, `scripts/`, `drizzle/`), production yapıland�
 
 ## Bağımlılık taraması (`pnpm audit`)
 
-| Paket                                   | Önem   | Nereden                                                     | Değerlendirme                                                                                                                       |
-| --------------------------------------- | ------ | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `esbuild` ≤0.24.2 (GHSA-67mh-4wv8-2f99) | Orta   | `drizzle-kit` → `@esbuild-kit/*` (yalnızca migration aracı) | Açık yalnızca esbuild'in geliştirme sunucusunu etkiler; bunu hiç çalıştırmıyoruz. Kabul edildi, drizzle-kit güncellemesi bekleniyor |
-| `braces` ≤3.0.3                         | Yüksek | `eslint-config-next` (yalnızca lint)                        | Production'a girmez; girdisi kendi kodumuz. Kabul edildi                                                                            |
+| Paket                                   | Önem     | Nereden                                                     | Değerlendirme                                                                                                                                                                                                                |
+| --------------------------------------- | -------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `esbuild` ≤0.24.2 (GHSA-67mh-4wv8-2f99) | Orta     | `drizzle-kit` → `@esbuild-kit/*` (yalnızca migration aracı) | Açık yalnızca esbuild'in geliştirme sunucusunu etkiler; bunu hiç çalıştırmıyoruz. Kabul edildi, drizzle-kit güncellemesi bekleniyor                                                                                          |
+| `braces` ≤3.0.3                         | Yüksek   | `eslint-config-next` (yalnızca lint)                        | Production'a girmez; girdisi kendi kodumuz. Kabul edildi                                                                                                                                                                     |
+| `uqr` 0.1.3 (yeni, 2026-10-12)          | Açık yok | Doğrudan bağımlılık: iki adımlı giriş kurulumundaki QR kodu | MIT lisanslı, kendi bağımlılığı yok, sürüm sabit (`0.1.3`). Yalnızca sunucuda SVG üretir; ağ, dosya veya `eval` kullanmaz. Girdisi Better Auth'un ürettiği `otpauth://` adresi; çıktı sayfaya SVG olarak konur. Kabul edildi |
 
 CI artık production bağımlılıklarında yüksek veya kritik bir açık görürse kırılır (`pnpm audit --prod --audit-level high`); Dependabot haftalık güncelleme açar.
 

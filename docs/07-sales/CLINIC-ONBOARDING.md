@@ -31,6 +31,7 @@ _2026-10-09 (denetim C4). Bugünkü konsol ve panel ekranlarına göre yazıldı
 1. `/admin` → **Klinikler** → **Yeni klinik**: ad, kısa ad (slug), saat dilimi.
 2. Klinik sayfası → **Kişi ekle**: sahip, e-posta, rol **Klinik sahibi** → sahip "parolanızı belirleyin" e-postası alır (24 saat geçerli).
 3. (İsteğe bağlı) **Modüller** → Takip.
+4. **Her kişiye ayrı hesap.** Ortak (paylaşılan) hesap açılmaz, sahip de dahil. İki adımlı giriş kişinin kendi telefonuna bağlıdır ve denetim kaydı kişi adına tutulur; ortak hesapla ikisi de çalışmaz. Resepsiyon bilgisayarı ortaksa her çalışan kendi hesabıyla girer (oturum süresi `PANEL_SESSION_HOURS` ile kısaltılabilir). Sahibe ve yöneticilere kurulumdan önce telefonlarına bir kimlik doğrulama uygulaması (Google veya Microsoft Authenticator) kurmalarını söyleyin; yedek kodları güvenli bir yere kaydetmeleri gerekir.
 
 ## 3. Klinik paneli: ayarlar (sahip veya Recall birlikte)
 
@@ -82,16 +83,18 @@ Kliniğin mevcut numarası Recall numarasına yönlendirilir: meşgulken, cevaps
 
 ## 9. Pilot için anahtar kararı (ürün sahibi)
 
-| Anahtar                                                                           | Önerilen pilot değeri | Not                                                                    |
-| --------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------- |
-| `POST_CALL_FLAGS`                                                                 | Açık                  | Panelde acil durum ve uyuşmayan sonuç rozetleri                        |
-| `VOICE_TOOL_IDEMPOTENCY`                                                          | Açık                  | Tekrar isteklerde ikinci işlem yok                                     |
-| `VOICE_SHARED_NUMBER_CHECK`                                                       | Kliniğe göre          | Aile numarası yaygınsa açık; arayanlar daha çok doğrulama sorusu duyar |
-| `AUDIT_STRICT`                                                                    | Açık                  | Denetim kaydı yazılamazsa işlem durur                                  |
-| `PANEL_LIMITS_VIEW`                                                               | Açık                  | Sahip kullanım ve sınırları görür                                      |
-| `VOICE_PROMPT_VARIANT`, `VOICE_PROMPT_HARDENING`, `RETELL_DYNAMIC_RESPONSIVENESS` | Ölçümden sonra        | ADR-003                                                                |
-| `HEALTH_JOBS_TOKEN`                                                               | Uptime kurulunca      | MONITORING.md                                                          |
-| `SMS_SENDING_ENABLED`                                                             | **Kapalı**            | Netgsm ve İYS/hukuk onayı bitene kadar                                 |
+| Anahtar                                                                           | Önerilen pilot değeri      | Not                                                                                                                        |
+| --------------------------------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `POST_CALL_FLAGS`                                                                 | Açık                       | Panelde acil durum ve uyuşmayan sonuç rozetleri                                                                            |
+| `VOICE_TOOL_IDEMPOTENCY`                                                          | Açık                       | Tekrar isteklerde ikinci işlem yok                                                                                         |
+| `VOICE_SHARED_NUMBER_CHECK`                                                       | Kliniğe göre               | Aile numarası yaygınsa açık; arayanlar daha çok doğrulama sorusu duyar                                                     |
+| `AUDIT_STRICT`                                                                    | Açık                       | Denetim kaydı yazılamazsa işlem durur                                                                                      |
+| `PANEL_LIMITS_VIEW`                                                               | Açık                       | Sahip kullanım ve sınırları görür                                                                                          |
+| `VOICE_PROMPT_VARIANT`, `VOICE_PROMPT_HARDENING`, `RETELL_DYNAMIC_RESPONSIVENESS` | Ölçümden sonra             | ADR-003                                                                                                                    |
+| `HEALTH_JOBS_TOKEN`                                                               | Uptime kurulunca           | MONITORING.md                                                                                                              |
+| `PANEL_TWO_FACTOR`                                                                | `required-admins`          | Karar: pilottan önce sahip ve yöneticiler için zorunlu; diğer personel isteğe bağlı açar. Bir ay sorunsuzsa `required-all` |
+| `TWO_FACTOR_RESET_EMAILS`                                                         | Recall sahibinin e-postası | Telefonunu ve yedek kodlarını kaybedeni yalnızca Recall sahibi sıfırlar; önce kliniği kayıtlı numarasından geri arar       |
+| `SMS_SENDING_ENABLED`                                                             | **Kapalı**                 | Netgsm ve İYS/hukuk onayı bitene kadar                                                                                     |
 
 ## 10. Pilotun bitişi veya ayrılma
 

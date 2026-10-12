@@ -91,6 +91,15 @@ Aynı çalışma alanında ikinci bir anahtar yeterli değildir: imza çalışma
 
 `CRON_SECRET` ve `BETTER_AUTH_SECRET`: ürün ekibi `.env.local` içinde yeni rastgele değerlerle değiştirir (ör. `openssl rand -base64 32`). Production'ı etkilemez; lokal oturumlar kapanır.
 
+> **Uyarı: production `BETTER_AUTH_SECRET` ve iki adımlı giriş (2026-10-12).** İki adımlı giriş (`PANEL_TWO_FACTOR`) açıldıktan sonra kişilerin doğrulayıcı anahtarları ve yedek kodları bu değerle şifreli saklanır. Production değeri değişirse hiçbiri çözülemez: kayıtlı herkes kod adımında kalır, yedek kodlar da çalışmaz; tüm oturumlar kapanır. Bu yüzden production değeri **yalnızca sızıntı şüphesinde** değiştirilir ve şu sırayla:
+>
+> 1. `PANEL_TWO_FACTOR=off` yapılır ve yeniden deploy edilir (eklenti yüklenmez; herkes yalnızca parolayla girer, kayıtlar silinmez).
+> 2. `BETTER_AUTH_SECRET` değiştirilir, deploy edilir; `/api/health` kontrol edilir.
+> 3. Eski kayıtlar artık işe yaramaz; temizlenmeleri tek seferlik bir production işlemidir (`two_factors` satırları silinir, `users.two_factor_enabled` false yapılır). Claude SQL'i önce dev dalında dener; production'da **ürün sahibinin ayrı onayıyla** uygulanır.
+> 4. Anahtar önceki değerine döner; kişiler `/iki-adim` sayfasında yeniden kurar (`required-*` ise ilk girişte yönlendirilir).
+>
+> Lokal değeri değiştirmek production'ı etkilemez. Kararlar: [DECISIONS-TO-REVIEW.md](../DECISIONS-TO-REVIEW.md) 116–120, anahtar tablosu [NEXT-STEPS-FOR-OWNER.md](../NEXT-STEPS-FOR-OWNER.md).
+
 ## 7. Neon IP kısıtı ve dal koruması
 
 - **IP kısıtı ("IP Allow"):** Neon'un ücretli üst planlarında (Scale ve üstü; güncel fiyat ve plan adı Neon'da teyit edilmeli). Tek başına işe yaramaz: Vercel fonksiyonlarının çıkış IP'leri sabit değildir. Sabit çıkış IP'si için Vercel'in Static IPs / Secure Compute özelliği gerekir (ücretli, Pro ve üstü). İkisi birlikte olmadan IP kısıtı production'ı kilitler. **Öneri:** şimdi değil; pilot öncesi maliyetle birlikte karar.
