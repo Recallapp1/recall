@@ -4,6 +4,8 @@ _Written 2026-10-09 at the end of the autonomous pre-launch hardening round. Eve
 
 Costs are estimates from the linked documents (checked 2026-10-08/09); confirm them on the vendor's page before paying.
 
+**Updated 2026-10-12 (hardening round 2):** the steps below are unchanged. New since round 1: eight more switches, all off (see the table at the end), and every remaining risk on one page in [OPEN-RISKS-BEFORE-PILOT.md](OPEN-RISKS-BEFORE-PILOT.md). After step 5 (Vercel Pro), search the docs for `[PLAN: Hobby]` and send me the agreed Pro message; I then turn on the hourly deletion queue (and, after pilot feedback, hourly reminders).
+
 ## Do these first, in this order
 
 ### 1. Load Retell credit into the **Recall Dev** workspace and start evaluation stage 1
