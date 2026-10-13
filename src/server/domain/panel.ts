@@ -1026,9 +1026,10 @@ export async function anonymizePatient(
       providerCallId,
     }));
     await enqueueProviderDeletions(tx, clinicId, providerCalls, "patient_anonymized", now);
+    // The booked-for name is a person's name on this record (full audit FA-01).
     await tx
       .update(appointments)
-      .set({ notes: null })
+      .set({ notes: null, bookedForName: null })
       .where(and(eq(appointments.clinicId, clinicId), eq(appointments.patientId, patientId)));
     await detachPatientNotifications(tx, clinicId, patientId);
     // Follow-up plans reveal treatments; they go with the identity (visits cascade).

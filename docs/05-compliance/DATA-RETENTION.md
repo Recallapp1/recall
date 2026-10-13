@@ -35,4 +35,4 @@
 1. `full_name` → `"Anonim Hasta"`, `phone` → `anon:<uuid>`, `notes` → null
 2. Hastayla ilgili `calls` (2026-10-08, denetim P-09): hastanın numarasından gelenler, `call_patients` ile hastaya bağlananlar (asistan bu aramada hastanın randevusunu oluşturdu, buldu, iptal etti veya taşıdı; gizli numara veya başka birinin numarası olabilir) ve hastanın randevularını oluşturan aramalar. `from_number`, `transcript`, `summary`, `recording_url` → null; Retell kopyaları silme kuyruğuna yazılır
 3. `callback_requests`: hastanın numarasıyla veya silinen bu aramalarda bırakılanlar: `patient_name`, `phone` → null, `reason` → `(anonimleştirildi)`
-4. Randevular kalır (istatistik için), kimlik bağı kopmuş olur.
+4. Randevular kalır (istatistik için), kimlik bağı kopmuş olur; randevu notu ve "kimin adına" adı (`booked_for_name`) silinir (2026-10-13, tam denetim FA-01).
