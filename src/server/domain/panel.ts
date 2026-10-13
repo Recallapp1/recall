@@ -866,10 +866,15 @@ export async function updatePatientIdentity(
   ];
   if (changed.length === 0) return [];
   try {
-    await exec
-      .update(patients)
-      .set({ fullName, phone, updatedAt: sql`now()` })
-      .where(and(eq(patients.clinicId, clinicId), eq(patients.id, input.patientId)));
+    await exec.transaction(async (tx) => {
+      await tx
+        .update(patients)
+        .set({ fullName, phone, updatedAt: sql`now()` })
+        .where(and(eq(patients.clinicId, clinicId), eq(patients.id, input.patientId)));
+      if (current.phone !== phone) {
+        await keepHistoryOnNewPhone(tx, clinicId, input.patientId, current.phone, phone);
+      }
+    });
   } catch (error) {
     if (isUniqueViolation(error)) {
       throw new DomainError("PHONE_TAKEN", "Bu numara başka bir hastanın kaydında var.");
@@ -877,6 +882,64 @@ export async function updatePatientIdentity(
     throw error;
   }
   return changed;
+}
+
+/**
+ * After a phone correction, export and erasure find calls and callback notes
+ * by the new number, so the old number's history would drop out of both
+ * (full audit FA-02). While the patient was alone on the old number, that
+ * history is theirs: its calls are linked to the patient (`call_patients`)
+ * and its callback notes take the corrected number. When family members
+ * still share the old number nothing moves; calls already linked to the
+ * patient stay linked, the rest stays with the number (as in exportCallScope).
+ */
+async function keepHistoryOnNewPhone(
+  tx: Executor,
+  clinicId: string,
+  patientId: string,
+  oldPhone: string,
+  newPhone: string,
+): Promise<void> {
+  const [family] = await tx
+    .select({ id: patients.id })
+    .from(patients)
+    .where(
+      and(
+        eq(patients.clinicId, clinicId),
+        eq(patients.phone, oldPhone),
+        ne(patients.id, patientId),
+      ),
+    )
+    .limit(1);
+  if (family) return;
+
+  const fromOld = await tx
+    .select({ id: calls.id })
+    .from(calls)
+    .where(and(eq(calls.clinicId, clinicId), eq(calls.fromNumber, oldPhone)));
+  if (fromOld.length > 0) {
+    await tx
+      .insert(callPatients)
+      .values(fromOld.map((call) => ({ clinicId, callId: call.id, patientId })))
+      .onConflictDoNothing();
+  }
+  await tx
+    .update(callbackRequests)
+    .set({ phone: newPhone })
+    .where(
+      and(
+        eq(callbackRequests.clinicId, clinicId),
+        eq(callbackRequests.phone, oldPhone),
+        // One open note per call and number: never collide with one already on the new number.
+        sql`not exists (
+          select 1 from ${callbackRequests} other
+          where other.clinic_id = ${callbackRequests.clinicId}
+            and other.call_id = ${callbackRequests.callId}
+            and other.phone = ${newPhone}
+            and other.status = 'open'
+        )`,
+      ),
+    );
 }
 
 /**

@@ -839,9 +839,13 @@ describe("patient correction (KVKK m.11, G-02)", () => {
     ).rejects.toBeInstanceOf(ForbiddenSignal);
 
     actAs(users.owner);
-    expect(
-      await save({ patientId: first!.id, fullName: "Birinci Hasta", phone: "05320000086" }),
-    ).toMatchObject({ status: "error", message: "Bu numara başka bir hastanın kaydında var." });
+    // After migration 0020 (TEST_SCHEMA=p12-dropped) a shared number is allowed:
+    // family members keep their own records, so this refusal exists only today.
+    if (process.env.TEST_SCHEMA !== "p12-dropped") {
+      expect(
+        await save({ patientId: first!.id, fullName: "Birinci Hasta", phone: "05320000086" }),
+      ).toMatchObject({ status: "error", message: "Bu numara başka bir hastanın kaydında var." });
+    }
     expect(
       await save({ patientId: first!.id, fullName: "Birinci Hasta", phone: "123" }),
     ).toMatchObject({ status: "error" });
