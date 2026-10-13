@@ -6,6 +6,8 @@ Costs are estimates from the linked documents (checked 2026-10-08/09); confirm t
 
 **Updated 2026-10-12 (hardening round 2):** the steps below are unchanged. New since round 1: eight more switches, all off (see the table at the end), and every remaining risk on one page in [OPEN-RISKS-BEFORE-PILOT.md](OPEN-RISKS-BEFORE-PILOT.md). After step 5 (Vercel Pro), search the docs for `[PLAN: Hobby]` and send me the agreed Pro message; I then turn on the hourly deletion queue (and, after pilot feedback, hourly reminders).
 
+**Full audit (2026-10-13):** findings, readiness numbers and the ordered task list are in [reviews/FULL-AUDIT-2026-10-13.md](reviews/FULL-AUDIT-2026-10-13.md) and [reviews/FULL-AUDIT-ACTION-PLAN.md](reviews/FULL-AUDIT-ACTION-PLAN.md); coverage ledger in [reviews/AUDIT-PROGRESS.md](reviews/AUDIT-PROGRESS.md).
+
 ## Do these first, in this order
 
 ### 1. Load Retell credit into the **Recall Dev** workspace and start evaluation stage 1
