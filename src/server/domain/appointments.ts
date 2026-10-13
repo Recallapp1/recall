@@ -524,6 +524,8 @@ export async function rescheduleAppointment(
           source: "voice",
           callId: input.callId ?? null,
           notes: current.notes,
+          // Who it is for moves with it: the ownership check asks for this name (FA-03).
+          bookedForName: current.bookedForName,
         })
         .returning({ id: appointments.id });
       // Rescheduling is cancel + new row: the follow-up link moves with it.
