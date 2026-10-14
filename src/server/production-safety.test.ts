@@ -534,3 +534,44 @@ describe("documentation names that the code can check (full audit section 6.1)",
     }
   });
 });
+
+describe("decision records and architecture docs match the repository (full audit section 6.1)", () => {
+  const read = (path: string) => readFileSync(path, "utf8");
+  const firstWord = (text: string) =>
+    text
+      .replace(/[*_`]/g, "")
+      .trim()
+      .split(/[\s:;(]/)[0]!;
+
+  it("the ADR index shows each ADR's own status", () => {
+    const index = read("docs/decisions/README.md");
+    for (const file of readdirSync("docs/decisions").filter((f) => /^ADR-\d{3}/.test(f))) {
+      const own = /Durum(?:\*\*:|\s*\|)\s*([^|\n]+)/.exec(read(join("docs/decisions", file)))?.[1];
+      const row = index.split("\n").find((line) => line.includes(`(${file})`));
+      const listed = row?.split("|").at(-2);
+      expect(own, file).toBeDefined();
+      expect(firstWord(listed ?? ""), file).toBe(firstWord(own!));
+    }
+  });
+
+  it("source paths named in decisions and architecture docs exist", () => {
+    const docs = [
+      ...readdirSync("docs/decisions").map((f) => join("docs/decisions", f)),
+      ...readdirSync("docs/01-architecture").map((f) => join("docs/01-architecture", f)),
+    ].filter((f) => f.endsWith(".md"));
+    for (const doc of docs) {
+      for (const [, path] of read(doc).matchAll(/`(src\/[^`*\s]+)`/g)) {
+        expect(statSync(path!, { throwIfNoEntry: false }), `${doc}: ${path}`).toBeDefined();
+      }
+    }
+  });
+
+  it("DATA-MODEL does not describe a column the code never writes as if it were filled", () => {
+    const written = /kvkkNoticeAt: (?!null)/.test(read("src/server/domain/panel.ts"));
+    if (!written) {
+      expect(read("docs/01-architecture/DATA-MODEL.md")).not.toMatch(
+        /\| kvkk_notice_at \| Aydınlatma anonsunun dinletildiği ilk arama zamanı \|/,
+      );
+    }
+  });
+});
