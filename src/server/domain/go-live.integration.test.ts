@@ -26,6 +26,7 @@ const OFF = {
   CALL_REVIEW: undefined,
   TEST_CALL_FLAG: undefined,
   PANEL_LIMITS_VIEW: undefined,
+  RECORDING_OFF_SWEEP: undefined,
 };
 
 let db: Database;

@@ -39,6 +39,7 @@ const SWITCHES = [
   { key: "CALL_REVIEW", label: "Asistan hatası bildirme" },
   { key: "TEST_CALL_FLAG", label: "Test araması işareti" },
   { key: "PANEL_LIMITS_VIEW", label: "Kullanım ve sınırlar sayfası" },
+  { key: "RECORDING_OFF_SWEEP", label: "Kayıt kapalıyken kaçan silmeler" },
 ] as const satisfies readonly { key: keyof Env; label: string }[];
 
 /**

@@ -127,6 +127,12 @@ const envSchema = z.object({
    */
   CONSOLE_LIMITS_EDIT: optionalFlag,
   /**
+   * "true": the daily retention job queues the voice provider's copy of
+   * recording-off calls whose analysis never arrived (full audit FA-10).
+   * Unset: such copies wait for the provider's own 30-day deletion, as today.
+   */
+  RECORDING_OFF_SWEEP: optionalFlag,
+  /**
    * "true": staff who can read calls report a call as wrong assistant
    * behaviour with a reason from a fixed list; audited (R2 5d). Off by default.
    */

@@ -1,10 +1,11 @@
 import "server-only";
 
-import { and, asc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lt, lte, notExists, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
-import { providerDeletions } from "../db/schema";
+import { calls, clinics, providerDeletions } from "../db/schema";
 import { raiseAlarm } from "../observability/alarm";
+import { RETENTION_DAYS } from "./retention";
 
 export type DeletionReason = "patient_anonymized" | "recording_off";
 
@@ -145,4 +146,52 @@ function describe(error: unknown): string {
     typeof error === "object" && error !== null && "status" in error ? String(error.status) : "";
   const name = error instanceof Error ? error.name : typeof error;
   return `${name}${status ? ` ${status}` : ""}`.slice(0, 100);
+}
+
+/** The analysis normally arrives within minutes; after this it is not coming. */
+const ANALYSIS_GRACE_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * RECORDING_OFF_SWEEP (full audit FA-10): with recording off, the provider's
+ * copy is deleted when the call's analysis arrives (handlers.ts). A call whose
+ * analysis never arrived is queued here, until the provider's own retention
+ * deletes it anyway. Calls with a stored recording link were recorded while
+ * recording was on and are left alone. Returns how many calls were queued.
+ */
+export async function sweepRecordingOffCalls(exec: Executor, now: Date): Promise<number> {
+  const callTime = sql`coalesce(${calls.startedAt}, ${calls.createdAt})`;
+  const missed = await exec
+    .select({
+      clinicId: calls.clinicId,
+      provider: calls.provider,
+      providerCallId: calls.providerCallId,
+    })
+    .from(calls)
+    .innerJoin(clinics, eq(clinics.id, calls.clinicId))
+    .where(
+      and(
+        sql`${clinics.settings} -> 'assistant' ->> 'recordCalls' = 'false'`,
+        isNull(calls.recordingUrl),
+        lt(callTime, new Date(now.getTime() - ANALYSIS_GRACE_MS)),
+        gt(callTime, new Date(now.getTime() - RETENTION_DAYS.recording * 24 * 60 * 60 * 1000)),
+        notExists(
+          exec
+            .select({ one: sql`1` })
+            .from(providerDeletions)
+            .where(
+              and(
+                eq(providerDeletions.provider, calls.provider),
+                eq(providerDeletions.providerCallId, calls.providerCallId),
+              ),
+            ),
+        ),
+      ),
+    );
+  if (missed.length === 0) return 0;
+  const inserted = await exec
+    .insert(providerDeletions)
+    .values(missed.map((row) => ({ ...row, reason: "recording_off" as const, nextAttemptAt: now })))
+    .onConflictDoNothing()
+    .returning({ id: providerDeletions.id });
+  return inserted.length;
 }

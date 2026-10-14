@@ -8,7 +8,7 @@ import { safeError } from "@/lib/safe-error";
 import { normalizePhone } from "@/lib/phone";
 
 import type { Database } from "../../../db";
-import { voiceAgents } from "../../../db/schema";
+import { calls, voiceAgents } from "../../../db/schema";
 import { flagCall } from "../../../domain/call-flag-records";
 import { completeCall, upsertCall } from "../../../domain/calls";
 import {
@@ -346,6 +346,11 @@ export async function handleCallEvent(request: Request, deps: RetellHandlerDeps)
   // Retell once its last event (the analysis) has reached us.
   // Queued first, so a failed or skipped attempt is retried by the daily job.
   if (event === "call_analyzed" && !ctx.settings.assistant.recordCalls) {
+    // A link stored while recording was still on points at audio deleted below (G-15).
+    await deps.db
+      .update(calls)
+      .set({ recordingUrl: null })
+      .where(and(eq(calls.clinicId, ctx.clinic.id), eq(calls.id, callRow.id)));
     const target = [{ provider: RETELL_PROVIDER, providerCallId: call.call_id }];
     await enqueueProviderDeletions(deps.db, ctx.clinic.id, target, "recording_off", deps.now());
     deps.defer(async () => {
