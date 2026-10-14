@@ -575,3 +575,34 @@ describe("decision records and architecture docs match the repository (full audi
     }
   });
 });
+
+describe("product docs promise only what ships (full audit section 6.1)", () => {
+  const read = (path: string) => readFileSync(path, "utf8");
+
+  it("no SMS promise in the product overview while sending is off by default", () => {
+    if (env().SMS_SENDING_ENABLED) return;
+    for (const doc of ["README.md", "docs/00-product/PRD.md", "docs/00-product/USER-FLOWS.md"]) {
+      expect(read(doc), doc).not.toMatch(
+        /SMS ile onaylar|SMS onayı gönderilir|SMS ile bilgi gönderdik|İptal SMS'i gönderilir\./,
+      );
+    }
+  });
+
+  it("the SMS template table carries no patient name or service, like the code", () => {
+    const rendered = Object.values(smsTemplates)
+      .map((template) =>
+        (template as (...args: unknown[]) => string)("Klinik", {
+          date: "2026-10-20",
+          time: "10:00",
+        }),
+      )
+      .join("\n");
+    expect(rendered).not.toMatch(/Sayın/);
+    expect(read("docs/03-telephony/NOTIFICATIONS.md")).not.toMatch(/\{\{(name|service)\}\}/);
+  });
+
+  it("the personas do not say there is no admin console", () => {
+    expect(statSync("src/app/admin").isDirectory()).toBe(true);
+    expect(read("docs/00-product/USER-PERSONAS.md")).not.toMatch(/ayrı bir admin paneli yok/);
+  });
+});
