@@ -4,16 +4,16 @@
 
 İlke: **İhtiyaç kadar, süre kadar.** Varsayılanlar aşağıdadır; klinik ihtiyacına göre kısaltabilir (uzatma, hukuki gerekçe ister).
 
-| Veri                             | Varsayılan süre                                                            | Süre dolunca                                             | Sorumlu                    |
-| -------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------- |
-| Ses kaydı                        | **30 gün**                                                                 | Sağlayıcıdan silinir, `recording_url` null yapılır       | Cron `retention`           |
-| Transkript                       | **90 gün**                                                                 | `transcript` null; `summary` kalır                       | Cron `retention`           |
-| Arama özeti ve meta veri         | 2 yıl                                                                      | Anonimleştirilir (numara silinir)                        | Cron                       |
-| Randevu                          | Klinik hesabı aktif olduğu sürece                                          | Hasta anonimleştirmesinde ilişki korunur, kimlik silinir | —                          |
-| Hasta kaydı                      | Son randevudan sonra 5 yıl (avukatla teyit edilecek)                       | Anonimleştirme                                           | Henüz yok (elle, panelden) |
-| Bildirim kaydı (`notifications`) | **1 yıl** (hukuki inceleme bekliyor)                                       | Silinir; mesaj metni ve telefon zaten saklanmaz          | Cron `retention`           |
-| Uygulama logları                 | Vercel planının saklama süresi (Hobby'de kısa; plan değişince güncellenir) | Otomatik                                                 | Vercel                     |
-| Klinik hesabı kapatıldığında     | 30 gün içinde tüm veri silinir, kliniğe dışa aktarım verilir               | Betik hazırlanıyor (A16); şimdilik elle                  | Operasyon                  |
+| Veri                             | Varsayılan süre                                                            | Süre dolunca                                                                                                             | Sorumlu                    |
+| -------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| Ses kaydı                        | **30 gün**                                                                 | Sağlayıcıdan silinir, `recording_url` null yapılır                                                                       | Cron `retention`           |
+| Transkript                       | **90 gün**                                                                 | `transcript` null; `summary` kalır                                                                                       | Cron `retention`           |
+| Arama özeti ve meta veri         | 2 yıl                                                                      | Anonimleştirilir (numara silinir)                                                                                        | Cron                       |
+| Randevu                          | Klinik hesabı aktif olduğu sürece                                          | Hasta anonimleştirmesinde ilişki korunur, kimlik silinir                                                                 | —                          |
+| Hasta kaydı                      | Son randevudan sonra 5 yıl (avukatla teyit edilecek)                       | Anonimleştirme                                                                                                           | Henüz yok (elle, panelden) |
+| Bildirim kaydı (`notifications`) | **1 yıl** (hukuki inceleme bekliyor)                                       | Silinir; mesaj metni ve telefon zaten saklanmaz                                                                          | Cron `retention`           |
+| Uygulama logları                 | Vercel planının saklama süresi (Hobby'de kısa; plan değişince güncellenir) | Otomatik                                                                                                                 | Vercel                     |
+| Klinik hesabı kapatıldığında     | 30 gün içinde tüm veri silinir, kliniğe dışa aktarım verilir               | `pnpm clinic:offboard` ([CLINIC-OFFBOARDING.md](../06-operations/CLINIC-OFFBOARDING.md)); production'da henüz açık değil | Operasyon                  |
 
 ## Uygulama (2026-10-06)
 

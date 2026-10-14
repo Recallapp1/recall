@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { DEV_DATABASE_ENDPOINT, devDatabaseRefusal } from "./dev-database";
@@ -33,4 +35,16 @@ describe("devDatabaseRefusal", () => {
     const message = devDatabaseRefusal(url("ep-other.neon.tech", "sekret-parola"));
     expect(message).not.toContain("sekret-parola");
   });
+});
+
+describe("scripts that write or copy clinic data", () => {
+  it.each(["scripts/db-export.ts", "scripts/clinic-offboard.ts"])(
+    "%s checks the database before touching it",
+    (path) => {
+      const source = readFileSync(path, "utf8");
+      const guard = source.indexOf("devDatabaseRefusal(process.env.DATABASE_URL)");
+      expect(guard).toBeGreaterThan(-1);
+      expect(guard).toBeLessThan(source.indexOf("db()"));
+    },
+  );
 });

@@ -34,6 +34,7 @@
     "ci:wait": "tsx scripts/ci-wait.ts",
     "dev:tunnel": "tsx --conditions=react-server scripts/dev-tunnel.ts",
     "clinic:member": "tsx --conditions=react-server scripts/clinic-member.ts",
+    "clinic:offboard": "tsx --conditions=react-server scripts/clinic-offboard.ts",
     "platform:admin": "tsx --conditions=react-server scripts/platform-admin.ts",
     "lint:tokens": "tsx scripts/check-design-tokens.ts",
     "lint:secrets": "tsx scripts/secret-scan.ts lint",

@@ -58,6 +58,7 @@ pnpm voice:voices   # Retell seslerini listele
 pnpm voice:sync --clinic <slug>   # kliniğin Retell ajanını oluştur/güncelle (--all, --force)
 pnpm voice:send <inbound|function-call|call-ended>   # imzalı örnek webhook isteği
 pnpm clinic:member --clinic <slug> --email <e-posta> --name "<ad>" [--role owner]   # kliniğe kişi ekle (parola e-postası gider)
+pnpm clinic:offboard --clinic <slug> --step export|erase|purge [--yes]   # klinik kapanışı (yalnızca dev veritabanı)
 pnpm platform:admin --email <e-posta> --name "<ad>"   # Recall konsolu (/admin) yetkisi ver
 ```
 

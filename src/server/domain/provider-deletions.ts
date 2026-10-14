@@ -7,7 +7,10 @@ import { calls, clinics, providerDeletions } from "../db/schema";
 import { raiseAlarm } from "../observability/alarm";
 import { RETENTION_DAYS } from "./retention";
 
-export type DeletionReason = "patient_anonymized" | "recording_off";
+export type DeletionReason = "patient_anonymized" | "recording_off" | "clinic_closed";
+
+/** Reasons that erase the call itself: late provider events must not refill it. */
+const ERASING_REASONS = ["patient_anonymized", "clinic_closed"] as const;
 
 /** Deletes one call on its provider; "already gone" must resolve, not throw. */
 export type DeleteProviderCall = (provider: string, providerCallId: string) => Promise<void>;
@@ -46,7 +49,7 @@ export async function enqueueProviderDeletions(
     .onConflictDoUpdate({
       target: [providerDeletions.provider, providerDeletions.providerCallId],
       set: {
-        reason: sql`case when excluded.reason = 'patient_anonymized' then excluded.reason else ${providerDeletions.reason} end`,
+        reason: sql`case when excluded.reason in ('patient_anonymized', 'clinic_closed') then excluded.reason else ${providerDeletions.reason} end`,
       },
     });
 }
@@ -70,7 +73,7 @@ export async function isErasedProviderCall(
         eq(providerDeletions.clinicId, clinicId),
         eq(providerDeletions.provider, provider),
         eq(providerDeletions.providerCallId, providerCallId),
-        eq(providerDeletions.reason, "patient_anonymized"),
+        inArray(providerDeletions.reason, [...ERASING_REASONS]),
       ),
     )
     .limit(1);

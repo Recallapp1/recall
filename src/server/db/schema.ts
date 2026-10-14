@@ -957,7 +957,7 @@ export const providerDeletions = pgTable(
     clinicId: clinicRef(),
     provider: text().notNull(),
     providerCallId: text().notNull(),
-    /** patient_anonymized | recording_off */
+    /** patient_anonymized | recording_off | clinic_closed */
     reason: text().notNull(),
     attempts: integer().notNull().default(0),
     /** Error class and status only, never payloads. */
