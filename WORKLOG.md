@@ -20,7 +20,7 @@
 | Takip               | V0 + V1 production'da; demo klinikte açık                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Güvenlik            | Hız sınırları (Postgres), webhook tekrar koruması, CSP, kritik denetim kaydı, bileşik kiracı FK'leri, `pnpm audit` CI'da. 2026-10-08 denetimi ([PRELAUNCH-AUDIT-2026-10-08.md](docs/reviews/PRELAUNCH-AUDIT-2026-10-08.md)) sonrası: Better Auth HTTP uç noktaları kapalı (organizasyon silme kilitlenmesi giderildi), iptal/erteleme tekrar güvenli, arama ve randevu sınırları (`limits`), KVKK silmesi tüm numaralarda, Retell silme kuyruğu |
 | Gizli değerler      | **Rotasyon yapıldı (2026-10-09):** Neon production parolası yenilendi, dev dalı ayrı parolada, Retell anahtarı yenilendi ve eskisi silindi; hepsi doğrulandı. Kalan: yedek dalların silinmesi, ayrı dev Retell çalışma alanı, lokal sırlar ([SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md))                                                                                                                        |
-| Testler             | 848 Vitest testi (72 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da                                                                                                                                                                                                                                                                            |
+| Testler             | 879 Vitest testi (78 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da                                                                                                                                                                                                                                                                            |
 | İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı), `ALARM` logları; Sentry kodu hazır (DSN yok), uptime hesabı yok                                                                                                                                                                                                                                                                                                                              |
 | Lokal               | Neon **`dev`** dalı (ayrı parola); Retell **Recall Dev** çalışma alanı (ayrı anahtar ve kredi; production anahtarı lokalde yok); `pnpm dev` + `pnpm dev:tunnel`; E2E kendi bellek içi veritabanıyla                                                                                                                                                                                                                                             |
 | Karar günlüğü       | [HARDENING-2026-10.md](docs/HARDENING-2026-10.md) (Ekim 2026 sağlamlaştırma), [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                                                                                           |
@@ -76,6 +76,32 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-14 · Tam denetim eylem planı A1–A3, A6–A9 · FA-01, FA-02, FA-03, FA-09, FA-10, FA-11, FA-13, FA-14, FA-15, FA-25
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dallar:** her madde ayrı dal, önce başarısız test, CI yeşil sonra `main`'e fast-forward · **Commit'ler:** A1 `6b76887`+`a5e43a4`, A2 `50eded8`+`76689a3`, A3 `b23cb62`+`03d4a25`, A6 `50ea5b8`+`ff847a3`, A7 `a0ff432`+`d039731`, A8 `e5cf055`+`a2eb9be`, A9 `3a917f6`+`5c73da7`
+
+**Ne yapıldı**
+
+- A1: KVKK silmesi `booked_for_name` alanını da temizliyor (anahtarsız hata düzeltmesi; iki şemada test).
+- A2: telefon düzeltmesi eski numaranın arama ve geri arama notlarını dışa aktarma ve silmede tutuyor (zaten `PANEL_PATIENT_EDIT` arkasında; iki şemada test). 0020 provasında zaten kırık olan "alınmış numara reddedilir" testi yalnızca bugünkü şemaya bağlandı.
+- A3: erteleme "kimin adına" adını koruyor (anahtarsız hata düzeltmesi; iki şemada test).
+- A6: konsoldan klinik sınırları, `CONSOLE_LIMITS_EDIT` (kapalı); sınır tanımı tek yerde (`src/lib/contracts/platform.ts`).
+- A7: saatlik hatırlatma işi `job_runs`'a yazılıyor; `HOURLY_REMINDERS` açıkken `/api/health/jobs` ve Yayına hazırlık sayfası izliyor; sayfa 2FA politikasını ve oturum süresini gösteriyor.
+- A8: asistan senkronu başarısız olunca ve bilinmeyen/senkronsuz numaraya arama gelince `ALARM` (gelen aramada günde bir).
+- A9: kayıt kapalıyken `call_analyzed`'da kayıt bağlantısı temizleniyor; analizi gelmeyen aramalar `RECORDING_OFF_SWEEP` (kapalı) ile günlük işte kuyruğa alınıyor.
+- Karar günlüğü 121–127; yeni anahtarlar `.env.example`, DEPLOYMENT.md ve anahtar tablosunda.
+
+**Doğrulama**
+
+- Her birleştirmeden sonra: deploy başarılı, `/api/health` db ok, jobs 200, ajan spec `23dfd4f92bde`, production env 13 (yeni yok), migration 20.
+- 879 Vitest testi; `TEST_SCHEMA=p12-dropped` ile tam takım: 857 geçti, 4 bilinen atlama (A3 anında).
+
+**Açık kalanlar / dikkat**
+
+- A4 (konsol kullanıcısının 2FA sıfırlaması) ve A5 (konsol kullanıcısının kendini kliniğe eklemesi) ürün sahibinin kararını bekliyor.
+- A6 kartı tarayıcıda denenmedi: yerel test veritabanında konsol kullanıcısı yok.
+- Uyku sonrası bir test koşusu askıda kaldı; süreçler durduruldu ve kapı yeniden koşturuldu.
 
 ### 2026-10-12 · İki adımlı giriş (TOTP), kapalı anahtarla · 2FA 1–4, G-04/P-18
 
