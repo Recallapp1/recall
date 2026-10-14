@@ -20,7 +20,9 @@ export async function GET(request: Request) {
   const token = env().HEALTH_JOBS_TOKEN;
   const detailed = !token || secretMatches(request.headers.get("x-health-token") ?? "", token);
   try {
-    const jobs = await jobHealth(db(), new Date());
+    const jobs = await jobHealth(db(), new Date(), {
+      hourlyReminders: env().HOURLY_REMINDERS === true,
+    });
     const healthy = jobs.every((job) => job.healthy);
     const status = healthy ? "ok" : "late";
     return Response.json(detailed ? { status, jobs } : { status }, {

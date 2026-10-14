@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 
-import type { Database, Executor } from "../db";
+import type { Executor } from "../db";
 import { jobRunClinics, jobRuns } from "../db/schema";
 
 /**
@@ -12,13 +12,15 @@ import { jobRunClinics, jobRuns } from "../db/schema";
  * re-run repeats none.
  */
 
-export type JobName = "notifications" | "retention";
+export type JobName = "notifications" | "retention" | "reminders";
 export type RunStatus = "running" | "partial" | "succeeded" | "failed";
 
 /** A run that has not moved for this long was cut off (timeout, crash). */
 export const STALE_HEARTBEAT_MS = 10 * 60 * 1000;
 /** A job whose last good run is older than this missed its daily slot. */
 export const MAX_RUN_AGE_MS = 26 * 60 * 60 * 1000;
+/** The hourly reminders job (HOURLY_REMINDERS): two missed hours and a margin. */
+export const HOURLY_MAX_RUN_AGE_MS = 150 * 60 * 1000;
 /** Self-continuations per day, so a failure can never loop forever. */
 export const MAX_INVOCATIONS_PER_DAY = 10;
 
@@ -106,9 +108,21 @@ export interface JobHealth {
   problem: "never_succeeded" | "too_old" | "last_run_failed" | "stuck" | null;
 }
 
-/** The heartbeat behind /api/health/jobs (no personal data: times and states only). */
-export async function jobHealth(db: Database, now: Date): Promise<JobHealth[]> {
-  const jobs: JobName[] = ["notifications", "retention"];
+/**
+ * The heartbeat behind /api/health/jobs (no personal data: times and states
+ * only). With HOURLY_REMINDERS the hourly job is watched too: switched on
+ * without its cron entry, reminders would otherwise stop silently (FA-13).
+ */
+export async function jobHealth(
+  db: Executor,
+  now: Date,
+  options: { hourlyReminders?: boolean } = {},
+): Promise<JobHealth[]> {
+  const jobs: JobName[] = [
+    "notifications",
+    "retention",
+    ...(options.hourlyReminders ? (["reminders"] as const) : []),
+  ];
   const latest = await db
     .select({
       job: jobRuns.job,
@@ -142,7 +156,12 @@ export async function jobHealth(db: Database, now: Date): Promise<JobHealth[]> {
       now.getTime() - last.heartbeatAt.getTime() > STALE_HEARTBEAT_MS
     ) {
       problem = "stuck";
-    } else if (now.getTime() - good.getTime() > MAX_RUN_AGE_MS) problem = "too_old";
+    } else if (
+      now.getTime() - good.getTime() >
+      (job === "reminders" ? HOURLY_MAX_RUN_AGE_MS : MAX_RUN_AGE_MS)
+    ) {
+      problem = "too_old";
+    }
     return {
       job,
       healthy: problem === null,

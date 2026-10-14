@@ -14,6 +14,7 @@ import {
   voiceAgents,
   workingHours,
 } from "../db/schema";
+import { jobHealth } from "./job-runs";
 
 export type GoLiveState = "ok" | "warn" | "off";
 
@@ -47,7 +48,8 @@ const SWITCHES = [
 export async function goLiveChecks(
   exec: Executor,
   clinicId: string,
-  config: Pick<Env, "SMS_SENDING_ENABLED" | "SMS_PROVIDER" | (typeof SWITCHES)[number]["key"]>,
+  config: Pick<Env, "SMS_SENDING_ENABLED" | "SMS_PROVIDER" | (typeof SWITCHES)[number]["key"]> &
+    Partial<Pick<Env, "PANEL_TWO_FACTOR" | "PANEL_SESSION_HOURS">>,
 ): Promise<{ checks: GoLiveCheck[]; switches: { label: string; on: boolean }[] }> {
   const total = async (query: Promise<{ value: number }[]>) => (await query)[0]?.value ?? 0;
   const [clinic] = await exec
@@ -120,6 +122,30 @@ export async function goLiveChecks(
         queued === 0 ? "Bekleyen silme yok" : `${queued} kayıt sağlayıcıda silinmeyi bekliyor`,
     },
   ];
-  const switches = SWITCHES.map(({ key, label }) => ({ label, on: config[key] === true }));
+  if (config.HOURLY_REMINDERS === true) {
+    const [hourly] = await jobHealth(exec, new Date(), { hourlyReminders: true }).then((jobs) =>
+      jobs.filter((job) => job.job === "reminders"),
+    );
+    checks.push({
+      label: "Saatlik hatırlatmalar",
+      state: hourly?.healthy ? "ok" : "warn",
+      detail: hourly?.healthy
+        ? "Saatlik iş çalışıyor"
+        : "Saatlik iş son 2,5 saatte çalışmadı: vercel.json'daki saatlik cron kaydı eksik olabilir; hatırlatma gitmez",
+    });
+  }
+  const policy = config.PANEL_TWO_FACTOR ?? "off";
+  const sessionHours = config.PANEL_SESSION_HOURS;
+  const switches = [
+    ...SWITCHES.map(({ key, label }) => ({ label, on: config[key] === true })),
+    {
+      label: `İki adımlı giriş: ${policy === "off" ? "kapalı" : policy}`,
+      on: policy !== "off",
+    },
+    {
+      label: `Panel oturum süresi: ${sessionHours === undefined ? "7 gün" : `${sessionHours} saat`}`,
+      on: sessionHours !== undefined,
+    },
+  ];
   return { checks, switches };
 }

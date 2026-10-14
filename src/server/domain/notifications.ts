@@ -237,6 +237,8 @@ export async function runHourlyReminders(
   log: (failure: { clinicId: string; error: unknown }) => void = () => {},
 ): Promise<{ clinics: number; planned: number; tooLate: number; failedClinics: number }> {
   const result = { clinics: 0, planned: 0, tooLate: 0, failedClinics: 0 };
+  // Recorded like the daily jobs, so /api/health/jobs notices a missing hourly run.
+  const run = await beginRun(db, "reminders", deps.now);
   const rows = await db
     .select({
       id: clinics.id,
@@ -260,6 +262,7 @@ export async function runHourlyReminders(
       log({ clinicId: row.id, error });
     }
   }
+  await endRun(db, run.id, result.failedClinics > 0 ? "failed" : "succeeded", result, deps.now);
   return result;
 }
 
