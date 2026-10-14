@@ -923,6 +923,40 @@ describe("repeated change requests", () => {
   });
 });
 
+describe("recording turned off during a call (G-15, full audit FA-15)", () => {
+  it("call_analyzed with recording off clears a link stored while it was on", async () => {
+    const toggled = await createTestClinic(db);
+    const event = (name: string) =>
+      signedRequest({
+        event: name,
+        call: {
+          call_id: "call_toggled",
+          agent_id: toggled.agentId,
+          call_type: "web_call",
+          recording_url: "https://example.invalid/toggled.wav",
+          duration_ms: 60_000,
+        },
+      });
+    await handleCallEvent(await event("call_ended"), deps());
+    const stored = async () =>
+      (await db.select().from(calls).where(eq(calls.providerCallId, "call_toggled")))[0]!;
+    expect((await stored()).recordingUrl).toBe("https://example.invalid/toggled.wav");
+
+    await db
+      .update(clinics)
+      .set({ settings: { assistant: { recordCalls: false } } })
+      .where(eq(clinics.id, toggled.ctx.clinic.id));
+    await handleCallEvent(await event("call_analyzed"), deps());
+
+    expect((await stored()).recordingUrl).toBeNull();
+    const [queued] = await db
+      .select()
+      .from(providerDeletions)
+      .where(eq(providerDeletions.providerCallId, "call_toggled"));
+    expect(queued).toMatchObject({ reason: "recording_off" });
+  });
+});
+
 describe("provider deletion queue", () => {
   it("keeps a failed deletion queued for the daily retry (P-10)", async () => {
     const quiet = await createTestClinic(db, {
