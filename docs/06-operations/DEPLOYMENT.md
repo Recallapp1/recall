@@ -112,10 +112,16 @@ Kaynak gerçek: [`.env.example`](../../.env.example) ve [`src/lib/env.ts`](../..
 `package.json`:
 
 ```json
-"vercel-build": "pnpm db:migrate && next build"
+"vercel-build": "drizzle-kit migrate && next build && pnpm voice:sync --existing --soft"
 ```
 
-Vercel, `vercel-build` script'i varsa onu çalıştırır. Migration'lar **geriye dönük uyumlu** yazılır (önce kolon ekle, kodu deploy et, sonra eski kolonu kaldır), çünkü deploy sırasında eski sürüm hâlâ trafik alıyor olabilir.
+Vercel, `vercel-build` script'i varsa onu çalıştırır. Sıra ve sonuçları (tam denetim FA-05):
+
+1. **`drizzle-kit migrate`** production veritabanına, build'den **önce** uygulanır. Build sonra düşerse veritabanı canlı koddan bir adım ileridedir; bu yüzden migration'lar **ekleyici ve geriye dönük uyumlu** yazılır (önce kolon ekle, kodu deploy et, sonra eski kolonu kaldır).
+2. **`next build`**.
+3. **`voice:sync --existing --soft`** mevcut Retell ajanlarına yeni prompt ve tool tanımını **yeni deploy yayına girmeden önce** gönderir. Değişmeyen tanım gönderilmez (spec özeti). Hata build'i durdurmaz, yalnızca uyarı yazar: ajan eski tanımda kalır.
+
+Yayına giriş (promotion) bu adımlardan sonra olur. Senkron başarılı olup yayına giriş başarısız olursa, ya da sonradan aşağıdaki "Promote" ile eski deploy'a dönülürse, **ajanlar yeni tanımda, kod eskide kalır**.
 
 ## Yayın süreci (2026-10-08'den beri: dal tabanlı)
 
@@ -134,7 +140,15 @@ Acil düzeltmede de aynı yol izlenir (CI yaklaşık 10 dakika); daha hızlı ge
 
 ## Geri alma
 
-Vercel → Deployments → önceki deploy → **Promote to Production** (anında). DB migration'ı geri almak gerekiyorsa ters migration yazılır; Neon'un point-in-time restore özelliği son çaredir.
+**Kod geri alma, asistanı geri almaz** (FA-05). Retell ajanları build sırasında `voice:sync` ile güncellenir; Vercel'de önceki deploy'u **Promote to Production** ile yayına almak build çalıştırmaz, ajanlar son build'in tanımında kalır.
+
+| Değişiklik                                                                        | Geri alma yolu                                                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prompt, tool tanımı veya argümanı, ajan ayarı (ör. `VOICE_PROMPT_*`, tool şeması) | Hatalı commit'i `git revert` ile geri al, dal akışıyla `main`'e birleştir: yeni build hem kodu hem ajanları eski tanıma döndürür. Acilse önce "Promote" ile kodu döndür, ardından aynı revert'i birleştir; arada ajan yeni tanımdadır. Anahtar ile açılmış davranışta önce anahtarı kaldırıp yeniden deploy etmek yeterli |
+| Yalnızca uygulama kodu (ajan tanımı değişmedi)                                    | Vercel → Deployments → önceki deploy → **Promote to Production** (anında); sonra revert'i dal akışıyla birleştir                                                                                                                                                                                                          |
+| Migration                                                                         | Ters migration yazılır ve dal akışıyla birleştirilir; Neon'un zaman içinde geri yükleme özelliği son çaredir ([BACKUP-RESTORE.md](BACKUP-RESTORE.md))                                                                                                                                                                     |
+
+Geri almadan sonra: build READY, `/api/health`, `/api/health/jobs`, konsolda kliniklerin asistan durumu **Güncel** (`voice_agents.status = synced`) ve beklenen spec özeti.
 
 ## Vercel Cron
 

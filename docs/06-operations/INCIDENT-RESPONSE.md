@@ -54,7 +54,7 @@ _2026-10-09 (denetim C3). Pilot dönemi için; ekip büyüdükçe roller ayrıl�
 ### Vercel kesintisi
 
 - Belirti: site ve webhook'lar erişilemez.
-- Geçici çözüm: Vercel durum sayfası; kötü bir deploy ise Deployments → önceki deploy → **Promote to Production**.
+- Geçici çözüm: Vercel durum sayfası; kötü bir deploy ise Deployments → önceki deploy → **Promote to Production**. Bu asistanın prompt ve tool tanımını geri almaz: deploy ajan tanımını değiştirdiyse revert commit'i birleştirilir ([DEPLOYMENT.md → Geri alma](DEPLOYMENT.md#geri-alma)).
 
 ### Veri ihlali şüphesi (KVKK)
 
