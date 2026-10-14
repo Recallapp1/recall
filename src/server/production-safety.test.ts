@@ -55,6 +55,8 @@ const ADDED_COLUMNS: Record<string, string[]> = {
   "0017_appointment_booked_for": ['ALTER TABLE "appointments" ADD COLUMN "booked_for_name" text;'],
   // Two-step sign-in (docs/proposals/2FA-TOTP): nullable, so no table rewrite.
   "0019_two_factor": ['ALTER TABLE "users" ADD COLUMN "two_factor_enabled" boolean DEFAULT false;'],
+  // Per-call latency (CALL_LATENCY_STORE): nullable, written only with the switch on.
+  "0020_call_latency": ['ALTER TABLE "calls" ADD COLUMN "latency" jsonb;'],
 };
 
 /**
@@ -370,7 +372,7 @@ describe("unique patient-number index (P-12)", () => {
     expect(relying).toEqual([]);
   });
 
-  it("migration 0019 is the two-step sign-in table, not the patient-number change (now 0020)", () => {
+  it("migration 0019 is the two-step sign-in table, not the patient-number change (planned as 0021; 0020 is call latency)", () => {
     const twoFactor = readFileSync(join("drizzle", "0019_two_factor.sql"), "utf8");
     expect(dropsPatientNumberIndex(twoFactor)).toBe(false);
     expect(twoFactor).not.toMatch(/DROP/i);

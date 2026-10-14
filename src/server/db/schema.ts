@@ -25,6 +25,7 @@ import {
   APPOINTMENT_STATUSES,
 } from "../../lib/contracts/appointment";
 import { CALL_OUTCOMES } from "../../lib/contracts/call";
+import type { CallLatency } from "../../lib/contracts/call-latency";
 import {
   FOLLOW_UP_INTERVAL_UNITS,
   FOLLOW_UP_STATES,
@@ -481,6 +482,8 @@ export const calls = pgTable(
     transcript: text(),
     recordingUrl: text(),
     costUsd: numeric({ precision: 10, scale: 4 }),
+    /** Provider-reported latency per component in ms (CALL_LATENCY_STORE); null when not stored. */
+    latency: jsonb().$type<CallLatency>(),
     /** Post-call flags (CALL_FLAGS); null until checked, empty when nothing was found. */
     flags: text().array(),
     flaggedAt: timestamp({ withTimezone: true }),

@@ -74,7 +74,7 @@ Ayrıntılar: [ESCALATION.md](ESCALATION.md)
 | Tool webhook süresi        | Hedef < 300 ms: aynı bölge, indeksli sorgular, soğuk başlatma yok (Fluid Compute)              |
 | TTS streaming              | Retell varsayılanı                                                                             |
 
-Ölçüm (hedef, henüz yok): Retell'in raporladığı gecikmeler (`latency`: ASR, LLM, TTS) bugün saklanmıyor; gerçek aramada Retell panelinden okunur. Bkz. [MONITORING.md](../06-operations/MONITORING.md).
+Ölçüm: Retell'in `call_ended` olayında raporladığı gecikmeler (uçtan uca, ASR, LLM, TTS; p50, p90, max) `CALL_LATENCY_STORE` açıkken `calls.latency` kolonuna yazılır (kapalıyken saklanmaz; Retell panelinden okunur). İzleme panosu henüz yok. Bkz. [MONITORING.md](../06-operations/MONITORING.md).
 
 ## Durum yönetimi
 

@@ -141,6 +141,13 @@
       "when": 1791795403317,
       "tag": "0019_two_factor",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791988114191,
+      "tag": "0020_call_latency",
+      "breakpoints": true
     }
   ]
 }

@@ -70,20 +70,20 @@ Pass bar for starting the pilot: C1–C11 pass; C13 recorded and accepted by you
 
 ## D. Switch enabling order (with verification after each)
 
-| Step | Switch                                                            | When                                            | Verify after redeploy                                                                 |
-| ---- | ----------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
-| D1   | `POST_CALL_FLAGS`, `VOICE_TOOL_IDEMPOTENCY`                       | Now (callers do not hear them)                  | `/api/health` ok; after C1, a `tool_requests` row and `calls.flagged_at` set          |
-| D2   | `PANEL_GO_LIVE_CHECK`, `PANEL_LIMITS_VIEW`                        | Now                                             | Pages open for an owner, 403/404 for staff                                            |
-| D3   | `AUDIT_STRICT`, `CALL_REVIEW`, `TEST_CALL_FLAG`                   | Before the first clinic                         | No `ALARM audit.critical_write_failed`; report box on a call page                     |
-| D4   | `TWO_FACTOR_RESET_EMAILS` then `PANEL_TWO_FACTOR=required-admins` | After A4                                        | Owner sent to `/iki-adim`; sign-in asks for a code; reset button only for your e-mail |
-| D5   | `PANEL_PATIENT_EDIT`                                              | **After A2**                                    | Correct a test patient's phone; export still lists the old calls                      |
-| D6   | `VOICE_SHARED_NUMBER_CHECK`                                       | **After A1 + A3**, after C1–C4                  | `booked_for_name` filled; reschedule keeps it; erasure clears it                      |
-| D7   | `VOICE_TOOL_FAILSAFE`                                             | After C12 on a dev agent                        | Log `retell.tool.unavailable` only on failures                                        |
-| D8   | `PANEL_SESSION_HOURS=12`                                          | If the clinic shares a reception PC             | New session cookie lifetime 12 h                                                      |
-| D9   | Option A, hardening, model                                        | After evaluation stage 2                        | New `spec_hash`; test call                                                            |
-| D10  | `DELETION_QUEUE_HOURLY`, `HOURLY_REMINDERS`                       | After B5 and A7, with the `vercel.json` entries | Route answers counts; reminders hourly; jobs health includes the hourly job           |
-| D11  | `SMS_SENDING_ENABLED`                                             | After B9 (Netgsm + İYS) and A11                 | A `sent` notification row with provider `netgsm`                                      |
-| —    | `PATIENTS_PER_NAME`                                               | Defer (needs migration 0020 decision)           | —                                                                                     |
+| Step | Switch                                                            | When                                             | Verify after redeploy                                                                 |
+| ---- | ----------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| D1   | `POST_CALL_FLAGS`, `VOICE_TOOL_IDEMPOTENCY`                       | Now (callers do not hear them)                   | `/api/health` ok; after C1, a `tool_requests` row and `calls.flagged_at` set          |
+| D2   | `PANEL_GO_LIVE_CHECK`, `PANEL_LIMITS_VIEW`                        | Now                                              | Pages open for an owner, 403/404 for staff                                            |
+| D3   | `AUDIT_STRICT`, `CALL_REVIEW`, `TEST_CALL_FLAG`                   | Before the first clinic                          | No `ALARM audit.critical_write_failed`; report box on a call page                     |
+| D4   | `TWO_FACTOR_RESET_EMAILS` then `PANEL_TWO_FACTOR=required-admins` | After A4                                         | Owner sent to `/iki-adim`; sign-in asks for a code; reset button only for your e-mail |
+| D5   | `PANEL_PATIENT_EDIT`                                              | **After A2**                                     | Correct a test patient's phone; export still lists the old calls                      |
+| D6   | `VOICE_SHARED_NUMBER_CHECK`                                       | **After A1 + A3**, after C1–C4                   | `booked_for_name` filled; reschedule keeps it; erasure clears it                      |
+| D7   | `VOICE_TOOL_FAILSAFE`                                             | After C12 on a dev agent                         | Log `retell.tool.unavailable` only on failures                                        |
+| D8   | `PANEL_SESSION_HOURS=12`                                          | If the clinic shares a reception PC              | New session cookie lifetime 12 h                                                      |
+| D9   | Option A, hardening, model                                        | After evaluation stage 2                         | New `spec_hash`; test call                                                            |
+| D10  | `DELETION_QUEUE_HOURLY`, `HOURLY_REMINDERS`                       | After B5 and A7, with the `vercel.json` entries  | Route answers counts; reminders hourly; jobs health includes the hourly job           |
+| D11  | `SMS_SENDING_ENABLED`                                             | After B9 (Netgsm + İYS) and A11                  | A `sent` notification row with provider `netgsm`                                      |
+| —    | `PATIENTS_PER_NAME`                                               | Defer (needs the P-12 migration (0021) decision) | —                                                                                     |
 
 ## E. Critical path to a supervised pilot
 

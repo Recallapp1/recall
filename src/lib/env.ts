@@ -66,6 +66,8 @@ const envSchema = z.object({
    * medical-risk mentions for the panel (audit F-03, F-04). Off by default.
    */
   POST_CALL_FLAGS: optionalFlag,
+  /** "true": store the provider's per-call latency (p50/p90/max per component). Off by default. */
+  CALL_LATENCY_STORE: optionalFlag,
   /**
    * "true": a number with appointments booked for different people counts as
    * shared; changing or revealing one needs name, date and time even with

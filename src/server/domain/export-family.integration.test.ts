@@ -120,7 +120,7 @@ async function exported(db: Database, clinic: TestClinic, patientId: string) {
   };
 }
 
-describe("export on a number shared by family members (after migration 0020)", () => {
+describe("export on a number shared by family members (after the P-12 migration (0021))", () => {
   it("holds each patient's own calls and notes; unattributed ones are left out and counted", async () => {
     const db = dropped;
     const clinic = await createTestClinic(db);

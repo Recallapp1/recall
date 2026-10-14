@@ -30,7 +30,7 @@ import { allow } from "../../../security/rate-limits";
 import { buildCallVariables } from "../../prompt";
 import { runTool } from "../../tools";
 import { RETELL_PROVIDER } from "./config";
-import { callEvent, functionCall, inboundWebhook, type RetellCall } from "./schemas";
+import { callEvent, functionCall, inboundWebhook, retellLatency, type RetellCall } from "./schemas";
 
 export interface RetellHandlerDeps {
   db: Database;
@@ -49,6 +49,8 @@ export interface RetellHandlerDeps {
    * (database down) answers an honest ok: false instead of HTTP 500. Unset means off.
    */
   toolFailsafe?: boolean;
+  /** CALL_LATENCY_STORE: keep the provider's per-call latency. Unset means off. */
+  storeLatency?: boolean;
   /** Dispatches one clinic's queued messages (locks, opt-out, window, caps). */
   dispatchClinic: (clinicId: string) => Promise<void>;
   /** Removes the call (audio included) from the provider. */
@@ -332,6 +334,7 @@ export async function handleCallEvent(request: Request, deps: RetellHandlerDeps)
       recordingUrl: ctx.settings.assistant.recordCalls ? call.recording_url : null,
       summary: call.call_analysis?.call_summary,
       costUsd: combinedCostCents != null ? combinedCostCents / 100 : null,
+      latency: deps.storeLatency ? retellLatency(call.latency) : null,
     });
   }
 

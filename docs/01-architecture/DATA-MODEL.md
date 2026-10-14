@@ -122,16 +122,18 @@ Bir güne birden fazla satır girilebilir (öğle arası = iki blok). Bir hekimi
 
 ### `calls`
 
-| Kolon                                  | Not                                                                                           |
-| -------------------------------------- | --------------------------------------------------------------------------------------------- |
-| provider, provider_call_id             | `retell`, unique                                                                              |
-| from_number, to_number                 |                                                                                               |
-| started_at, ended_at, duration_seconds |                                                                                               |
-| ended_reason                           | Sağlayıcıdan gelen                                                                            |
-| outcome                                | `booked`, `cancelled`, `rescheduled`, `info`, `transferred`, `callback`, `abandoned`, `other` |
-| summary, transcript                    | Hassas veri, saklama politikasına tabi                                                        |
-| recording_url                          |                                                                                               |
-| cost_usd                               | numeric                                                                                       |
+| Kolon                                  | Not                                                                                                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| provider, provider_call_id             | `retell`, unique                                                                                             |
+| from_number, to_number                 |                                                                                                              |
+| started_at, ended_at, duration_seconds |                                                                                                              |
+| ended_reason                           | Sağlayıcıdan gelen                                                                                           |
+| outcome                                | `booked`, `cancelled`, `rescheduled`, `info`, `transferred`, `callback`, `abandoned`, `other`                |
+| summary, transcript                    | Hassas veri, saklama politikasına tabi                                                                       |
+| recording_url                          |                                                                                                              |
+| cost_usd                               | numeric                                                                                                      |
+| flags, flagged_at                      | Arama sonrası işaretler (`POST_CALL_FLAGS`)                                                                  |
+| latency                                | jsonb, uçtan uca/ASR/LLM/TTS için p50, p90, max (ms); yalnızca `CALL_LATENCY_STORE` açıkken (migration 0020) |
 
 ### `callback_requests`: geri aranacaklar
 

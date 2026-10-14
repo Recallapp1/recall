@@ -12,7 +12,7 @@ import { updatePatientIdentity } from "./panel";
 /*
  * Phone correction (PANEL_PATIENT_EDIT) keeps the patient's history (full
  * audit FA-02): calls and callback notes from the old number stay reachable
- * by export and erasure. Run on today's schema and after migration 0020.
+ * by export and erasure. Run on today's schema and after the P-12 migration (0021).
  */
 
 const NOW = new Date("2026-10-04T09:00:00Z");
@@ -107,7 +107,7 @@ async function noteRow(db: Database, id: string) {
 
 const schemas = [
   ["today's schema", () => today],
-  ["after migration 0020", () => dropped],
+  ["after the P-12 migration (0021)", () => dropped],
 ] as const;
 
 describe.each(schemas)("phone correction keeps the history (%s)", (_, database) => {
@@ -167,7 +167,7 @@ describe.each(schemas)("phone correction keeps the history (%s)", (_, database) 
   });
 });
 
-describe("phone correction on a number shared by family members (after migration 0020)", () => {
+describe("phone correction on a number shared by family members (after the P-12 migration (0021))", () => {
   it("leaves the number's calls and notes with the number; the family's own calls stay theirs", async () => {
     const db = dropped;
     const clinic = await createTestClinic(db);

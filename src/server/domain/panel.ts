@@ -957,7 +957,7 @@ async function keepHistoryOnNewPhone(
 /**
  * Calls from a shared number that belong only to other patients on it (P-12):
  * linked to one of them and not to the patient being erased. Empty while the
- * number has one patient, which is always the case before migration 0020.
+ * number has one patient, which is always the case before the P-12 migration (0021).
  */
 async function familyCallIds(
   tx: Executor,

@@ -16,7 +16,7 @@ import {
  * A move keeps who the booking was for (full audit FA-03): with
  * VOICE_SHARED_NUMBER_CHECK the family member's own name is what a caller
  * must give, before and after a reschedule. Run on today's schema and after
- * migration 0020.
+ * the P-12 migration (0021).
  */
 
 const NOW = new Date("2026-10-04T09:00:00Z");
@@ -62,7 +62,7 @@ function book(db: Database, clinic: TestClinic, time: string, name: string) {
 
 const schemas = [
   ["today's schema", () => today],
-  ["after migration 0020", () => dropped],
+  ["after the P-12 migration (0021)", () => dropped],
 ] as const;
 
 describe.each(schemas)("reschedule keeps the booked-for name (%s)", (_, database) => {

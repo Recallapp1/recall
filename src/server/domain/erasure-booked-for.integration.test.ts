@@ -11,7 +11,7 @@ import { anonymizePatient } from "./panel";
 /*
  * KVKK erasure and the booked-for name (full audit FA-01): the name of the
  * person a booking was for is personal data of the erased record and goes
- * with it. Run on today's schema and on the schema after migration 0020.
+ * with it. Run on today's schema and on the schema after the P-12 migration (0021).
  */
 
 const NOW = new Date("2026-10-04T09:00:00Z");
@@ -69,7 +69,7 @@ async function bookedFor(db: Database, appointmentId: string) {
 
 const schemas = [
   ["today's schema", () => today],
-  ["after migration 0020", () => dropped],
+  ["after the P-12 migration (0021)", () => dropped],
 ] as const;
 
 describe.each(schemas)("erasure clears the booked-for name (%s)", (_, database) => {
@@ -115,7 +115,7 @@ describe.each(schemas)("erasure clears the booked-for name (%s)", (_, database) 
 
     expect(await bookedFor(db, parent.appointment.id)).toBeNull();
     if (separateRecords) {
-      // After 0020 the child has a record of their own: untouched.
+      // After the P-12 migration (0021) the child has a record of their own: untouched.
       expect(child.appointment.patientId).not.toBe(parent.appointment.patientId);
       expect(await bookedFor(db, child.appointment.id)).toBe(child.appointment.bookedForName);
     } else {

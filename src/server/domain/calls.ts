@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { personName } from "@/lib/names";
+import type { CallLatency } from "@/lib/contracts/call-latency";
 import { normalizePhone } from "@/lib/phone";
 
 import type { Executor } from "../db";
@@ -89,6 +90,7 @@ export interface CallReport {
   transcript?: string | null;
   recordingUrl?: string | null;
   costUsd?: number | null;
+  latency?: CallLatency | null;
 }
 
 const ABANDONED_UNDER_SECONDS = 10;
@@ -108,6 +110,7 @@ export async function completeCall(exec: Executor, call: Call, report: CallRepor
   if (report.transcript) updates.transcript = report.transcript;
   if (report.recordingUrl) updates.recordingUrl = report.recordingUrl;
   if (report.costUsd != null) updates.costUsd = report.costUsd.toFixed(4);
+  if (report.latency) updates.latency = report.latency;
 
   if (Object.keys(updates).length > 0) {
     await exec

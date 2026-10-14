@@ -131,7 +131,7 @@ async function queued(db: Database, clinic: TestClinic) {
   return new Set(rows.map((row) => row.providerCallId));
 }
 
-describe("erasure on a number shared by family members (after migration 0020)", () => {
+describe("erasure on a number shared by family members (after the P-12 migration (0021))", () => {
   it("erases only the patient's own calls, recordings, callback notes and provider copies", async () => {
     const db = dropped;
     const clinic = await createTestClinic(db);

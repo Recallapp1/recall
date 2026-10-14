@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { CallLatency } from "@/lib/contracts/call-latency";
+
 /**
  * Retell request payloads. Lenient on purpose (loose objects, optional
  * fields): we validate what we read and ignore the rest, so additive changes
@@ -26,7 +28,29 @@ export const retellCall = z.looseObject({
   recording_url: z.string().nullish(),
   call_analysis: z.looseObject({ call_summary: z.string().nullish() }).nullish(),
   call_cost: z.looseObject({ combined_cost: z.number().nullish() }).nullish(),
+  // Read leniently by retellLatency(): an odd shape must not reject the event.
+  latency: z.unknown().optional(),
 });
+
+const latencyStats = z.looseObject({
+  p50: z.number().nullish(),
+  p90: z.number().nullish(),
+  max: z.number().nullish(),
+});
+
+/** Retell's `latency` reduced to p50/p90/max of the components we track; null if absent or unreadable. */
+export function retellLatency(raw: unknown): CallLatency | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const result: CallLatency = {};
+  for (const key of ["e2e", "asr", "llm", "tts"] as const) {
+    const parsed = latencyStats.safeParse((raw as Record<string, unknown>)[key]);
+    if (!parsed.success) continue;
+    const { p50, p90, max } = parsed.data;
+    if (p50 == null && p90 == null && max == null) continue;
+    result[key] = { p50: p50 ?? null, p90: p90 ?? null, max: max ?? null };
+  }
+  return Object.keys(result).length > 0 ? result : null;
+}
 
 export const inboundWebhook = z.looseObject({
   event: z.literal("call_inbound"),

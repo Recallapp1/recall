@@ -839,7 +839,7 @@ describe("patient correction (KVKK m.11, G-02)", () => {
     ).rejects.toBeInstanceOf(ForbiddenSignal);
 
     actAs(users.owner);
-    // After migration 0020 (TEST_SCHEMA=p12-dropped) a shared number is allowed:
+    // After the P-12 migration (0021) (TEST_SCHEMA=p12-dropped) a shared number is allowed:
     // family members keep their own records, so this refusal exists only today.
     if (process.env.TEST_SCHEMA !== "p12-dropped") {
       expect(
