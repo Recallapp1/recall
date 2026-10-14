@@ -27,9 +27,9 @@ sequenceDiagram
     V->>H: Bilgileri geri okur, teyit ister
     V->>R: tool: book_appointment(...)
     R->>DB: Randevu oluştur (çakışma kontrolü, transaction)
-    R->>S: Onay SMS'i
+    R->>S: Onay SMS'i (SMS açıksa; bugün kapalı)
     R-->>V: OK + randevu özeti
-    V->>H: "Randevunuz oluşturuldu, SMS ile bilgi gönderdik."
+    V->>H: "Randevunuz oluşturuldu." (SMS gerçekten gönderilecekse bunu da söyler)
     V->>R: call_ended / call_analyzed (transkript, özet, süre)
     R->>DB: Arama kaydı
 ```
@@ -44,13 +44,13 @@ sequenceDiagram
 6. **Kimlik:** Arayan numara (caller ID) ile hasta aranır. Kayıt yoksa ad soyad sorulur. Numara gizliyse telefon numarası istenir.
 7. **Teyit:** Hizmet, hekim, gün, saat ve isim geri okunur. Hasta onaylamadan kayıt yapılmaz.
 8. **Kayıt:** `book_appointment`. Slot bu arada dolduysa yeni seçenek sunulur.
-9. **Kapanış:** SMS bilgisi, "Başka bir konuda yardımcı olabilir miyim?"
+9. **Kapanış:** "Başka bir konuda yardımcı olabilir miyim?" SMS'ten yalnızca SMS kanalı gerçekten gönderiyorsa söz edilir (sonuç iddiası kuralı).
 
 ## 2. Randevu iptali
 
 1. Arayan numara ile hastanın **gelecekteki** randevuları bulunur (`find_appointments`).
 2. Birden fazla randevu varsa hangisi olduğu sorulur.
-3. Teyit alınır ve `cancel_appointment` çağrılır. İptal SMS'i gönderilir.
+3. Teyit alınır ve `cancel_appointment` çağrılır. SMS açıksa iptal SMS'i gönderilir.
 4. Asistan yeniden randevu teklif eder: "Başka bir güne almak ister misiniz?"
 5. Kliniğin iptal kuralı varsa (ör. "24 saatten az kala iptal edilemez") asistan bunu iletir ve isteği geri arama notu olarak bırakır.
 

@@ -2,7 +2,7 @@
 
 **Kliniğinizin telefonlarını 7/24 açan, randevu alan Türkçe sesli asistan.**
 
-Hasta kliniği aradığında karşısında, kliniğe özel yapılandırılmış bir yapay zekâ asistanı bulur. Asistan uygun saatleri kontrol eder, randevuyu oluşturur, SMS ile onaylar ve randevuyu kliniğin paneline düşürür. Sekreterin telefonda geçirdiği zaman, gerçekten insan gerektiren işlere kalır.
+Hasta kliniği aradığında karşısında, kliniğe özel yapılandırılmış bir yapay zekâ asistanı bulur. Asistan uygun saatleri kontrol eder, randevuyu oluşturur ve kliniğin paneline düşürür. SMS onayı ve hatırlatma hazır, ancak SMS sağlayıcısı (Netgsm, İYS) bağlanana kadar kapalı. Sekreterin telefonda geçirdiği zaman, gerçekten insan gerektiren işlere kalır.
 
 ## Hızlı başlangıç (lokal)
 

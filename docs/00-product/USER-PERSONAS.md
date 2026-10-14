@@ -36,7 +36,7 @@
 ## 5. Recall operasyon ekibi (iç kullanıcı)
 
 - **İhtiyaç:** Yeni klinikleri sisteme almak, numara bağlamak, sorunlu aramaları incelemek, maliyetleri izlemek.
-- **Not:** MVP'de ayrı bir admin paneli yok. Bu işler doğrudan veritabanı, seed betikleri, `pnpm voice:sync` ve Retell paneli üzerinden yürütülür. Yönetim konsolu F6'da gelir.
+- **Araç:** Recall konsolu (`/admin`, [ADR-010](../decisions/ADR-010-platform-console.md)): klinik açma, kontrol listesi, ekip, numaralar, asistan durumu, arama metrikleri; hasta verisi göstermez. Konsolun karşılamadığı işler (numaranın Retell'e aktarılması, bazı onarımlar) CLI betikleri ve Retell paneliyle yapılır.
 
 ## Panel rol eşlemesi
 

@@ -10,12 +10,15 @@
 
 ## SMS tipleri
 
-| Tip        | Tetikleyici                   | Şablon                                                                                                                                                             |
-| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Onay       | Randevu oluşturuldu           | `{{clinic}}: Sayın {{name}}, {{date}} {{time}} tarihli {{service}} randevunuz oluşturuldu. Adres: {{address}}. İptal/değişiklik için bu numarayı arayabilirsiniz.` |
-| İptal      | Randevu iptal edildi          | `{{clinic}}: {{date}} {{time}} tarihli randevunuz iptal edilmiştir. Yeni randevu için bizi arayabilirsiniz.`                                                       |
-| Erteleme   | Randevu ertelendi             | `{{clinic}}: Randevunuz {{date}} {{time}} olarak güncellenmiştir.`                                                                                                 |
-| Hatırlatma | Randevudan N saat önce (cron) | `{{clinic}}: Yarın {{time}}'de randevunuz bulunmaktadır. Gelemeyecekseniz lütfen bizi arayın.`                                                                     |
+Metinler kodda: `smsTemplates` (`src/server/notifications/sms.ts`). Hasta adı, hizmet ve tedavi yazılmaz (sağlık verisi; KVKK).
+
+| Tip                | Tetikleyici                        | Metin (örnek)                                                                                                                                     |
+| ------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Onay               | Randevu oluşturuldu                | `{{clinic}}: 20 Ekim Salı saat 10:00 için randevunuz oluşturuldu. Adres: {{address}}. Değişiklik için bu numarayı arayabilirsiniz.` (adres varsa) |
+| İptal              | Randevu iptal edildi               | `{{clinic}}: 20 Ekim Salı saat 10:00 randevunuz iptal edildi. Yeni randevu için bizi arayabilirsiniz.`                                            |
+| Erteleme           | Randevu ertelendi                  | `{{clinic}}: Randevunuz 20 Ekim Salı saat 10:00 olarak güncellendi.`                                                                              |
+| Hatırlatma         | Randevudan önce (günlük iş)        | `{{clinic}}: 20 Ekim Salı saat 10:00 randevunuzu hatırlatırız. Gelemeyecekseniz lütfen bizi arayın.`                                              |
+| Takip hatırlatması | Takip planında vakti gelen ziyaret | `{{clinic}}: Merhaba, takip ziyaretiniz için randevu planlamak üzere sizi bekliyoruz. Uygun bir zaman için bizi arayabilirsiniz.`                 |
 
 - Şablonlar 160 karakterin altında tutulur (Türkçe karakterler UCS-2 kodlamaya geçirir ve limiti 70'e düşürebilir; Netgsm'in Türkçe karakter desteği ile ölçülecek).
 - Gönderici adı (başlık): Recall'un onaylı başlığı veya kliniğin kendi başlığı (Faz 3).
