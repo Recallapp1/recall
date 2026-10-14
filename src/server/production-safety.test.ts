@@ -606,3 +606,36 @@ describe("product docs promise only what ships (full audit section 6.1)", () => 
     expect(read("docs/00-product/USER-PERSONAS.md")).not.toMatch(/ayrı bir admin paneli yok/);
   });
 });
+
+describe("status docs agree with each other and the repository (full audit section 6.1)", () => {
+  const read = (path: string) => readFileSync(path, "utf8");
+  const phaseMarks = (doc: string) =>
+    Object.fromEntries(
+      [...read(doc).matchAll(/^\| (F\d+) +\|[^|]+\| *([✅🟡⏳])/gmu)].map((m) => [m[1], m[2]]),
+    );
+
+  it("ROADMAP shows the same phase status as IMPLEMENTATION-PLAN", () => {
+    const plan = phaseMarks("docs/IMPLEMENTATION-PLAN.md");
+    const roadmap = phaseMarks("docs/00-product/ROADMAP.md");
+    expect(Object.keys(plan).length).toBeGreaterThan(8);
+    expect(roadmap).toEqual(plan);
+  });
+
+  it("the plan ticks the legal templates that exist as drafts and does not say main is unprotected", () => {
+    const plan = read("docs/IMPLEMENTATION-PLAN.md");
+    if (statSync("docs/legal-drafts/KVKK-AYDINLATMA-METNI.md", { throwIfNoEntry: false })) {
+      expect(plan).not.toMatch(/- \[ \] Aydınlatma metni şablonu/);
+    }
+    expect(plan).not.toMatch(/`main` koruması ürün ekibinde/);
+  });
+
+  it("the old onboarding page points to the current one", () => {
+    expect(read("docs/04-panel/ONBOARDING.md").slice(0, 600)).toContain(
+      "../07-sales/CLINIC-ONBOARDING.md",
+    );
+  });
+
+  it("the worklog does not call every migration add-only (0002 and 0013 are not)", () => {
+    expect(read("WORKLOG.md")).not.toMatch(/hepsi ekleyici/);
+  });
+});
