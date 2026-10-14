@@ -446,10 +446,27 @@ export async function cancelAppointment(
   if (status === "cancelled") return { ...owned, alreadyCancelled: true };
   assertCancellable(ctx, owned.startsAt, input.now);
 
-  await db
+  // Only while still active: a change made meanwhile (staff, another call) wins (FA-17).
+  const cancelled = await db
     .update(appointments)
     .set({ status: "cancelled", cancelledAt: input.now })
-    .where(and(eq(appointments.id, owned.id), eq(appointments.clinicId, ctx.clinic.id)));
+    .where(
+      and(
+        eq(appointments.id, owned.id),
+        eq(appointments.clinicId, ctx.clinic.id),
+        inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
+      ),
+    )
+    .returning({ id: appointments.id });
+  if (cancelled.length === 0) {
+    // The same request repeated at the same moment (provider retry) already cancelled it.
+    const [now] = await db
+      .select({ status: appointments.status })
+      .from(appointments)
+      .where(and(eq(appointments.id, owned.id), eq(appointments.clinicId, ctx.clinic.id)));
+    if (now?.status === "cancelled") return { ...owned, alreadyCancelled: true };
+    throw changedMeanwhile();
+  }
   await recomputePlansForAppointment(
     db,
     { clinicId: ctx.clinic.id, timeZone: ctx.clinic.timezone },
@@ -508,10 +525,19 @@ export async function rescheduleAppointment(
   try {
     // Atomic: the old appointment is only released if the new slot is secured.
     const newId = await db.transaction(async (tx) => {
-      await tx
+      // Only while still active: a second, simultaneous move finds it gone (FA-17).
+      const released = await tx
         .update(appointments)
         .set({ status: "cancelled", cancelledAt: input.now })
-        .where(and(eq(appointments.id, current.id), eq(appointments.clinicId, clinic.id)));
+        .where(
+          and(
+            eq(appointments.id, current.id),
+            eq(appointments.clinicId, clinic.id),
+            inArray(appointments.status, [...ACTIVE_APPOINTMENT_STATUSES]),
+          ),
+        )
+        .returning({ id: appointments.id });
+      if (released.length === 0) throw changedMeanwhile();
       const [created] = await tx
         .insert(appointments)
         .values({
@@ -540,6 +566,11 @@ export async function rescheduleAppointment(
     });
     return { previous: owned, appointment: await summarize(db, clinic, newId) };
   } catch (error) {
+    if (error instanceof DomainError && error.code === "APPOINTMENT_CHANGED") {
+      // The same move repeated at the same moment (provider retry) already made it.
+      const moved = await findMovedAppointment(db, ctx, owned.id, input);
+      if (moved) return { previous: owned, appointment: moved, alreadyRescheduled: true };
+    }
     if (isOverlapViolation(error)) {
       throw new DomainError("SLOT_UNAVAILABLE", "Bu saat az önce doldu.");
     }
@@ -561,6 +592,13 @@ function assertCancellable({ settings }: ClinicContext, startsAt: Date, now: Dat
 
 /** Statuses a caller's change request can find: active ones, and cancelled for repeats. */
 const CHANGEABLE: Appointment["status"][] = [...ACTIVE_APPOINTMENT_STATUSES, "cancelled"];
+
+function changedMeanwhile() {
+  return new DomainError(
+    "APPOINTMENT_CHANGED",
+    "Bu randevu az önce değişti; işlemi yapamadım. Klinik ekibimiz sizi geri arayabilir.",
+  );
+}
 
 function notFound() {
   return new DomainError("NOT_FOUND", "Bu numaraya kayıtlı böyle bir randevu bulamadım.");

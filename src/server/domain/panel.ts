@@ -407,15 +407,27 @@ export async function changeAppointmentStatus(
     throw new DomainError("INVALID_TRANSITION", "Bu randevunun durumu bu şekilde değiştirilemez.");
   }
 
-  await exec
+  // Only from the status just read: a change made meanwhile is not overwritten (FA-17).
+  const changed = await exec
     .update(appointments)
     .set({
       status: input.status,
       cancelledAt: input.status === "cancelled" ? input.now : null,
     })
     .where(
-      and(eq(appointments.clinicId, scope.clinicId), eq(appointments.id, input.appointmentId)),
+      and(
+        eq(appointments.clinicId, scope.clinicId),
+        eq(appointments.id, input.appointmentId),
+        eq(appointments.status, current.status),
+      ),
+    )
+    .returning({ id: appointments.id });
+  if (changed.length === 0) {
+    throw new DomainError(
+      "APPOINTMENT_CHANGED",
+      "Randevu bu sırada değişti. Sayfayı yenileyip tekrar deneyin.",
     );
+  }
   // A correction ("Gelmedi", "Tamamlandı") changes what the follow-up counts.
   await recomputePlansForAppointment(
     exec,

@@ -48,13 +48,17 @@ async function mergeSettings(
   clinicId: string,
   patch: (current: ReturnType<typeof parseClinicSettings>) => ClinicSettingsInput,
 ): Promise<void> {
-  const [row] = await exec
-    .select({ settings: clinics.settings })
-    .from(clinics)
-    .where(eq(clinics.id, clinicId));
-  if (!row) throw new DomainError("CLINIC_NOT_FOUND", "Klinik bulunamadı.");
-  const next = parseClinicSettings(patch(parseClinicSettings(row.settings)));
-  await exec.update(clinics).set({ settings: next }).where(eq(clinics.id, clinicId));
+  // Row lock: two saves at once (panel and console) both survive (FA-23).
+  await exec.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ settings: clinics.settings })
+      .from(clinics)
+      .where(eq(clinics.id, clinicId))
+      .for("update");
+    if (!row) throw new DomainError("CLINIC_NOT_FOUND", "Klinik bulunamadı.");
+    const next = parseClinicSettings(patch(parseClinicSettings(row.settings)));
+    await tx.update(clinics).set({ settings: next }).where(eq(clinics.id, clinicId));
+  });
 }
 
 /** Takip settings (panel, clinicSettings.update). */
