@@ -1,6 +1,6 @@
 # Klinik Paneli
 
-Rota kökü: `/panel`. Oturum gerektirir (Better Auth, Faz 2). Klinik = aktif organizasyon.
+Rota kökü: `/panel`. Oturum gerektirir (Better Auth). Rotalar Türkçedir (`src/app/panel`). Klinik = aktif organizasyon.
 
 ## Navigasyon
 
@@ -16,36 +16,36 @@ Bugün │ Takvim │ Randevular │ Aramalar │ Hastalar │ Geri aranacaklar 
 - Zaman çizelgesi: günün randevuları, hekim bazında.
 - "Yeni" etiketi: son girişten beri asistanın oluşturduğu randevular.
 
-### 2. Takvim (`/panel/calendar`)
+### 2. Takvim (`/panel/takvim`)
 
 - Gün / hafta görünümü, hekim kolonları.
 - Randevuya tıklayınca detay paneli (hasta, hizmet, kaynak, ilgili arama özeti).
 - Boş slota tıklayınca manuel randevu oluşturma (`source=panel`).
 - Sürükle-bırak erteleme (V1).
 
-### 3. Randevular (`/panel/appointments`)
+### 3. Randevular (`/panel/randevular`, detay `/panel/randevular/[id]`)
 
 - Tablo: tarih, saat, hasta, hizmet, hekim, durum, kaynak.
 - Filtre: tarih aralığı, hekim, durum, kaynak.
 - Aksiyonlar: onayla, iptal et, gelmedi, tamamlandı.
 
-### 4. Aramalar (`/panel/calls`)
+### 4. Aramalar (`/panel/aramalar`, detay `/panel/aramalar/[id]`)
 
 - Tablo: zaman, arayan (maskeli), süre, sonuç (`outcome`), özet.
 - Detay: özet, transkript, ses kaydı oynatıcı (izin ve saklama süresi dahilinde), bağlı randevu.
 
-### 5. Hastalar (`/panel/patients`)
+### 5. Hastalar (`/panel/hastalar`, detay `/panel/hastalar/[id]`)
 
 - Arama: isim, telefon.
 - Detay: iletişim, randevu geçmişi, aramalar, notlar.
 - KVKK: "Hastayı anonimleştir" aksiyonu (owner ve admin).
 
-### 6. Geri aranacaklar (`/panel/callbacks`)
+### 6. Geri aranacaklar (`/panel/geri-arama`)
 
 - Açık talepler listesi: isim, telefon, sebep, zaman.
 - "Tamamlandı" işareti.
 
-### 7. Ayarlar (`/panel/settings`)
+### 7. Ayarlar (`/panel/ayarlar`)
 
 | Sekme             | İçerik                                                                         | Rol   |
 | ----------------- | ------------------------------------------------------------------------------ | ----- |
@@ -57,6 +57,13 @@ Bugün │ Takvim │ Randevular │ Aramalar │ Hastalar │ Geri aranacaklar 
 | Randevu kuralları | Slot aralığı, minimum ön süre, en fazla ileri gün, iptal kuralı                | admin |
 | Bildirimler       | SMS onay ve hatırlatma                                                         | admin |
 | Ekip              | Üyeler, davet, roller                                                          | owner |
+
+Ayarların alt sayfaları: `/panel/ayarlar/asistan`, `/panel/ayarlar/calisma-saatleri`, `/panel/ayarlar/hekimler`, `/panel/ayarlar/hizmetler`, `/panel/ayarlar/randevu-kurallari`, `/panel/ayarlar/tatiller`, `/panel/ayarlar/ekip`, `/panel/ayarlar/takip`, `/panel/ayarlar/sinirlar`, `/panel/ayarlar/denetim`, `/panel/ayarlar/yayina-hazirlik`. Bildirim (SMS) ayarları SMS gönderimi açılana kadar etkisizdir.
+
+### 8. Diğer ekranlar
+
+- Takip planları: `/panel/takip`, detay `/panel/takip/[id]`.
+- İlk kurulum: `/panel/baslangic`; birden çok kliniği olan kullanıcı için klinik seçimi: `/panel/klinik-sec`; kişisel tercihler: `/panel/tercihler`.
 
 ## Teknik notlar
 
