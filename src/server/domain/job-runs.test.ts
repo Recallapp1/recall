@@ -6,7 +6,7 @@ import { createTestClinic, createTestDb } from "@/test/db";
 import type { Database } from "../db";
 import * as schema from "../db/schema";
 import { jobHealth } from "./job-runs";
-import { runNotificationJob, type DispatchDeps } from "./notifications";
+import { runHourlyReminders, runNotificationJob, type DispatchDeps } from "./notifications";
 
 let db: Database;
 let close: () => Promise<void>;
@@ -121,5 +121,35 @@ describe("job heartbeat", () => {
     } finally {
       await fresh.close();
     }
+  });
+});
+
+describe("hourly reminders heartbeat (HOURLY_REMINDERS, full audit FA-13)", () => {
+  const T = new Date("2026-10-09T08:05:00Z");
+  const later = (minutes: number) => new Date(T.getTime() + minutes * 60_000);
+  const reminders = async (now: Date, hourlyReminders?: boolean) =>
+    (
+      await jobHealth(db, now, hourlyReminders === undefined ? undefined : { hourlyReminders })
+    ).find((job) => job.job === "reminders");
+
+  it("unset: the jobs list is unchanged (no reminders entry)", async () => {
+    expect(await reminders(T)).toBeUndefined();
+    expect(await reminders(T, false)).toBeUndefined();
+  });
+
+  it("on: never run is unhealthy, a run is healthy for two and a half hours, then too old", async () => {
+    expect(await reminders(T, true)).toMatchObject({ healthy: false, problem: "never_succeeded" });
+
+    await runHourlyReminders(db, deps(T));
+    const [run] = await db.select().from(schema.jobRuns).where(eq(schema.jobRuns.job, "reminders"));
+    expect(run).toMatchObject({ status: "succeeded" });
+
+    expect(await reminders(later(30), true)).toMatchObject({ healthy: true, problem: null });
+    expect(await reminders(later(149), true)).toMatchObject({ healthy: true });
+    expect(await reminders(later(151), true)).toMatchObject({ healthy: false, problem: "too_old" });
+
+    // The next hourly run (same UTC day) moves the heartbeat on.
+    await runHourlyReminders(db, deps(later(60)));
+    expect(await reminders(later(200), true)).toMatchObject({ healthy: true });
   });
 });

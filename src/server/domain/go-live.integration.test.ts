@@ -6,6 +6,7 @@ import { createTestClinic, createTestDb } from "@/test/db";
 import type { Database } from "../db";
 import { providerDeletions } from "../db/schema";
 import { goLiveChecks } from "./go-live";
+import { runHourlyReminders } from "./notifications";
 
 /* R2 5c: the read-only go-live check (PANEL_GO_LIVE_CHECK). */
 
@@ -81,6 +82,40 @@ describe("goLiveChecks (R2 5c)", () => {
     });
     expect(checks.find((c) => c.label === "SMS")?.state).toBe("ok");
     expect(switches.find((s) => s.label === "Arama işaretleri")?.on).toBe(true);
+  });
+
+  it("HOURLY_REMINDERS on: warns until the hourly job has run, then ok; unset shows no such row", async () => {
+    const clinic = await createTestClinic(db);
+    const label = "Saatlik hatırlatmalar";
+    const off = await goLiveChecks(db, clinic.ctx.clinic.id, OFF);
+    expect(off.checks.map((c) => c.label)).not.toContain(label);
+
+    const now = new Date();
+    const on = await goLiveChecks(db, clinic.ctx.clinic.id, { ...OFF, HOURLY_REMINDERS: true });
+    expect(on.checks.find((c) => c.label === label)).toMatchObject({ state: "warn" });
+
+    await runHourlyReminders(db, {
+      now,
+      sendingEnabled: false,
+      provider: { delivers: false, send: async () => {} },
+      providerName: "test",
+    });
+    const after = await goLiveChecks(db, clinic.ctx.clinic.id, { ...OFF, HOURLY_REMINDERS: true });
+    expect(after.checks.find((c) => c.label === label)).toMatchObject({ state: "ok" });
+  });
+
+  it("shows the two-step sign-in policy and the session length", async () => {
+    const clinic = await createTestClinic(db);
+    const { switches } = await goLiveChecks(db, clinic.ctx.clinic.id, {
+      ...OFF,
+      PANEL_TWO_FACTOR: "required-admins",
+      PANEL_SESSION_HOURS: 12,
+    });
+    expect(switches).toContainEqual({ label: "İki adımlı giriş: required-admins", on: true });
+    expect(switches).toContainEqual({ label: "Panel oturum süresi: 12 saat", on: true });
+    const unset = await goLiveChecks(db, clinic.ctx.clinic.id, OFF);
+    expect(unset.switches).toContainEqual({ label: "İki adımlı giriş: kapalı", on: false });
+    expect(unset.switches).toContainEqual({ label: "Panel oturum süresi: 7 gün", on: false });
   });
 
   it("is for owners and admins only (billing.read)", () => {
