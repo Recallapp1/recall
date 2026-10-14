@@ -14,13 +14,13 @@ Her seçimin gerekçesi ve alternatifi aşağıda. Büyük kararlar ayrıca [ADR
 
 ## Veri
 
-| Seçim                       | Neden                                                                                                                          | Alternatif                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
-| **PostgreSQL**              | İlişkisel veri (klinik → hekim → randevu); `tstzrange` ve exclusion constraint ile **DB seviyesinde çifte rezervasyon engeli** | MySQL                      |
-| **Neon (prod)**             | Vercel Marketplace entegrasyonu; PR başına veritabanı dalı; Frankfurt bölgesi                                                  | Supabase, RDS              |
-| **Docker Postgres (lokal)** | İnternetsiz, ücretsiz, hızlı sıfırlanabilir                                                                                    | Neon dev dalı              |
-| **Drizzle ORM**             | SQL'e yakın, hafif, serverless dostu, tip güvenli; migration'lar düz SQL                                                       | Prisma                     |
-| **`pg` sürücüsü**           | Hem lokal Postgres hem Neon ile aynı kod; Vercel Fluid Compute ile bağlantı havuzu                                             | `@neondatabase/serverless` |
+| Seçim                | Neden                                                                                                                                                                      | Alternatif                 |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| **PostgreSQL**       | İlişkisel veri (klinik → hekim → randevu); `tstzrange` ve exclusion constraint ile **DB seviyesinde çifte rezervasyon engeli**                                             | MySQL                      |
+| **Neon (prod)**      | Vercel Marketplace entegrasyonu; Frankfurt bölgesi. Production `production` dalı, geliştirme ayrı `dev` dalı (ayrı parola). Önizleme deploy'ları kapalı, PR başına dal yok | Supabase, RDS              |
+| **Lokal veritabanı** | Günlük geliştirme Neon `dev` dalında; yedek olarak PGlite (`pnpm db:local`) veya Docker (`pnpm db:up`), internetsiz                                                        | Neon dev dalı              |
+| **Drizzle ORM**      | SQL'e yakın, hafif, serverless dostu, tip güvenli; migration'lar düz SQL                                                                                                   | Prisma                     |
+| **`pg` sürücüsü**    | Hem lokal Postgres hem Neon ile aynı kod; Vercel Fluid Compute ile bağlantı havuzu                                                                                         | `@neondatabase/serverless` |
 
 Bkz. [ADR-001](../decisions/ADR-001-stack.md).
 

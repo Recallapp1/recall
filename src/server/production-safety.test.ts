@@ -546,7 +546,7 @@ describe("decision records and architecture docs match the repository (full audi
   it("the ADR index shows each ADR's own status", () => {
     const index = read("docs/decisions/README.md");
     for (const file of readdirSync("docs/decisions").filter((f) => /^ADR-\d{3}/.test(f))) {
-      const own = /Durum(?:\*\*:|\s*\|)\s*([^|\n]+)/.exec(read(join("docs/decisions", file)))?.[1];
+      const own = /Durum(?::\*\*|\s*\|)\s*([^|\n]+)/.exec(read(join("docs/decisions", file)))?.[1];
       const row = index.split("\n").find((line) => line.includes(`(${file})`));
       const listed = row?.split("|").at(-2);
       expect(own, file).toBeDefined();

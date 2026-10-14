@@ -43,7 +43,7 @@ erDiagram
 | status                 | enum `active`/`paused` | `paused` iken asistan sadece mesaj bırakır                                                  |
 | created_at, updated_at | timestamptz            |                                                                                             |
 
-> Faz 2'de Better Auth `organization` tablosu eklenecek ve `clinics.organization_id` ile 1:1 bağlanacak.
+> Better Auth `organizations` tablosu `clinics.organization_id` ile 1:1 bağlıdır (benzersiz, `restrict`); kliniğin ekibi bu organizasyonun üyeleridir ([ADR-009](../decisions/ADR-009-accounts-and-roles.md)).
 
 ### `voice_agents`: kliniğin Retell ajanı
 
@@ -100,12 +100,12 @@ Bir güne birden fazla satır girilebilir (öğle arası = iki blok). Bir hekimi
 
 ### `patients`
 
-| Kolon          | Not                                                |
-| -------------- | -------------------------------------------------- |
-| full_name      |                                                    |
-| phone          | E.164. `(clinic_id, phone)` unique                 |
-| notes          | Panelden                                           |
-| kvkk_notice_at | Aydınlatma anonsunun dinletildiği ilk arama zamanı |
+| Kolon          | Not                                                                               |
+| -------------- | --------------------------------------------------------------------------------- |
+| full_name      |                                                                                   |
+| phone          | E.164. `(clinic_id, phone)` unique                                                |
+| notes          | Panelden                                                                          |
+| kvkk_notice_at | Kullanılmıyor: hiçbir kod yazmaz (tam denetim FA-22); anonimleştirmede null'lanır |
 
 ### `appointments`
 
@@ -145,11 +145,11 @@ Bir güne birden fazla satır girilebilir (öğle arası = iki blok). Bir hekimi
 
 ### `provider_deletions`: sağlayıcı tarafı silme kuyruğu (2026-10-08)
 
-`clinic_id, provider, provider_call_id (benzersiz), reason (patient_anonymized/recording_off), attempts, last_error, next_attempt_at, done_at`. Kişisel veri içermez; `done_at` silmenin kaydıdır.
+`clinic_id, provider, provider_call_id (benzersiz), reason (patient_anonymized/recording_off/clinic_closed), attempts, last_error, next_attempt_at, done_at`. Kişisel veri içermez; `done_at` silmenin kaydıdır.
 
 ## Kurallar
 
-- Her tabloda (clinics hariç) `clinic_id NOT NULL` ve `ON DELETE CASCADE` var.
+- Kliniğe ait her tabloda `clinic_id NOT NULL` ve `ON DELETE CASCADE` var. İstisnalar: `audit_events.clinic_id` boş olabilir (platform düzeyi kayıtlar, ör. `clinic.purged`); Better Auth tabloları (`users`, `sessions`, `accounts`, `organizations`, `members`, `invitations`…) ve platform tabloları (`demo_requests`, `rate_limits`, `job_runs`) kliniğe bağlı değildir.
 - Para birimi kuruş (integer). Float kullanılmaz.
 - Telefon numaraları E.164 (`+905321234567`) olarak normalize edilir: `src/lib/phone.ts`.
 - Silme: hasta silme talebi (KVKK) gelirse hasta anonimleştirilir, randevu istatistikleri korunur. Bkz. [DATA-RETENTION.md](../05-compliance/DATA-RETENTION.md).
