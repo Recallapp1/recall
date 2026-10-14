@@ -20,7 +20,7 @@
 | Takip               | V0 + V1 production'da; demo klinikte açık                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Güvenlik            | Hız sınırları (Postgres), webhook tekrar koruması, CSP, kritik denetim kaydı, bileşik kiracı FK'leri, `pnpm audit` CI'da. 2026-10-08 denetimi ([PRELAUNCH-AUDIT-2026-10-08.md](docs/reviews/PRELAUNCH-AUDIT-2026-10-08.md)) sonrası: Better Auth HTTP uç noktaları kapalı (organizasyon silme kilitlenmesi giderildi), iptal/erteleme tekrar güvenli, arama ve randevu sınırları (`limits`), KVKK silmesi tüm numaralarda, Retell silme kuyruğu |
 | Gizli değerler      | **Rotasyon yapıldı (2026-10-09):** Neon production parolası yenilendi, dev dalı ayrı parolada, Retell anahtarı yenilendi ve eskisi silindi; hepsi doğrulandı. Kalan: yedek dalların silinmesi, ayrı dev Retell çalışma alanı, lokal sırlar ([SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md))                                                                                                                        |
-| Testler             | 879 Vitest testi (78 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da                                                                                                                                                                                                                                                                            |
+| Testler             | 892 Vitest testi (80 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da                                                                                                                                                                                                                                                                            |
 | İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı), `ALARM` logları; Sentry kodu hazır (DSN yok), uptime hesabı yok                                                                                                                                                                                                                                                                                                                              |
 | Lokal               | Neon **`dev`** dalı (ayrı parola); Retell **Recall Dev** çalışma alanı (ayrı anahtar ve kredi; production anahtarı lokalde yok); `pnpm dev` + `pnpm dev:tunnel`; E2E kendi bellek içi veritabanıyla                                                                                                                                                                                                                                             |
 | Karar günlüğü       | [HARDENING-2026-10.md](docs/HARDENING-2026-10.md) (Ekim 2026 sağlamlaştırma), [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                                                                                           |
@@ -76,6 +76,25 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-14 · Tam denetim A4 ve A5 (ürün sahibinin kararlarıyla) · FA-06, FA-07
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dallar:** `feat/2fa-reset-console-users`, `feat/console-user-clinic-membership` (önce başarısız test, CI yeşil, fast-forward) · **Commit'ler:** A4 `35398b0`+`bcb1f7d`, A5 `f08b9cf`+`6f346e3`
+
+**Ne yapıldı**
+
+- A4: Recall sahibi (`TWO_FACTOR_RESET_EMAILS`) konsol ana sayfasındaki "Recall konsol kullanıcıları" kartından bir konsol kullanıcısının iki adımlı girişini sıfırlıyor; "kimliği konsol dışında doğruladım" kutusu zorunlu, kendi hesabı sıfırlanamaz, kritik `auth.two_factor_reset_console_user` kaydı (klinik yok). Runbook: [TWO-FACTOR-RECOVERY.md](docs/06-operations/TWO-FACTOR-RECOVERY.md) (klinik personeli, konsol kullanıcısı, iki konsol hesabı, anahtarı geçici kapatma, son çare elle veritabanı sıfırlaması).
+- A5: konsol kullanıcısının bir kliniğe katılması (konsol/CLI, davet, üyeye konsol rolü) her zaman kritik `platform.console_user_joined_clinic` kaydı; Yayına hazırlık sayfasında satır; isteğe bağlı sert engel `BLOCK_CONSOLE_CLINIC_MEMBERSHIP` (kapalı). ADR-010 düzeltildi.
+- Karar günlüğü 128–129.
+
+**Doğrulama**
+
+- Her birleştirmeden sonra: deploy başarılı, `/api/health` db ok, jobs 200, ajan spec `23dfd4f92bde`, production env 13, migration 20.
+
+**Açık kalanlar / dikkat**
+
+- A4 kartı tarayıcıda denenmedi (yerel test veritabanında konsol kullanıcısı yok); 5 entegrasyon testi var.
+- Kalan işler: [FULL-AUDIT-ACTION-PLAN.md](docs/reviews/FULL-AUDIT-ACTION-PLAN.md).
 
 ### 2026-10-14 · Tam denetim eylem planı A1–A3, A6–A9 · FA-01, FA-02, FA-03, FA-09, FA-10, FA-11, FA-13, FA-14, FA-15, FA-25
 
