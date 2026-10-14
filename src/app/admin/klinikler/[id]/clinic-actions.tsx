@@ -20,12 +20,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
+import {
+  CLINIC_LIMIT_FIELDS,
+  type ClinicLimitKey,
+  type ClinicLimits,
+} from "@/lib/contracts/platform";
+
 import { SaveButton, useSave } from "../../../panel/(app)/ayarlar/_components/settings-ui";
 import {
   addClinicMemberAction,
   addPhoneNumberAction,
   removePhoneNumberAction,
   setClinicFeatureAction,
+  setClinicLimitsAction,
   setClinicStatusAction,
   syncAssistantAction,
   resetTwoFactorAction,
@@ -287,5 +294,62 @@ export function ResetTwoFactorButton({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Abuse and cost limits (CONSOLE_LIMITS_EDIT): Recall team only, audited. */
+export function LimitsForm({ clinicId, limits }: { clinicId: string; limits: ClinicLimits }) {
+  const [value, setValue] = useState<Record<ClinicLimitKey, string>>(
+    () =>
+      Object.fromEntries(
+        (Object.keys(CLINIC_LIMIT_FIELDS) as ClinicLimitKey[]).map((key) => [
+          key,
+          String(limits[key]),
+        ]),
+      ) as Record<ClinicLimitKey, string>,
+  );
+  const { pending, save } = useSave();
+  const keys = Object.keys(CLINIC_LIMIT_FIELDS) as ClinicLimitKey[];
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {keys.map((key) => {
+          const field = CLINIC_LIMIT_FIELDS[key];
+          return (
+            <div key={key} className="flex flex-col gap-1.5">
+              <Label htmlFor={`limit-${key}`} className="text-sm text-heading">
+                {field.label}
+              </Label>
+              <Input
+                id={`limit-${key}`}
+                type="number"
+                inputMode="numeric"
+                min={field.min}
+                max={field.max}
+                value={value[key]}
+                onChange={(event) => setValue((v) => ({ ...v, [key]: event.target.value }))}
+                className="h-10"
+              />
+              <span className="text-xs text-body">
+                {field.min}–{field.max} · varsayılan {field.fallback}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <SaveButton
+        pending={pending}
+        onClick={() =>
+          save(() =>
+            setClinicLimitsAction({
+              clinicId,
+              limits: Object.fromEntries(keys.map((key) => [key, Number(value[key])])),
+            }),
+          )
+        }
+      >
+        Sınırları kaydet
+      </SaveButton>
+    </div>
   );
 }

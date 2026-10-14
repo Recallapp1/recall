@@ -20,6 +20,7 @@ import {
   AssistantActions,
   ClinicStatusButton,
   FeatureSwitch,
+  LimitsForm,
   PhoneNumbers,
   ResetTwoFactorButton,
 } from "./clinic-actions";
@@ -123,6 +124,16 @@ export default async function ClinicConsolePage({
             gönderimi ayrıca genel olarak kapalıdır.
           </p>
         </Card>
+
+        {env().CONSOLE_LIMITS_EDIT === true && (
+          <Card title="Arama ve randevu sınırları">
+            <LimitsForm clinicId={clinic.id} limits={parseClinicSettings(clinic.settings).limits} />
+            <p className="text-xs text-body">
+              Kötüye kullanım ve maliyet sınırları. Değişiklik denetim kaydına yazılır; tek arama
+              üst sınırı asistana senkronlanır.
+            </p>
+          </Card>
+        )}
 
         <Card title="Sesli asistan">
           <div className="flex flex-col gap-1 text-sm">

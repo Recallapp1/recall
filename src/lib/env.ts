@@ -121,6 +121,12 @@ const envSchema = z.object({
   /** "true": owners and admins see the read-only "Yayına hazırlık" page (R2 5c). Off by default. */
   PANEL_GO_LIVE_CHECK: optionalFlag,
   /**
+   * "true": Recall console users edit a clinic's abuse and cost limits on the
+   * clinic page; audited (full audit FA-09). Unset: limits change only in the
+   * database, as today.
+   */
+  CONSOLE_LIMITS_EDIT: optionalFlag,
+  /**
    * "true": staff who can read calls report a call as wrong assistant
    * behaviour with a reason from a fixed list; audited (R2 5d). Off by default.
    */

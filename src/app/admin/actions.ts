@@ -9,6 +9,7 @@ import { env } from "@/lib/env";
 
 import { fieldErrors, type FormState } from "@/lib/contracts/form-state";
 import {
+  clinicLimitsInputSchema,
   createClinicSchema,
   DEMO_REQUEST_STATUSES,
   phoneNumberSchema,
@@ -23,7 +24,7 @@ import { db } from "@/server/db";
 import { clinics, members } from "@/server/db/schema";
 import { recordAudit, withAudit, type AuditInput } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
-import { setClinicFeature } from "@/server/domain/settings";
+import { setClinicFeature, setClinicLimits } from "@/server/domain/settings";
 import {
   addPhoneNumber,
   createClinic,
@@ -31,7 +32,7 @@ import {
   setClinicStatus,
 } from "@/server/platform/clinics";
 import { setDemoRequestStatus } from "@/server/platform/demo-requests";
-import { ensureAssistant } from "@/server/voice/sync";
+import { ensureAssistant, scheduleAssistantSync } from "@/server/voice/sync";
 
 const TRY_AGAIN = "İşlem şu anda yapılamadı. Lütfen tekrar deneyin.";
 
@@ -153,6 +154,37 @@ export async function setClinicFeatureAction(
       ? "Takip modülü açıldı. Klinik, kurallarını Ayarlar → Takip kurallarından tanımlar."
       : "Takip modülü kapatıldı. Veriler korunur; hatırlatmalar durur.",
   };
+}
+
+/**
+ * A clinic's abuse and cost limits (CONSOLE_LIMITS_EDIT, full audit FA-09).
+ * Recall team only; the change and its audit record commit together. The
+ * maximum call length is part of the assistant, so it is synced afterwards.
+ */
+export async function setClinicLimitsAction(input: unknown): Promise<SettingsResult> {
+  const session = await requirePlatformAdmin();
+  if (env().CONSOLE_LIMITS_EDIT !== true) return { ok: false, message: "Bu özellik kapalı." };
+  const parsed = clinicLimitsInputSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]!.message };
+  const { clinicId, limits } = parsed.data;
+  try {
+    await db().transaction(async (tx) => {
+      const fields = await setClinicLimits(tx, clinicId, limits);
+      await recordAudit(tx, {
+        actorUserId: session.user.id,
+        clinicId,
+        action: "platform.limits_changed",
+        targetType: "clinic",
+        targetId: clinicId,
+        metadata: { fields },
+      });
+    });
+  } catch (error) {
+    return failure("platform.limits.failed", error);
+  }
+  scheduleAssistantSync(clinicId);
+  revalidatePath(`/admin/klinikler/${clinicId}`);
+  return { ok: true, message: "Sınırlar kaydedildi." };
 }
 
 export async function addPhoneNumberAction(input: unknown): Promise<SettingsResult> {

@@ -60,7 +60,8 @@ export type AuditAction =
   | "follow_up.settings_updated"
   | "patient.sms_opt_out"
   | "patient.sms_opt_in"
-  | "platform.feature_changed";
+  | "platform.feature_changed"
+  | "platform.limits_changed";
 
 export interface AuditInput {
   clinicId: string | null;
@@ -99,6 +100,7 @@ export const CRITICAL_AUDIT_ACTIONS: ReadonlySet<AuditAction> = new Set<AuditAct
   "platform.phone_number_added",
   "platform.phone_number_removed",
   "platform.feature_changed",
+  "platform.limits_changed",
   "platform.clinic_status_changed",
 ]);
 

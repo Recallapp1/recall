@@ -21,17 +21,17 @@ _2026-10-09 (denetim C3). Pilot dönemi; kanal ve saatler ürün sahibinin karar
 
 ## Sık talepler ve nasıl yapılır
 
-| Talep                                  | Kim yapar                | Nasıl                                                                                    |
-| -------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------- |
-| Ekibe kişi ekleme / çıkarma            | Klinik sahibi/yöneticisi | Panel → Ayarlar → Ekip. İlk sahip: Recall `pnpm clinic:member`                           |
-| Çalışma saati, hekim, hizmet, tatil    | Klinik                   | Panel → Ayarlar                                                                          |
-| Asistan adı, karşılama, sık sorulanlar | Klinik                   | Panel → Ayarlar → Asistan (değişiklik ajana otomatik senkronlanır)                       |
-| Arama/randevu sınırlarını değiştirme   | Recall                   | Klinik ayarları `limits` (konsol ekranı yok; veritabanından, değişiklik denetim kaydına) |
-| Kayıt dinleme sorunu                   | Recall                   | Konsolda kliniğin ajan durumu; Retell kayıt süresi 30 gün                                |
-| **KVKK bilgi talebi (m.11)**           | Klinik (veri sorumlusu)  | Panel → Hastalar → hasta → "Verileri indir". Yasal yanıt süresi en geç **30 gün** (m.13) |
-| **KVKK silme talebi**                  | Klinik                   | Panel → Hastalar → hasta → "Anonimleştir" (aramalar ve Retell kopyaları dahil; kalıcı)   |
-| Asistanın söylediği yanlış bilgi       | Recall                   | Arama kaydı ve dökümü (panel), işaretler; prompt/ayar düzeltmesi dal akışıyla            |
-| Faturalama                             | Recall                   | Henüz faturalama yok (pilot)                                                             |
+| Talep                                  | Kim yapar                | Nasıl                                                                                                                                                        |
+| -------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ekibe kişi ekleme / çıkarma            | Klinik sahibi/yöneticisi | Panel → Ayarlar → Ekip. İlk sahip: Recall `pnpm clinic:member`                                                                                               |
+| Çalışma saati, hekim, hizmet, tatil    | Klinik                   | Panel → Ayarlar                                                                                                                                              |
+| Asistan adı, karşılama, sık sorulanlar | Klinik                   | Panel → Ayarlar → Asistan (değişiklik ajana otomatik senkronlanır)                                                                                           |
+| Arama/randevu sınırlarını değiştirme   | Recall                   | `CONSOLE_LIMITS_EDIT` açıkken konsol → klinik → Arama ve randevu sınırları (denetim kaydına yazılır); kapalıyken yalnızca veritabanından (denetim kaydı yok) |
+| Kayıt dinleme sorunu                   | Recall                   | Konsolda kliniğin ajan durumu; Retell kayıt süresi 30 gün                                                                                                    |
+| **KVKK bilgi talebi (m.11)**           | Klinik (veri sorumlusu)  | Panel → Hastalar → hasta → "Verileri indir". Yasal yanıt süresi en geç **30 gün** (m.13)                                                                     |
+| **KVKK silme talebi**                  | Klinik                   | Panel → Hastalar → hasta → "Anonimleştir" (aramalar ve Retell kopyaları dahil; kalıcı)                                                                       |
+| Asistanın söylediği yanlış bilgi       | Recall                   | Arama kaydı ve dökümü (panel), işaretler; prompt/ayar düzeltmesi dal akışıyla                                                                                |
+| Faturalama                             | Recall                   | Henüz faturalama yok (pilot)                                                                                                                                 |
 
 ## Triage adımları
 

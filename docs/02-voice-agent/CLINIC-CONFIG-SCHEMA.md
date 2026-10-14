@@ -30,7 +30,7 @@ Bir kliniğin asistanı iki kaynaktan beslenir:
     smsReminderHoursBefore: number | null // varsayılan 24, null = kapalı
   },
   // Kötüye kullanım ve maliyet sınırları (2026-10-08, denetim P-08). Yalnızca Recall
-  // ekibi değiştirir (konsol veya veritabanı); panel formları bu bölüme yazamaz.
+  // ekibi değiştirir: `CONSOLE_LIMITS_EDIT` açıkken konsoldan (denetim kaydıyla), değilse veritabanından; panel formları bu bölüme yazamaz.
   limits: {
     callsPerNumberPerHour: number   // Bir numaradan kliniğe saatlik arama (varsayılan 5)
     callsPerNumberPerDay: number    // Bir numaradan günlük arama (varsayılan 15)

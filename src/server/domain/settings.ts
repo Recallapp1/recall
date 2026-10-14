@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, count, eq, gt, inArray, isNull, lt } from "drizzle-orm";
 
 import { ACTIVE_APPOINTMENT_STATUSES } from "@/lib/contracts/appointment";
+import type { ClinicLimitKey, ClinicLimits } from "@/lib/contracts/platform";
 
 import type {
   AssistantSettingsInput,
@@ -63,6 +64,25 @@ export async function updateFollowUpSettings(
   input: { smsReminders: boolean; dueSoonDays: number },
 ): Promise<void> {
   await mergeSettings(exec, clinicId, (current) => ({ ...current, followUp: input }));
+}
+
+/**
+ * Abuse and cost limits, set by the Recall team from the console only
+ * (CONSOLE_LIMITS_EDIT). Returns the names of the limits that changed.
+ */
+export async function setClinicLimits(
+  exec: Executor,
+  clinicId: string,
+  limits: ClinicLimits,
+): Promise<ClinicLimitKey[]> {
+  let changed: ClinicLimitKey[] = [];
+  await mergeSettings(exec, clinicId, (current) => {
+    changed = (Object.keys(limits) as ClinicLimitKey[]).filter(
+      (key) => current.limits[key] !== limits[key],
+    );
+    return { ...current, limits };
+  });
+  return changed;
 }
 
 /** Modules switched by the Recall team from the console only. */
