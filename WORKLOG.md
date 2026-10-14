@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-> **Projenin güncel durumunun tek yetkili kaynağı bu tablodur.** Planın faz tablosu ve eski raporlar tarihli özetlerdir. _Son güncelleme: 2026-10-12._
+> **Projenin güncel durumunun tek yetkili kaynağı bu tablodur.** Planın faz tablosu ve eski raporlar tarihli özetlerdir. _Son güncelleme: 2026-10-14._
 
 | Konu                | Durum (2026-10-09)                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,7 +20,7 @@
 | Takip               | V0 + V1 production'da; demo klinikte açık                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Güvenlik            | Hız sınırları (Postgres), webhook tekrar koruması, CSP, kritik denetim kaydı, bileşik kiracı FK'leri, `pnpm audit` CI'da. 2026-10-08 denetimi ([PRELAUNCH-AUDIT-2026-10-08.md](docs/reviews/PRELAUNCH-AUDIT-2026-10-08.md)) sonrası: Better Auth HTTP uç noktaları kapalı (organizasyon silme kilitlenmesi giderildi), iptal/erteleme tekrar güvenli, arama ve randevu sınırları (`limits`), KVKK silmesi tüm numaralarda, Retell silme kuyruğu |
 | Gizli değerler      | **Rotasyon yapıldı (2026-10-09):** Neon production parolası yenilendi, dev dalı ayrı parolada, Retell anahtarı yenilendi ve eskisi silindi; hepsi doğrulandı. Kalan: yedek dalların silinmesi, ayrı dev Retell çalışma alanı, lokal sırlar ([SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md))                                                                                                                        |
-| Testler             | 893 Vitest testi (80 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da                                                                                                                                                                                                                                                                            |
+| Testler             | 917 Vitest testi (87 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da. Kapsam ölçümü `pnpm test:coverage` (bilgi amaçlı)                                                                                                                                                                                                                         |
 | İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı), `ALARM` logları; Sentry kodu hazır (DSN yok), uptime hesabı yok                                                                                                                                                                                                                                                                                                                              |
 | Lokal               | Neon **`dev`** dalı (ayrı parola); Retell **Recall Dev** çalışma alanı (ayrı anahtar ve kredi; production anahtarı lokalde yok); `pnpm dev` + `pnpm dev:tunnel`; E2E kendi bellek içi veritabanıyla                                                                                                                                                                                                                                             |
 | Karar günlüğü       | [HARDENING-2026-10.md](docs/HARDENING-2026-10.md) (Ekim 2026 sağlamlaştırma), [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                                                                                           |
@@ -76,6 +76,31 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-14 · Tam denetim A10–A16 ve 2028 tatilleri · FA-05, FA-08, FA-16–FA-19, FA-21–FA-24, FA-26, FA-30
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dallar:** her madde ayrı dal, önce başarısız test, CI yeşil, fast-forward · **Commit'ler (test → düzeltme):** A10 `3e42ee8`→`4b0ad79`, A11 `36b549e`→`db36e56`, A12 `7d88277`→`928a79f`, A13 `2fe2197`→`29195f1`, A14 `c984849`→`afb12b3`, A15 `507180b`→`92901e5`, 2028 tatilleri `c3a2f77`→`69979b2`, A16 `d34fcd1`→`1db65c3`
+
+**Ne yapıldı**
+
+- A10: iptal, erteleme ve panel durum değişikliği yalnızca beklenen durumdaki satırı günceller (`APPOINTMENT_CHANGED`); ayar birleştirme satır kilidiyle.
+- A11: randevu saati geçmiş işlem SMS'i `too_late` atlanır; silinmeye 10 günden az kalan açık geri arama notları için klinik başına alarm.
+- A12: veri yazan/kopyalayan betikler yalnızca dev veritabanında (`devDatabaseRefusal`); production'da `EMAIL_PROVIDER=console` gönderimi reddeder ve alarm verir.
+- A13: `pnpm test:coverage` (v8); ilk ölçüm TESTING.md'de, CI kapısı değil.
+- A14: DEPLOYMENT.md gerçek build sırası ve "Promote asistanı geri almaz" geri alma tablosu.
+- A15: kodla çelişen belge iddiaları düzeltildi (güvenlik incelemesi, SECURITY, DATA-RETENTION, KVKK, ESCALATION, AGENT-DESIGN, CALL-ROUTING, API, TESTING, ADR dizini); üç test tekrar kaymayı yakalar.
+- 2028 dini bayramları (Diyanet'le teyit edilecek).
+- A16: `pnpm clinic:offboard` (export, erase, purge) ve [CLINIC-OFFBOARDING.md](docs/06-operations/CLINIC-OFFBOARDING.md); yalnızca dev veritabanı. Silme kuyruğuna `clinic_closed` nedeni.
+- Karar günlüğü 130–137 (132'deki test commit'i `7d88277` olarak düzeltildi).
+
+**Doğrulama**
+
+- Her birleştirmeden sonra: deploy başarılı, `/api/health` db ok, jobs 200, ajan spec `23dfd4f92bde`, production env 13, migration 20.
+- A16 betiği bellek içi geçici bir Postgres'te baştan sona çalıştırıldı (export → erase → purge reddi/onayı → klinik yok). Neon dev dalına bu makineden 5432 bağlantısı zaman aşımına uğradı; orada denenmedi.
+
+**Açık kalanlar / dikkat**
+
+- A16 production'da açılmadı (prova + sahip onayı). A17 (metin kararı), A18 (gerçek arama), bölüm 6.1'in kalan belgeleri (ROADMAP, PANEL-SPEC, DATA-MODEL, TECH-STACK, personalar, PRD SMS), CSP.
 
 ### 2026-10-14 · Tam denetim A4 ve A5 (ürün sahibinin kararlarıyla) · FA-06, FA-07
 
