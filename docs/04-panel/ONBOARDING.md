@@ -1,5 +1,7 @@
 # Klinik Onboarding
 
+> **Güncel değil (2026-10-14):** güncel adımlar [../07-sales/CLINIC-ONBOARDING.md](../07-sales/CLINIC-ONBOARDING.md) belgesinde. Bu sayfa ilk tasarım olarak kalır.
+
 Hedef: Sözleşmeden **canlı ilk aramaya 48 saat**.
 
 ## MVP: Recall ekibi destekli (concierge)

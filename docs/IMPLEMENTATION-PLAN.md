@@ -47,7 +47,7 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 | F5  | Klinik paneli                                               | ✅ ekranlar, sıralama, action testleri, E2E · açık: logo/görsel, 375/1440 görsel kontrol                                                                  | F3, F4     |
 | F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                                                                                                         | F3, F1     |
 | F7  | KVKK, güvenlik, veri saklama                                | 🟡 saklama, anonimleştirme, dışa aktarma, hız sınırı, CSP, denetim, güvenlik incelemesi ✅ · açık: yasal metinler, avukat, alan şifreleme değerlendirmesi | F5         |
-| F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı, CI yeşil, iş kalp atışı · açık: Sentry/uptime hesapları, `main` koruması, Pro/ücretli Neon                                                      | F1, F3     |
+| F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı, CI yeşil, iş kalp atışı · `main` korumalı · açık: Sentry/uptime hesapları, Pro/ücretli Neon                                                     | F1, F3     |
 | F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                                                                                                        | F1–F8      |
 | F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                                                                                                        | F9         |
 
@@ -336,7 +336,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] Maliyet görünümü: klinik bazında 30 günlük dakika ve gerçek maliyet (`calls.cost_usd`, Retell `combined_cost`)
 - [x] Demo talepleri listesi ve durum takibi (yeni, görüşüldü, müşteri oldu, olumsuz)
 
-**F6 çıkış kriterleri:** Yeni bir klinik, kod veya veritabanına dokunmadan, konsoldan 15 dakikada canlıya alınabiliyor.
+**F6 çıkış kriterleri:** Yeni bir klinik, kod veya veritabanına dokunmadan, konsoldan 15 dakikada canlıya alınabiliyor. Durum (2026-10-14): klinik açma ve asistan konsoldan; arama/randevu sınırları `CONSOLE_LIMITS_EDIT` açıkken konsoldan (kapalı), konsol kullanıcısının 2FA sıfırlaması konsoldan (Recall sahibi). Numaranın Retell'e aktarılması hâlâ elle.
 
 ---
 
@@ -347,7 +347,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] Retell veri saklama ayarlarının klinik tercihine göre ayarlanması (imzalı kayıt bağlantıları; kayıt kapalıysa arama analizden sonra Retell'den silinir)
 - [ ] Hassas alanların uygulama seviyesinde şifrelenmesinin değerlendirilmesi (transkript, telefon) — Hukuki görüşle birlikte değerlendirilecek
 - [x] Güvenlik başlıkları ve CSP, hız sınırlama (giriş, webhook), Retell IP izin listesi (opsiyonel ek katman) — Başlıklar + CSP + Postgres tabanlı hız sınırları (2026-10-07). Retell IP izin listesi gerekmedi: imza + tekrar koruması
-- [ ] Aydınlatma metni şablonu, DPA şablonu, alt işleyenler listesi (Retell, Neon, Vercel, Netgsm, Resend)
+- [x] Aydınlatma metni şablonu, DPA şablonu, alt işleyenler listesi (Retell, Neon, Vercel, Netgsm, Resend) — taslaklar [legal-drafts/](legal-drafts/) altında; avukat onayı aşağıdaki kutuda
 - [ ] Avukat incelemesi (ürün ekibi)
 - [x] Güvenlik incelemesi (`/security-review`) ve bağımlılık taraması — [SECURITY-REVIEW-2026-10.md](05-compliance/SECURITY-REVIEW-2026-10.md); CI'da `pnpm audit --prod`, Dependabot
 
@@ -373,7 +373,7 @@ Tasarım ve karar günlüğü: [proposals/TAKIP.md](proposals/TAKIP.md).
 - [x] Production ajanları `recalltr.company`'ye bağlı (konsoldan oluşturulan demo klinik; gerçek arama → randevu → DB doğrulandı). Inbound URL numara gelince (F2). Preview test ajanları: ⏳
 - [x] Alan adı `recalltr.company` (+ `www` yönlendirme), Resend alanı doğrulandı (eu-west-1), güvenlik başlıkları, robots/sitemap/OG
 - [ ] Sentry, uptime izleme (`/api/health`), Vercel Cron — Vercel Cron ve kod hazır (Sentry, `/api/health/jobs`); hesaplar ürün ekibinde ([MONITORING.md](06-operations/MONITORING.md))
-- [x] CI: entegrasyon testleri (PGlite) ve build; `main` koruması — CI yeşil (testler, build, E2E). `main` koruması ürün ekibinde (GitHub ayarı)
+- [x] CI: entegrasyon testleri (PGlite) ve build; `main` koruması — CI yeşil (testler, build, E2E); `main` korumalı (2026-10-08'den beri `check` ve `e2e` zorunlu)
 
 ---
 
