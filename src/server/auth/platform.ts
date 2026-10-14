@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createAccessControl } from "better-auth/plugins/access";
+
+import { env } from "@/lib/env";
 import { defaultStatements } from "better-auth/plugins/admin/access";
 
 /**
@@ -19,3 +21,17 @@ export const platformRoles = {
     session: ["list", "revoke"],
   }),
 };
+
+/**
+ * BLOCK_CONSOLE_CLINIC_MEMBERSHIP (owner's decision 2026-10-14, full audit
+ * FA-07): optional hard block on console users joining a clinic. Off by
+ * default; every such join is audited either way.
+ */
+export function consoleClinicMembershipBlocked(): boolean {
+  try {
+    return env().BLOCK_CONSOLE_CLINIC_MEMBERSHIP === true;
+  } catch {
+    // Without a valid environment (some unit tests) the default applies.
+    return false;
+  }
+}

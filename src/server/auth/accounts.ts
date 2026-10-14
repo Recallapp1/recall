@@ -10,6 +10,7 @@ import { accounts, clinics, invitations, members, organizations, users } from ".
 import { recordAudit } from "../domain/audit";
 import { DomainError } from "../domain/errors";
 import { auth } from ".";
+import { consoleClinicMembershipBlocked, PLATFORM_ADMIN } from "./platform";
 
 /*
  * Account provisioning. Public sign-up is disabled (ADR-009): accounts are
@@ -45,7 +46,7 @@ export async function ensureClinicOrganization(clinicId: string): Promise<string
 
 async function findUserByEmail(exec: Executor, email: string) {
   const [user] = await exec
-    .select({ id: users.id, name: users.name })
+    .select({ id: users.id, name: users.name, role: users.role })
     .from(users)
     .where(eq(users.email, normalizeEmail(email)));
   return user;
@@ -82,11 +83,18 @@ export async function addClinicMember(input: {
   const result = await db().transaction(async (tx) => {
     let user = await findUserByEmail(tx, email);
     const userCreated = !user;
+    const consoleUser = user?.role === PLATFORM_ADMIN;
+    if (consoleUser && consoleClinicMembershipBlocked()) {
+      throw new DomainError(
+        "CONSOLE_USER_IN_CLINIC",
+        "Recall konsol kullanıcıları kliniklerin ekibine eklenemez.",
+      );
+    }
     if (!user) {
       [user] = await tx
         .insert(users)
         .values({ name: input.name.trim(), email })
-        .returning({ id: users.id, name: users.name });
+        .returning({ id: users.id, name: users.name, role: users.role });
     }
     const inserted = await tx
       .insert(members)
@@ -102,6 +110,17 @@ export async function addClinicMember(input: {
         targetId: user!.id,
         metadata: { role: input.role, via: "recall_team" },
       });
+      // A console user reaches this clinic's patient data (FA-07): critical.
+      if (consoleUser) {
+        await recordAudit(tx, {
+          clinicId: input.clinicId,
+          actorUserId: null,
+          action: "platform.console_user_joined_clinic",
+          targetType: "user",
+          targetId: user!.id,
+          metadata: { role: input.role, via: "recall_team" },
+        });
+      }
     }
     return {
       userId: user!.id,

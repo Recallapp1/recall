@@ -13,7 +13,10 @@ import {
   services,
   voiceAgents,
   workingHours,
+  members,
+  users,
 } from "../db/schema";
+import { PLATFORM_ADMIN } from "../auth/platform";
 import { jobHealth } from "./job-runs";
 
 export type GoLiveState = "ok" | "warn" | "off";
@@ -86,6 +89,15 @@ export async function goLiveChecks(
     ),
   ]);
   const smsOn = config.SMS_SENDING_ENABLED && config.SMS_PROVIDER === "netgsm";
+  // Console users on the clinic's team (FA-07): their joining is audited.
+  const consoleMembers = await total(
+    exec
+      .select({ value: count() })
+      .from(members)
+      .innerJoin(clinics, eq(clinics.organizationId, members.organizationId))
+      .innerJoin(users, eq(users.id, members.userId))
+      .where(and(eq(clinics.id, clinicId), eq(users.role, PLATFORM_ADMIN))),
+  );
 
   const checks: GoLiveCheck[] = [
     {
@@ -115,6 +127,14 @@ export async function goLiveChecks(
       label: "SMS",
       state: smsOn ? "ok" : "off",
       detail: smsOn ? "Gerçek gönderim açık" : "Kapalı: hiçbir SMS gönderilmez",
+    },
+    {
+      label: "Recall konsol kullanıcıları",
+      state: consoleMembers === 0 ? "ok" : "warn",
+      detail:
+        consoleMembers === 0
+          ? "Ekipte Recall konsol kullanıcısı yok"
+          : `${consoleMembers} Recall konsol kullanıcısı bu kliniğin ekibinde; katılım denetim kaydında`,
     },
     {
       label: "Silme kuyruğu (KVKK)",

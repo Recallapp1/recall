@@ -1,6 +1,7 @@
 "use server";
 
 import { APIError } from "better-auth/api";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -18,7 +19,11 @@ import { fieldErrors, type FormState } from "@/lib/contracts/form-state";
 import { safeError } from "@/lib/safe-error";
 import { auth } from "@/server/auth";
 import { acceptInvitationAsNewUser } from "@/server/auth/accounts";
+import { consoleClinicMembershipBlocked, PLATFORM_ADMIN } from "@/server/auth/platform";
 import { requireSession } from "@/server/auth/session";
+import { db } from "@/server/db";
+import { clinics, invitations } from "@/server/db/schema";
+import { AuditWriteError, recordAudit } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
 import { allow, requestIp, TOO_MANY_ATTEMPTS } from "@/server/security/rate-limits";
 
@@ -198,11 +203,26 @@ export async function acceptInvitationAsMember(
   _previous: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireSession();
+  const session = await requireSession();
   const invitationId = String(formData.get("invitationId") ?? "");
+  const consoleUser = (session.user as { role?: string | null }).role === PLATFORM_ADMIN;
+  if (consoleUser && consoleClinicMembershipBlocked()) {
+    return {
+      status: "error",
+      message: "Recall konsol kullanıcıları kliniklerin ekibine katılamaz.",
+    };
+  }
   try {
     await auth().api.acceptInvitation({ body: { invitationId }, headers: await headers() });
+    if (consoleUser) await auditConsoleUserJoined(session.user.id, invitationId);
   } catch (error) {
+    if (error instanceof AuditWriteError) {
+      return {
+        status: "error",
+        message:
+          "Katıldınız ancak denetim kaydı yazılamadı. Recall ekibi bilgilendirildi; lütfen tekrar giriş yapın.",
+      };
+    }
     if (error instanceof APIError) {
       return {
         status: "error",
@@ -216,6 +236,23 @@ export async function acceptInvitationAsMember(
     return { status: "error", message: TRY_AGAIN };
   }
   redirect("/panel");
+}
+
+/** A console user joined a clinic by invitation (FA-07): critical, after acceptance. */
+async function auditConsoleUserJoined(userId: string, invitationId: string) {
+  const [row] = await db()
+    .select({ clinicId: clinics.id, role: invitations.role })
+    .from(invitations)
+    .innerJoin(clinics, eq(clinics.organizationId, invitations.organizationId))
+    .where(eq(invitations.id, invitationId));
+  await recordAudit(db(), {
+    clinicId: row?.clinicId ?? null,
+    actorUserId: userId,
+    action: "platform.console_user_joined_clinic",
+    targetType: "user",
+    targetId: userId,
+    metadata: { role: row?.role ?? null, via: "invitation" },
+  });
 }
 
 export async function signOut() {

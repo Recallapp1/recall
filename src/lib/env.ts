@@ -133,6 +133,12 @@ const envSchema = z.object({
    */
   RECORDING_OFF_SWEEP: optionalFlag,
   /**
+   * "true": a Recall console user can never join a clinic's team (console,
+   * CLI, invitation, or the console role granted to a member). Unset: allowed,
+   * and every such join is a critical audit entry (owner's decision 2026-10-14).
+   */
+  BLOCK_CONSOLE_CLINIC_MEMBERSHIP: optionalFlag,
+  /**
    * "true": staff who can read calls report a call as wrong assistant
    * behaviour with a reason from a fixed list; audited (R2 5d). Off by default.
    */

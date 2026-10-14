@@ -51,6 +51,7 @@ describe("goLiveChecks (R2 5c)", () => {
       Asistan: "ok",
       "Çalışma saatleri, hekim ve hizmet": "ok",
       SMS: "off",
+      "Recall konsol kullanıcıları": "ok",
       "Silme kuyruğu (KVKK)": "ok",
     });
     expect(switches.every((s) => !s.on)).toBe(true);

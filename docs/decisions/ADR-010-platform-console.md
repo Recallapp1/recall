@@ -21,6 +21,6 @@ Recall ekibinin klinik açması, numara bağlaması, asistanı oluşturması ve 
 ## Sonuçlar
 
 - ✅ Yeni klinik birkaç dakikada açılır: form → asistanı oluştur → numara bağla → klinik panelden hekim ve tatilleri girer.
-- ✅ Konsol erişimi klinik verisine kestirme yol açmaz.
+- ⚠️ Konsol kullanıcısı bir kliniğe üye olabilir (konsoldan, CLI ile, davetle veya üyeye konsol rolü verilerek) ve böylece o kliniğin hasta verisini görür. Engellenmez (ürün sahibinin kararı 2026-10-14); her katılım kliniğin denetim kaydına kritik `platform.console_user_joined_clinic` olarak yazılır ve Yayına hazırlık sayfasında görünür. İsteğe bağlı sert engel: `BLOCK_CONSOLE_CLINIC_MEMBERSHIP` (kapalı). Tam denetim FA-07.
 - ⚠️ Numara içe aktarma ve Retell'de inbound webhook ataması elle; F2'de otomatikleşecek.
 - ⏳ Klinik başına aylık fatura görünümü ve uyarılar (senkron hatası, uzun süre arama gelmemesi) sonraki adım.

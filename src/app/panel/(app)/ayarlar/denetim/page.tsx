@@ -71,6 +71,7 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   "patient.sms_opt_in": "Hastanın SMS iznini geri açtı",
   "platform.feature_changed": "Modül ayarını değiştirdi (Recall)",
   "platform.limits_changed": "Arama ve randevu sınırlarını değiştirdi (Recall)",
+  "platform.console_user_joined_clinic": "Bir Recall konsol kullanıcısı ekibe katıldı",
 };
 
 const TARGET_LABELS: Record<string, string> = {
