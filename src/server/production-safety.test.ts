@@ -476,3 +476,61 @@ describe("documentation claims that the code can check (full audit A15)", () => 
     expect(read("docs/05-compliance/DATA-RETENTION.md")).toContain(`"${name}"`);
   });
 });
+
+describe("documentation names that the code can check (full audit section 6.1)", () => {
+  const read = (path: string) => readFileSync(path, "utf8");
+  const files = (dir: string, pattern: RegExp): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory()
+        ? files(join(dir, entry.name), pattern)
+        : pattern.test(entry.name)
+          ? [join(dir, entry.name)]
+          : [],
+    );
+
+  it("every panel route in PANEL-SPEC exists", () => {
+    const routes = new Set(
+      files("src/app/panel", /^page\.tsx$/).map(
+        (page) =>
+          "/" +
+          page
+            .replaceAll("\\", "/")
+            .replace(/^src\/app\//, "")
+            .replace(/\/page\.tsx$/, "")
+            .replace(/\/\([^)]+\)/g, ""),
+      ),
+    );
+    const documented = [...read("docs/04-panel/PANEL-SPEC.md").matchAll(/`(\/panel[^`\s]*)`/g)].map(
+      (m) => m[1]!,
+    );
+    expect(documented.length).toBeGreaterThan(5);
+    for (const route of documented) expect(routes, route).toContain(route);
+  });
+
+  it("every tool error code in TOOLS.md is raised somewhere in the code", () => {
+    const code = files("src", /\.tsx?$/)
+      .filter((f) => !f.includes(".test.") && !f.endsWith("errors.ts"))
+      .map(read)
+      .join("\n");
+    const listed = read("docs/02-voice-agent/TOOLS.md")
+      .split("\n")
+      .filter((line) => line.includes("Hatalar:"))
+      .flatMap((line) => [...line.matchAll(/`([A-Z][A-Z_]+)`/g)].map((m) => m[1]!));
+    expect(listed.length).toBeGreaterThan(5);
+    for (const name of listed) expect(code, name).toContain(`"${name}"`);
+  });
+
+  it("every require…() guard named in the docs exists", () => {
+    const code = files("src", /\.tsx?$/)
+      .map(read)
+      .join("\n");
+    const named = new Set(
+      files("docs", /\.md$/).flatMap((doc) =>
+        [...read(doc).matchAll(/\b(require[A-Z][A-Za-z]+)\(/g)].map((m) => m[1]!),
+      ),
+    );
+    for (const guard of named) {
+      expect(code, guard).toMatch(new RegExp(`(function|const) ${guard}\\b`));
+    }
+  });
+});
