@@ -8,7 +8,7 @@
 | **Entegrasyon**        | Vitest + PGlite (süreç içi Postgres, gerçek migration'lar) | Tool handler'ları ve DB; exclusion constraint; kiracı izolasyonu; uçtan uca webhook akışı                        | Her commit (Docker gerekmez)           |
 | **Webhook sözleşmesi** | Vitest                                                     | Retell SDK ile imzalanmış istekler → imza, kiracı, tool ve olay davranışı                                        | Her PR                                 |
 | **Senaryo eval**       | Retell web call / test araçları + özel script              | [CONVERSATION-SCENARIOS.md](../02-voice-agent/CONVERSATION-SCENARIOS.md)                                         | Prompt, model veya tool değişikliğinde |
-| **E2E (panel)**        | Playwright (Faz 2)                                         | Giriş, randevu oluşturma, iptal                                                                                  | Release öncesi                         |
+| **E2E (panel)**        | Playwright (`e2e`, CI)                                     | Giriş, randevu oluşturma, iptal                                                                                  | Release öncesi                         |
 
 ## Birim testi kuralları
 
@@ -22,11 +22,11 @@
 - [x] Telefon normalizasyonu: `0532…`, `532…`, `+90 532…`, `90532…`
 - [x] Kiracı izolasyonu: A kliniğinin tool context'i ile B kliniğinin randevusu iptal edilemez
 - [x] Çifte rezervasyon: aynı slota iki insert → exclusion constraint biri için hata verir
-- [x] Webhook: yanlış secret → 401; bilinmeyen numara → 404
+- [x] Webhook: yanlış imza → 401; bilinmeyen numara → 200 ve `reject: true` (arama reddedilir, alarm)
 
 ## Senaryo eval (Faz 1)
 
-**Yöntem:** Her senaryo için bir "hasta" persona'sı (LLM ile simüle edilen arayan) ve başarı kriterleri tanımlanır. Simüle edilen konuşma metin modunda çalıştırılır (ses olmadan, aynı prompt ve tool'larla). Ardından DB durumu ve konuşma, kriterlere göre puanlanır.
+**Yöntem:** Her senaryo için bir "hasta" persona'sı (LLM ile simüle edilen arayan) ve başarı kriterleri tanımlanır. Uygulanan yöntem (`scripts/voice-eval/run.ts`): her senaryo dev kliniğinin asistanıyla gerçek bir Retell web araması olarak çalışır (kredi harcar; yalnızca dev veritabanında). Ardından DB durumu ve konuşma, kriterlere göre puanlanır.
 
 | Ölçüt        | Nasıl                                                                            |
 | ------------ | -------------------------------------------------------------------------------- |
@@ -48,4 +48,4 @@
 
 ## CI
 
-`.github/workflows/ci.yml`: install → lint → typecheck → format:check → test (birim ve entegrasyon).
+`.github/workflows/ci.yml`: `check` işi install → `pnpm audit` → lint → lint:tokens → lint:secrets → typecheck → format:check → test → build; `e2e` işi Playwright (Chromium). `main` ikisi de yeşil olmadan kabul etmez.

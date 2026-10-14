@@ -45,12 +45,12 @@ Hasta asistan konuşurken söze girerse asistan durur ve dinler. Retell'de varsa
 
 ### Sessizlik
 
-- 6 sn sessizlik: "Orada mısınız?"
-- 15 sn daha sessizlik: Kibar bir kapanışla arama sonlandırılır.
+- Uygulanan: 20 sn sessizlikte Retell aramayı sonlandırır (`end_call_after_silence_ms`).
+- Hedef (henüz yok): 6 sn sessizlikte "Orada mısınız?", ardından kibar kapanış.
 
 ### Bekleme sesleri
 
-Tool çağrısı sürerken asistan kısa bir dolgu cümlesi söyler ("Hemen bakıyorum…"). Tool tanımında `messages: request-start` ile yapılandırılır.
+Tool çağrısı sürerken asistan kısa bir dolgu cümlesi söyler ("Hemen bakıyorum…"). Retell tool tanımında `speak_during_execution` ve `execution_message_description` ile yapılandırılır.
 
 ## Kapsam sınırları
 
@@ -74,7 +74,7 @@ Ayrıntılar: [ESCALATION.md](ESCALATION.md)
 | Tool webhook süresi        | Hedef < 300 ms: aynı bölge, indeksli sorgular, soğuk başlatma yok (Fluid Compute)              |
 | TTS streaming              | Retell varsayılanı                                                                             |
 
-Ölçüm: her aramada Retell'in raporladığı gecikmeler (`latency`: ASR, LLM, TTS) `calls` tablosuna ve izleme panosuna yazılır. Bkz. [MONITORING.md](../06-operations/MONITORING.md).
+Ölçüm (hedef, henüz yok): Retell'in raporladığı gecikmeler (`latency`: ASR, LLM, TTS) bugün saklanmıyor; gerçek aramada Retell panelinden okunur. Bkz. [MONITORING.md](../06-operations/MONITORING.md).
 
 ## Durum yönetimi
 

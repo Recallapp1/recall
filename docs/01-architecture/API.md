@@ -99,11 +99,11 @@ Her zaman `200 {}` döner. Bilinmeyen ajanların olayları kaydedilmez (tekrar d
 
 ## `GET /api/cron/reminders` (F2)
 
-Vercel Cron tarafından saatlik çağrılır. `Authorization: Bearer ${CRON_SECRET}` zorunlu. Hatırlatma SMS'leri (idempotent).
+Saatlik hatırlatmalar için hazır, ancak `vercel.json`'da zamanlanmamış: Vercel Pro ve `HOURLY_REMINDERS=true` bekliyor. Bugün hatırlatmaları günlük `/api/cron/notifications` planlar. `Authorization: Bearer ${CRON_SECRET}` zorunlu. Hatırlatma SMS'leri (idempotent).
 
 ## `GET /api/cron/retention` (F7)
 
-Günlük. Saklama süresi dolan transkript ve kayıt URL'lerini temizler.
+Günlük. Saklama süresi dolan transkript ve kayıt URL'lerini, eski bildirim ve geri arama kayıtlarını temizler; silinmeye 10 günden az kalan açık geri arama notları için klinik başına alarm üretir.
 
 ## Hata biçimi (iç uç noktalar)
 

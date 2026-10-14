@@ -4,16 +4,16 @@
 
 İlke: **İhtiyaç kadar, süre kadar.** Varsayılanlar aşağıdadır; klinik ihtiyacına göre kısaltabilir (uzatma, hukuki gerekçe ister).
 
-| Veri                             | Varsayılan süre                                              | Süre dolunca                                             | Sorumlu          |
-| -------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------- | ---------------- |
-| Ses kaydı                        | **30 gün**                                                   | Sağlayıcıdan silinir, `recording_url` null yapılır       | Cron `retention` |
-| Transkript                       | **90 gün**                                                   | `transcript` null; `summary` kalır                       | Cron `retention` |
-| Arama özeti ve meta veri         | 2 yıl                                                        | Anonimleştirilir (numara silinir)                        | Cron             |
-| Randevu                          | Klinik hesabı aktif olduğu sürece                            | Hasta anonimleştirmesinde ilişki korunur, kimlik silinir | —                |
-| Hasta kaydı                      | Son randevudan sonra 5 yıl (avukatla teyit edilecek)         | Anonimleştirme                                           | Cron (Faz 3)     |
-| Bildirim kaydı (`notifications`) | **1 yıl** (hukuki inceleme bekliyor)                         | Silinir; mesaj metni ve telefon zaten saklanmaz          | Cron `retention` |
-| Uygulama logları                 | 30 gün (Vercel planına bağlı)                                | Otomatik                                                 | Vercel           |
-| Klinik hesabı kapatıldığında     | 30 gün içinde tüm veri silinir, kliniğe dışa aktarım verilir | —                                                        | Operasyon        |
+| Veri                             | Varsayılan süre                                                            | Süre dolunca                                             | Sorumlu                    |
+| -------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------- |
+| Ses kaydı                        | **30 gün**                                                                 | Sağlayıcıdan silinir, `recording_url` null yapılır       | Cron `retention`           |
+| Transkript                       | **90 gün**                                                                 | `transcript` null; `summary` kalır                       | Cron `retention`           |
+| Arama özeti ve meta veri         | 2 yıl                                                                      | Anonimleştirilir (numara silinir)                        | Cron                       |
+| Randevu                          | Klinik hesabı aktif olduğu sürece                                          | Hasta anonimleştirmesinde ilişki korunur, kimlik silinir | —                          |
+| Hasta kaydı                      | Son randevudan sonra 5 yıl (avukatla teyit edilecek)                       | Anonimleştirme                                           | Henüz yok (elle, panelden) |
+| Bildirim kaydı (`notifications`) | **1 yıl** (hukuki inceleme bekliyor)                                       | Silinir; mesaj metni ve telefon zaten saklanmaz          | Cron `retention`           |
+| Uygulama logları                 | Vercel planının saklama süresi (Hobby'de kısa; plan değişince güncellenir) | Otomatik                                                 | Vercel                     |
+| Klinik hesabı kapatıldığında     | 30 gün içinde tüm veri silinir, kliniğe dışa aktarım verilir               | Betik hazırlanıyor (A16); şimdilik elle                  | Operasyon                  |
 
 ## Uygulama (2026-10-06)
 
@@ -32,7 +32,7 @@
 
 `anonymizePatient(clinicId, patientId)`:
 
-1. `full_name` → `"Anonim Hasta"`, `phone` → `anon:<uuid>`, `notes` → null
+1. `full_name` → `"Anonimleştirilmiş hasta"`, `phone` → `anon:<uuid>`, `notes` → null
 2. Hastayla ilgili `calls` (2026-10-08, denetim P-09): hastanın numarasından gelenler, `call_patients` ile hastaya bağlananlar (asistan bu aramada hastanın randevusunu oluşturdu, buldu, iptal etti veya taşıdı; gizli numara veya başka birinin numarası olabilir) ve hastanın randevularını oluşturan aramalar. `from_number`, `transcript`, `summary`, `recording_url` → null; Retell kopyaları silme kuyruğuna yazılır
 3. `callback_requests`: hastanın numarasıyla veya silinen bu aramalarda bırakılanlar: `patient_name`, `phone` → null, `reason` → `(anonimleştirildi)`
 4. Randevular kalır (istatistik için), kimlik bağı kopmuş olur; randevu notu ve "kimin adına" adı (`booked_for_name`) silinir (2026-10-13, tam denetim FA-01).

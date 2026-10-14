@@ -15,7 +15,7 @@ Yönlendirme kliniğin **kendi operatöründe** (veya santralinde) kurulur. Reca
 ```mermaid
 flowchart TD
     IN[Gelen arama] --> FIND{Numara bir kliniğe ait mi?}
-    FIND -- Hayır --> ERR[Genel mesaj + kapanış + alarm]
+    FIND -- Hayır --> ERR[Arama reddedilir + alarm]
     FIND -- Evet --> ST{Klinik durumu}
     ST -- paused --> MSG[Randevu alınmıyor mesajı + geri arama notu]
     ST -- active --> AST[Kliniğe özel asistan]

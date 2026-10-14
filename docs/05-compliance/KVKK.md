@@ -33,7 +33,7 @@ Sağlık verisi KVKK m.6 kapsamında **özel nitelikli kişisel veri**dir ve dah
 
 ## Aydınlatma yükümlülüğü
 
-1. **Arama başında kısa anons** (firstMessage içinde):
+1. **Arama başında kısa anons** (firstMessage içinde). Uygulanan (2026-10-14): kayıt açıksa yalnızca "Hizmet kalitesi için görüşmemiz kaydedilmektedir." cümlesi eklenir; aydınlatma metni cümlesi henüz yok, klinik kendi karşılamasına (`assistant.greeting`) ekleyebilir. Hedef metin:
    > "Hizmet kalitesi için görüşmemiz kaydedilmektedir. Kişisel verilerinize ilişkin aydınlatma metnine kliniğimizin web sitesinden ulaşabilirsiniz."
 2. **Tam aydınlatma metni** kliniğin web sitesinde yayınlanır. Recall bir şablon sağlar (veri sorumlusu, amaçlar, aktarım, haklar, başvuru yolu).
 3. Hasta onay SMS'inde aydınlatma metni linki (Faz 2).
@@ -54,7 +54,7 @@ Retell ve onun STT, TTS, LLM sağlayıcıları büyük ihtimalle **yurt dışın
 | Talep            | Uygulama                                                                                                       |
 | ---------------- | -------------------------------------------------------------------------------------------------------------- |
 | Bilgi talebi     | Panelden hasta kaydının dışa aktarımı (JSON), `patients.export` yetkisi                                        |
-| Düzeltme         | Panelden düzenleme                                                                                             |
+| Düzeltme         | Panelde ad ve telefon düzeltme formu (`PANEL_PATIENT_EDIT` anahtarı; kapalıyken Recall ekibi düzeltir)         |
 | Silme / yok etme | Panelde "Anonimleştir": isim ve telefon silinir, transkript ve kayıt silinir, randevu istatistiği anonim kalır |
 | İtiraz           | Klinik üzerinden; Recall klinik talimatıyla uygular                                                            |
 

@@ -22,12 +22,12 @@ Kapsam: tüm kod tabanı (`src/`, `scripts/`, `drizzle/`), production yapıland�
 
 ## Kontrol edilen ve sorun bulunmayan alanlar
 
-- **XSS:** `dangerouslySetInnerHTML`, `eval`, `new Function` yok; React kaçışı.
-- **SQL enjeksiyonu:** tüm sorgular Drizzle parametreli; `sql.raw` yok.
+- **XSS:** `eval`, `new Function` yok; React kaçışı. Tek `dangerouslySetInnerHTML` iki adımlı doğrulama kurulumundaki QR görseli: SVG sunucuda kullanıcının kendi TOTP adresinden üretilir, dışarıdan metin içermez (tam denetim, 2026-10-14).
+- **SQL enjeksiyonu:** tüm sorgular Drizzle parametreli; uygulama kodunda `sql.raw` kullanılmaz (yalnızca testlerde şema hazırlığı).
 - **SSRF:** sunucudan dış çağrılar yalnızca sabit adreslere (Resend, Netgsm, Retell SDK).
-- **Yetki:** her panel sayfası ve action `requireClinic`/`requirePermission`/`requirePanelScope` ile; konsolun 8 action'ının hepsi `requirePlatformAdmin`. Kiracı her zaman sunucuda (oturum, aranan numara, ajan kimliği).
+- **Yetki:** her panel sayfası ve action `requireClinic`/`requirePermission`/`requirePanelScope` ile; konsolun tüm action'ları (2026-10-14: 11) `requirePlatformAdmin`. Kiracı her zaman sunucuda (oturum, aranan numara, ajan kimliği).
 - **CSRF:** Server Action'lar Next'in Origin kontrolüyle; Better Auth `trustedOrigins` tek kaynak.
-- **Gizli değerler:** kodda gizli değer yok; `process.env` yalnızca `src/lib/env.ts` ve seed betiğinde.
+- **Gizli değerler:** kodda gizli değer yok; uygulamada `process.env` yalnızca `src/lib/env.ts`, `src/instrumentation.ts` ve seed betiğinde; `scripts/` altındaki operasyon betikleri kendi değişkenlerini okur.
 - **Log:** hata logları `safeError()` ile; tool ve webhook loglarında yalnızca id ve kod.
 
 ## Bağımlılık taraması (`pnpm audit`)
@@ -43,5 +43,5 @@ CI artık production bağımlılıklarında yüksek veya kritik bir açık gör�
 ## Açık kalanlar
 
 - Hassas alanların (döküm, telefon) uygulama seviyesinde şifrelenmesi: değerlendirme hukuki görüşle birlikte (KVKK.md).
-- 2FA kapsam dışı (ürün kararı); konsol yöneticileri için canlıdan önce yeniden değerlendirilmeli.
+- 2FA bu incelemede kapsam dışıydı; sonradan eklendi (Better Auth `twoFactor`, `PANEL_TWO_FACTOR` anahtarıyla; varsayılan kapalı; kurtarma: [TWO-FACTOR-RECOVERY.md](../06-operations/TWO-FACTOR-RECOVERY.md)).
 - Retell'in ses işleme bölgesi ve yurt dışı aktarım: hukuki inceleme.

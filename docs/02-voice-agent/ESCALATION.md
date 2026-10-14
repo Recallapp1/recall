@@ -29,13 +29,13 @@ Asistan şunları **yapmaz**: teşhis koymak, ilaç veya doz önermek, tedavi yo
 
 ## 3. İnsana devretme
 
-| Durum                               | Mesai içi + devir numarası var | Diğer                     |
-| ----------------------------------- | ------------------------------ | ------------------------- |
-| Hasta insan istiyor                 | `transferCall`                 | `create_callback_request` |
-| Asistan 2 denemede anlayamadı       | `transferCall`                 | `create_callback_request` |
-| Şikâyet, fatura, hukuki konu        | `transferCall`                 | `create_callback_request` |
-| Config'de olmayan bilgi             | Teklif et                      | `create_callback_request` |
-| Devir başarısız (meşgul, cevap yok) | `create_callback_request`      | —                         |
+| Durum                                               | Mesai içi + devir numarası var | Diğer                     |
+| --------------------------------------------------- | ------------------------------ | ------------------------- |
+| Hasta insan istiyor                                 | `transferCall`                 | `create_callback_request` |
+| Asistan 2 denemede anlayamadı (prompt'ta henüz yok) | `transferCall`                 | `create_callback_request` |
+| Şikâyet, fatura, hukuki konu                        | `transferCall`                 | `create_callback_request` |
+| Config'de olmayan bilgi                             | Teklif et                      | `create_callback_request` |
+| Devir başarısız (meşgul, cevap yok)                 | `create_callback_request`      | —                         |
 
 "Mesai içi" kliniğin `working_hours` (klinik geneli, `practitioner_id = null`) satırlarına göre hesaplanır ve prompt'a eklenir.
 
@@ -49,12 +49,12 @@ Asistan şunları **yapmaz**: teşhis koymak, ilaç veya doz önermek, tedavi yo
 
 - Rol değiştirme, talimat ifşası veya veri dökümü istekleri reddedilir.
 - Asıl koruma **mimaridedir**: tool'lar kiracı ve arayan ile sınırlıdır, LLM'e toplu veri erişimi yoktur.
-- Hakaret veya taciz: bir uyarı, devam ederse kibar kapanış (`endCall`).
+- Hakaret veya taciz: bir uyarı, devam ederse kibar kapanış (`endCall`). Prompt'ta henüz yok (tam denetim, 2026-10-14).
 
 ## 6. Hata durumları
 
-| Durum                                | Davranış                                                                                                           |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Tool zaman aşımı veya 5xx            | "Sistemde kısa bir sorun yaşıyorum" → bir kez yeniden dene → olmazsa geri arama notu                               |
-| Veritabanı erişilemez                | Geri arama notu da yazılamıyorsa: "Lütfen daha sonra tekrar arayın" ve Retell'deki arama kaydı inceleme için kalır |
-| Klinik bulunamadı (numara eşleşmedi) | Genel bir hata mesajı ve kapanış. Alarm üretilir                                                                   |
+| Durum                                | Davranış                                                                                                              |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Tool zaman aşımı veya 5xx            | Hedef: "Sistemde kısa bir sorun yaşıyorum" → bir kez yeniden dene → olmazsa geri arama notu. Yeniden deneme henüz yok |
+| Veritabanı erişilemez                | Geri arama notu da yazılamıyorsa: "Lütfen daha sonra tekrar arayın" ve Retell'deki arama kaydı inceleme için kalır    |
+| Klinik bulunamadı (numara eşleşmedi) | Arama reddedilir (`reject`, asistan konuşmaz); `voice.inbound_unknown_number` alarmı günde bir kez                    |
