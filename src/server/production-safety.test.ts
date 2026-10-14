@@ -420,3 +420,23 @@ describe("unique patient-number index (P-12)", () => {
     ).toEqual([]);
   });
 });
+
+describe("deploy docs follow the build (full audit FA-05)", () => {
+  const deployment = readFileSync("docs/06-operations/DEPLOYMENT.md", "utf8");
+  const pkg = JSON.parse(readFileSync("package.json", "utf8")) as {
+    scripts: Record<string, string>;
+  };
+
+  it("every vercel-build command quoted in DEPLOYMENT.md is the real one", () => {
+    const quoted = [...deployment.matchAll(/"vercel-build":\s*"([^"]+)"/g)].map((m) => m[1]);
+    expect(quoted.length).toBeGreaterThan(0);
+    for (const command of quoted) expect(command).toBe(pkg.scripts["vercel-build"]);
+  });
+
+  it("the rollback section says the assistant does not roll back with a promoted deploy", () => {
+    const rollback = deployment.slice(deployment.indexOf("## Geri alma"));
+    expect(rollback).toMatch(/Promote to Production/);
+    expect(rollback).toMatch(/voice:sync/);
+    expect(rollback).toMatch(/revert/i);
+  });
+});
