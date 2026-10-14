@@ -639,3 +639,12 @@ describe("status docs agree with each other and the repository (full audit secti
     expect(read("WORKLOG.md")).not.toMatch(/hepsi ekleyici/);
   });
 });
+
+describe("silence handling is described as the agent spec sets it", () => {
+  it("AGENT-DESIGN names Retell's reminder setting while the spec leaves it at the default", () => {
+    const spec = readFileSync("src/server/voice/providers/retell/agent-spec.ts", "utf8");
+    const design = readFileSync("docs/02-voice-agent/AGENT-DESIGN.md", "utf8");
+    if (!spec.includes("reminder_trigger_ms")) expect(design).toContain("reminder_trigger_ms");
+    expect(design).toContain("end_call_after_silence_ms");
+  });
+});
