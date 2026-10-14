@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { HOLIDAY_YEARS, turkishPublicHolidays } from "./holidays";
 
 describe("Turkish public holidays", () => {
-  it("cover the coming two years, so the shortcut keeps working through 2027", () => {
+  it("cover the next two years, so the shortcut still works late in 2027", () => {
     expect(HOLIDAY_YEARS).toEqual(expect.arrayContaining([2026, 2027, 2028]));
   });
 

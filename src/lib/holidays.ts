@@ -47,6 +47,23 @@ const RELIGIOUS: Record<number, PublicHoliday[]> = {
     },
     { name: "Kurban Bayramı", startDate: "2027-05-16", endDate: "2027-05-19" },
   ],
+  // Astronomical estimate; confirm against the Diyanet calendar when it is published.
+  2028: [
+    {
+      name: "Ramazan Bayramı arifesi",
+      startDate: "2028-02-25",
+      endDate: "2028-02-25",
+      fromTime: "13:00",
+    },
+    { name: "Ramazan Bayramı", startDate: "2028-02-26", endDate: "2028-02-28" },
+    {
+      name: "Kurban Bayramı arifesi",
+      startDate: "2028-05-04",
+      endDate: "2028-05-04",
+      fromTime: "13:00",
+    },
+    { name: "Kurban Bayramı", startDate: "2028-05-05", endDate: "2028-05-08" },
+  ],
 };
 
 export const HOLIDAY_YEARS = Object.keys(RELIGIOUS).map(Number);
