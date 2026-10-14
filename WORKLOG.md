@@ -20,7 +20,7 @@
 | Takip               | V0 + V1 production'da; demo klinikte açık                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Güvenlik            | Hız sınırları (Postgres), webhook tekrar koruması, CSP, kritik denetim kaydı, bileşik kiracı FK'leri, `pnpm audit` CI'da. 2026-10-08 denetimi ([PRELAUNCH-AUDIT-2026-10-08.md](docs/reviews/PRELAUNCH-AUDIT-2026-10-08.md)) sonrası: Better Auth HTTP uç noktaları kapalı (organizasyon silme kilitlenmesi giderildi), iptal/erteleme tekrar güvenli, arama ve randevu sınırları (`limits`), KVKK silmesi tüm numaralarda, Retell silme kuyruğu                                 |
 | Gizli değerler      | **Rotasyon yapıldı (2026-10-09):** Neon production parolası yenilendi, dev dalı ayrı parolada, Retell anahtarı yenilendi ve eskisi silindi; hepsi doğrulandı. Kalan: yedek dalların silinmesi, ayrı dev Retell çalışma alanı, lokal sırlar ([SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md))                                                                                                                                                        |
-| Testler             | 917 Vitest testi (87 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da. Kapsam ölçümü `pnpm test:coverage` (bilgi amaçlı)                                                                                                                                                                                                                                                         |
+| Testler             | 938 Vitest testi (88 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da. Kapsam ölçümü `pnpm test:coverage` (bilgi amaçlı)                                                                                                                                                                                                                                                         |
 | İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı), `ALARM` logları; Sentry kodu hazır (DSN yok), uptime hesabı yok                                                                                                                                                                                                                                                                                                                                                              |
 | Lokal               | Neon **`dev`** dalı (ayrı parola); Retell **Recall Dev** çalışma alanı (ayrı anahtar ve kredi; production anahtarı lokalde yok); `pnpm dev` + `pnpm dev:tunnel`; E2E kendi bellek içi veritabanıyla                                                                                                                                                                                                                                                                             |
 | Karar günlüğü       | [HARDENING-2026-10.md](docs/HARDENING-2026-10.md) (Ekim 2026 sağlamlaştırma), [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                                                                                                                           |
@@ -76,6 +76,29 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-14 · Arama gecikmesi kolonu, tam denetim bölüm 6.1 belge düzeltmeleri, prompt önerisi · FA-11, FA-21, FA-22
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dallar:** her biri önce başarısız test, CI yeşil, fast-forward · **Commit'ler (test → düzeltme):** gecikme `6c9d5c8`→`3da0683`, rotalar/hata kodları `afc8129`→`2f9a218`, ADR ve mimari `833e936`→`690c9ef`, ürün ve SMS dili `bec5884`→`7cd4d12`, plan ve yol haritası `a18f0f3`→`9ed3a87`, sessizlik belgesi ve öneri `db6e7b3`→`ba9679b`
+
+**Ne yapıldı**
+
+- `calls.latency` (jsonb, boş olabilir; migration `0020_call_latency`, ekleyici): `CALL_LATENCY_STORE=true` iken `call_ended` olayındaki uçtan uca/ASR/LLM/TTS gecikmesinin p50, p90 ve max değerleri yazılır. Kapalıyken (production) hiçbir şey yazılmaz; beklenmedik biçim olayı reddetmez. P-12 numara migration'ı (yapılmadı) artık `0021`; güncel belgeler ve test yorumları buna göre, tarihli denetim kayıtları olduğu gibi.
+- Bölüm 6.1: PANEL-SPEC Türkçe rotalar; TOOLS.md hata listesi koddaki kodlarla; ADR dizini durumları ADR'lerle; ADR-006 şablon yeri; ADR-010 konsol üyeliği sınırı; TECH-STACK/ADR-001 önizleme ve lokal veritabanı; DATA-MODEL (organizasyon, `kvkk_notice_at` kullanılmıyor, `clinic_id` kuralı istisnaları); README/PRD/USER-FLOWS SMS'i "hazır ama kapalı" anlatıyor; NOTIFICATIONS şablon tablosu koddan; USER-PERSONAS konsol; ROADMAP plandaki faz durumlarıyla aynı; plan F6 çıkış notu, F7 yasal taslaklar, F8 `main` koruması; eski ONBOARDING güncel belgeye yönlendiriyor; WORKLOG migration ifadesi düzeltildi. Her biri için kaymayı yakalayan test.
+- AGENT-DESIGN sessizlik: Retell varsayılan hatırlatması (10 sn, bir kez) ve 20 sn kapanış.
+- [proposals/PROMPT-RECOVERY-RULES.md](docs/proposals/PROMPT-RECOVERY-RULES.md): sessizlik, tool yeniden deneme, hakaret ve "iki kez anlayamadı" için önerilen prompt satırları ve ayarlar (`VOICE_PROMPT_RECOVERY`, kapalı), gerçek arama kontrolleri. **Prompt değişmedi.**
+- Karar günlüğü 138.
+
+**Doğrulama**
+
+- Her birleştirmeden sonra: deploy başarılı, `/api/health` db ok, jobs 200, ajan spec `23dfd4f92bde`, production env 13. Migration: gecikme birleştirmesinden sonra **21** (önce 20), `calls.latency` boş olabilir ve 0 satırda dolu.
+- `pnpm test:p12-rehearsal` 920 geçti, 4 atlandı.
+
+**Açık kalanlar / dikkat**
+
+- A16 provası Neon `dev` dalında yapılamadı: bu makineden 5432 bağlantısı zaman aşımına uğruyor (ağ). Prova yerel bellek içi veritabanında yapıldı (önceki kayıt).
+- `CALL_LATENCY_STORE` production'da açılmadı (ürün sahibi kararı; açınca yalnızca yeni aramalar dolar).
+- Prompt önerisi ürün sahibinin onayını bekliyor.
 
 ### 2026-10-14 · Tam denetim A10–A16 ve 2028 tatilleri · FA-05, FA-08, FA-16–FA-19, FA-21–FA-24, FA-26, FA-30
 
