@@ -440,3 +440,37 @@ describe("deploy docs follow the build (full audit FA-05)", () => {
     expect(rollback).toMatch(/revert/i);
   });
 });
+
+describe("documentation claims that the code can check (full audit A15)", () => {
+  const read = (path: string) => readFileSync(path, "utf8");
+  const sources = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory()
+        ? sources(`${dir}/${entry.name}`)
+        : /\.(ts|tsx)$/.test(entry.name) && !entry.name.includes(".test.")
+          ? [read(`${dir}/${entry.name}`)]
+          : [],
+    );
+  const code = sources("src").join("\n");
+
+  it("every ADR is listed in the ADR index", () => {
+    const index = read("docs/decisions/README.md");
+    const adrs = readdirSync("docs/decisions").filter((f) => /^ADR-\d{3}/.test(f));
+    for (const file of adrs) expect(index, file).toContain(`(${file})`);
+  });
+
+  it("the security review does not deny what the code does", () => {
+    const review = read("docs/05-compliance/SECURITY-REVIEW-2026-10.md");
+    if (code.includes("sql.raw(")) expect(review).not.toMatch(/`sql\.raw` yok/);
+    if (code.includes("dangerouslySetInnerHTML")) {
+      expect(review).not.toMatch(/`dangerouslySetInnerHTML`, `eval`, `new Function` yok/);
+    }
+  });
+
+  it("the retention doc names the erased patient as the code does", () => {
+    const panel = read("src/server/domain/panel.ts");
+    const name = /fullName: "([^"]+)",\s*phone: `\$\{ANONYMIZED_PREFIX\}/.exec(panel)?.[1];
+    expect(name).toBeDefined();
+    expect(read("docs/05-compliance/DATA-RETENTION.md")).toContain(`"${name}"`);
+  });
+});
