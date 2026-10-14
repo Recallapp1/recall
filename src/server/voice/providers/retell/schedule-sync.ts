@@ -4,10 +4,9 @@ import { eq } from "drizzle-orm";
 import { after } from "next/server";
 
 import { env } from "@/lib/env";
-import { safeError } from "@/lib/safe-error";
-
 import { db } from "../../../db";
 import { voiceAgents } from "../../../db/schema";
+import { raiseAlarm } from "../../../observability/alarm";
 import { retellClient, retellConfig } from "./config";
 import { syncClinicVoiceAgent, type SyncResult } from "./sync";
 
@@ -35,18 +34,24 @@ export async function syncAssistantNow(clinicId: string): Promise<SyncResult | n
   });
 }
 
-/** After a settings change: sync once the response has been sent. */
-export function scheduleAssistantSync(clinicId: string): void {
+/**
+ * After a settings change: sync once the response has been sent. A failure
+ * is an alarm (full audit FA-14): the assistant keeps speaking from the old
+ * settings (hours, services) until someone syncs it.
+ */
+export function scheduleAssistantSync(
+  clinicId: string,
+  sync: (clinicId: string) => Promise<SyncResult | null> = syncAssistantNow,
+): void {
   after(async () => {
     try {
-      const result = await syncAssistantNow(clinicId);
+      const result = await sync(clinicId);
       if (result?.status === "error") {
-        console.error(JSON.stringify({ msg: "voice.sync.failed", clinicId, error: result.error }));
+        // Provider messages carry no patient data (sync.ts: describeError).
+        raiseAlarm("voice.sync_failed", { clinicId, error: result.error.slice(0, 200) });
       }
     } catch (error) {
-      console.error(
-        JSON.stringify({ msg: "voice.sync.failed", clinicId, error: safeError(error) }),
-      );
+      raiseAlarm("voice.sync_failed", { clinicId }, error);
     }
   });
 }

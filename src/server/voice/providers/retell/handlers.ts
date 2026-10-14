@@ -25,6 +25,7 @@ import {
   isErasedProviderCall,
   processProviderDeletions,
 } from "../../../domain/provider-deletions";
+import { raiseAlarm } from "../../../observability/alarm";
 import { allow } from "../../../security/rate-limits";
 import { buildCallVariables } from "../../prompt";
 import { runTool } from "../../tools";
@@ -68,6 +69,13 @@ export async function handleInbound(request: Request, deps: RetellHandlerDeps) {
   const ctx = number ? await findClinicByPhoneNumber(deps.db, number) : null;
   if (!ctx) {
     log("warn", "retell.inbound.clinic_not_found");
+    // A number routed to Retell but not bound to a clinic: callers are turned away.
+    await alarmOncePerDay(
+      deps,
+      `unknown:${number ?? inbound.to_number}`,
+      "voice.inbound_unknown_number",
+      {},
+    );
     return Response.json({ call_inbound: { reject: true } });
   }
 
@@ -83,6 +91,9 @@ export async function handleInbound(request: Request, deps: RetellHandlerDeps) {
     );
   if (!agent?.externalAgentId) {
     log("error", "retell.inbound.agent_not_synced", { clinicId: ctx.clinic.id });
+    await alarmOncePerDay(deps, `unsynced:${ctx.clinic.id}`, "voice.inbound_agent_not_synced", {
+      clinicId: ctx.clinic.id,
+    });
     return Response.json({ call_inbound: { reject: true } });
   }
 
@@ -117,6 +128,31 @@ export async function handleInbound(request: Request, deps: RetellHandlerDeps) {
       metadata: { clinic_id: ctx.clinic.id },
     },
   });
+}
+
+/**
+ * Calls refused because of our configuration (full audit FA-11): one alarm per
+ * subject and day. The subject is hashed into the counter key; the alarm
+ * carries ids only, never a phone number.
+ */
+async function alarmOncePerDay(
+  deps: RetellHandlerDeps,
+  subject: string,
+  event: string,
+  fields: Record<string, string>,
+) {
+  try {
+    const first = await consumeRateLimit(
+      deps.db,
+      `voice-alarm:inbound:${hashKey(subject)}`,
+      { limit: 1, windowMs: 24 * 60 * 60 * 1000 },
+      deps.now(),
+    );
+    if (first.allowed) raiseAlarm(event, fields);
+  } catch (error) {
+    // The call is refused either way; an unreachable counter still alarms.
+    raiseAlarm(event, fields, error);
+  }
 }
 
 /** Custom function call: runs one provider-agnostic tool inside the call's clinic. */
