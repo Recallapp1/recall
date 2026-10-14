@@ -8,11 +8,11 @@
  *
  *   pnpm tsx --conditions=react-server scripts/rehearsal/p12-dev-rehearsal.ts
  */
+import { devDatabaseRefusal } from "@/lib/dev-database";
 import { config } from "dotenv";
 
 config({ path: [".env.local", ".env"], quiet: true });
 
-const PRODUCTION_ENDPOINT = "ep-small-bar-b1c058o0";
 const PHONE = "+905000000019"; // 0500 is not an assigned Turkish prefix
 const UP = [
   `CREATE INDEX IF NOT EXISTS "patients_clinic_id_phone_idx" ON "patients" ("clinic_id", "phone")`,
@@ -30,9 +30,9 @@ function check(label: string, ok: boolean, detail = "") {
 }
 
 async function main() {
-  const url = process.env.DATABASE_URL ?? "";
-  if (!url || url.includes(PRODUCTION_ENDPOINT)) {
-    console.error("Refusing to run: DATABASE_URL is missing or points at production.");
+  const refusal = devDatabaseRefusal(process.env.DATABASE_URL);
+  if (refusal) {
+    console.error(`Refusing to run: ${refusal}`);
     process.exitCode = 1;
     return;
   }

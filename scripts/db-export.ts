@@ -12,6 +12,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { config } from "dotenv";
+
+import { devDatabaseRefusal } from "@/lib/dev-database";
 import { getTableName, is } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 
@@ -19,12 +21,10 @@ import { db, schema } from "@/server/db";
 
 config({ path: [".env.local", ".env"], quiet: true });
 
-const PRODUCTION_ENDPOINT = "ep-small-bar-b1c058o0";
-
 async function main() {
-  const url = process.env.DATABASE_URL ?? "";
-  if (!url || url.includes(PRODUCTION_ENDPOINT)) {
-    console.error("Refusing to export: DATABASE_URL is missing or points at production.");
+  const refusal = devDatabaseRefusal(process.env.DATABASE_URL);
+  if (refusal) {
+    console.error(`Refusing to export: ${refusal}`);
     process.exitCode = 1;
     return;
   }

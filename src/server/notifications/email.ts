@@ -3,6 +3,8 @@ import "server-only";
 import { env } from "@/lib/env";
 import { safeError } from "@/lib/safe-error";
 
+import { raiseAlarm } from "../observability/alarm";
+
 /**
  * Transactional email behind an adapter (ADR-006). Emails never contain
  * patient data: only the clinic name, the inviter's name and one-time links.
@@ -26,10 +28,18 @@ export function maskEmail(email: string): string {
 
 /**
  * Local development: nothing is sent. The text body is printed so one-time
- * links (password, invitation) can be opened from the terminal.
+ * links (password, invitation) can be opened from the terminal. In production
+ * those links are credentials: the provider refuses and alarms instead of
+ * writing them to the logs (full audit FA-30).
  */
 class ConsoleEmailProvider implements EmailProvider {
+  constructor(private readonly production: boolean) {}
+
   async send({ to, subject, text }: EmailMessage) {
+    if (this.production) {
+      raiseAlarm("email.console_in_production", { subject });
+      throw new Error("EMAIL_PROVIDER=console cannot send in production");
+    }
     console.info(`[email:console] to=${maskEmail(to)} subject="${subject}"\n${text}`);
   }
 }
@@ -64,7 +74,7 @@ export function emailProvider(): EmailProvider {
   provider =
     config.EMAIL_PROVIDER === "resend"
       ? new ResendEmailProvider(config.RESEND_API_KEY!, config.EMAIL_FROM)
-      : new ConsoleEmailProvider();
+      : new ConsoleEmailProvider(config.NODE_ENV === "production");
   return provider;
 }
 

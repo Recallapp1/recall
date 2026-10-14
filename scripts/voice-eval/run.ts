@@ -18,6 +18,7 @@
  * latency setting for the run and restores the env configuration afterwards
  * (profiles.ts).
  */
+import { devDatabaseRefusal } from "@/lib/dev-database";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -55,18 +56,18 @@ import { invariants, scenarios, type CallOutcome, type Scenario, type ToolCall }
 config({ path: [".env.local", ".env"], quiet: true });
 
 const CLINIC_SLUG = "gulus-dis";
-const PRODUCTION_ENDPOINT = "ep-small-bar-b1c058o0";
 const WORK_DIR = resolve(".voice-eval");
 const SEEDED = { zeynep: "+905329000051", murat: "+905329000052" } as const;
 
 const retell = new Retell({ apiKey: process.env.RETELL_API_KEY ?? "" });
 
 function guard() {
-  const dbUrl = process.env.DATABASE_URL ?? "";
   const appUrl = process.env.APP_URL ?? "";
   if (!process.env.RETELL_API_KEY) throw new Error("RETELL_API_KEY is not set.");
-  if (dbUrl.includes(PRODUCTION_ENDPOINT) || appUrl.includes("recalltr.company")) {
-    throw new Error("Refusing to run: this points at production. Use the dev database and tunnel.");
+  const refusal = devDatabaseRefusal(process.env.DATABASE_URL);
+  if (refusal) throw new Error(`Refusing to run: ${refusal} Use the dev database and tunnel.`);
+  if (appUrl.includes("recalltr.company")) {
+    throw new Error("Refusing to run: APP_URL is production. Use the dev tunnel.");
   }
   if (process.platform !== "win32") {
     throw new Error("Caller audio uses Windows text-to-speech (tts.ps1); run on Windows.");
