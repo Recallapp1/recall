@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { sign } from "retell-sdk";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { createTestClinic, createTestDb, type TestClinic } from "@/test/db";
 
@@ -16,6 +16,7 @@ import {
   patients,
   providerDeletions,
   toolRequests,
+  voiceAgents,
 } from "../../../db/schema";
 import { dispatchClinicNotifications } from "../../../domain/notifications";
 import {
@@ -188,6 +189,51 @@ describe("inbound webhook", () => {
       deps(),
     );
     expect(await response.json()).toEqual({ call_inbound: { reject: true } });
+  });
+});
+
+describe("inbound alarms (full audit FA-11, FA-14)", () => {
+  function alarms() {
+    const spy = vi.spyOn(console, "error");
+    onTestFinished(() => spy.mockRestore());
+    return () =>
+      spy.mock.calls.map(([line]) => String(line)).filter((line) => line.includes('"msg":"ALARM"'));
+  }
+
+  it("a call to a number that belongs to no clinic raises one alarm a day, without the number", async () => {
+    const lines = alarms();
+    for (const id of ["unknown_1", "unknown_2"]) {
+      const response = await handleInbound(
+        await signedRequest({
+          event: "call_inbound",
+          call_inbound: { call_id: id, to_number: "+902120000998" },
+        }),
+        deps(),
+      );
+      expect(await response.json()).toEqual({ call_inbound: { reject: true } });
+    }
+    const raised = lines().filter((line) => line.includes("voice.inbound_unknown_number"));
+    expect(raised).toHaveLength(1);
+    expect(raised[0]).not.toContain("2120000998");
+  });
+
+  it("a clinic number without a synced agent raises one alarm a day for that clinic", async () => {
+    const unsynced = await createTestClinic(db);
+    await db.delete(voiceAgents).where(eq(voiceAgents.clinicId, unsynced.ctx.clinic.id));
+    const lines = alarms();
+    for (const id of ["nosync_1", "nosync_2"]) {
+      const response = await handleInbound(
+        await signedRequest({
+          event: "call_inbound",
+          call_inbound: { call_id: id, to_number: unsynced.phoneNumber },
+        }),
+        deps(),
+      );
+      expect(await response.json()).toEqual({ call_inbound: { reject: true } });
+    }
+    const raised = lines().filter((line) => line.includes("voice.inbound_agent_not_synced"));
+    expect(raised).toHaveLength(1);
+    expect(raised[0]).toContain(unsynced.ctx.clinic.id);
   });
 });
 
