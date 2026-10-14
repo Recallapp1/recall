@@ -1,6 +1,6 @@
 # Proposal: silence, tool retry, abuse and "did not understand twice"
 
-_Status: **draft for the owner's review, 2026-10-14.** Nothing here is in the prompt or the agent. Owner-facing, English; the proposed lines the assistant would say are in Turkish, exactly as they would go into `src/server/voice/prompt.ts`._
+_Status: **sections 1–4 approved by the owner as drafts only (2026-10-14).** `VOICE_PROMPT_RECOVERY` is not built and stays off until a real call; retries apply only to the read-only tools (`check_availability`, `find_appointments`), never to booking, cancelling, rescheduling or callback notes. The open questions stay open until then. Nothing here is in the prompt or the agent. Owner-facing, English; the proposed lines the assistant would say are in Turkish, exactly as they would go into `src/server/voice/prompt.ts`._
 
 The full audit (FA-11) and the A15 doc check found four rules that [ESCALATION.md](../02-voice-agent/ESCALATION.md) and [AGENT-DESIGN.md](../02-voice-agent/AGENT-DESIGN.md) describe but the assistant does not follow. This document proposes wording and settings for each one, so you can approve, change or reject them line by line.
 

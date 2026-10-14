@@ -1,6 +1,40 @@
 # Action plan from the full audit (2026-10-13)
 
-_Status 2026-10-14 (evening): A1–A15 done, A16 built (dev only), 2028 holidays done (commit ids in the Tag column); A4 and A5 after the owner's decisions of 2026-10-14. Open: A17 (wording), A18 (real call), A16 production run and dev rehearsal (network), prompt recovery proposal (owner review), CSP. Section 6.1 docs done; call latency stored behind `CALL_LATENCY_STORE` (off). Every remaining task in logical order, from [FULL-AUDIT-2026-10-13.md](FULL-AUDIT-2026-10-13.md). Owner-facing, English. Tags: **do-now** (code, no spend), **blocked-on-me** (money, account, lawyer, vendor or decision), **needs-real-call**, **defer-after-pilot**. Critical and high findings come first. Nothing here has been started: this audit changed no code._
+_Status 2026-10-14 (final for this round): every item that can be done without a real call or an owner decision is done. A1–A15, the 2028 holidays, section 6.1 doc corrections and the per-call latency column are merged; A16 is built (dev only). **Building stops here** until a real call or a decision from you. The remaining work is the list in section F. Owner-facing, English. Tags: **do-now** (code, no spend), **blocked-on-me** (money, account, lawyer, vendor or decision), **needs-real-call**, **defer-after-pilot**._
+
+## F. Final remaining list (2026-10-14)
+
+Nothing is left in **do-now**: every remaining item waits for you or for a real call.
+
+### Blocked on you
+
+| #   | Item                                       | What I need                                                                                                                                                                                  |
+| --- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1  | A16 dev rehearsal                          | You run `pnpm clinic:offboard` (export → erase → purge) against the Neon `dev` branch from a network that allows port 5432 ([CLINIC-OFFBOARDING.md](../06-operations/CLINIC-OFFBOARDING.md)) |
+| F2  | A16 in production                          | Your approval after F1; then a separate change lifts the dev-only refusal                                                                                                                    |
+| F3  | A17 KVKK notice and objection wording      | Wording from you or the lawyer (B4); then I build it behind a switch                                                                                                                         |
+| F4  | `CALL_LATENCY_STORE`                       | Off by your decision (2026-10-14). Turning it on fills `calls.latency` for new calls only; useful for C13 and ADR-003                                                                        |
+| F5  | B1–B10                                     | Section B: Retell credit (dev, production), phone line, lawyer, Vercel Pro, Neon Launch + restore drill, Sentry/uptime, decisions, company/SMS/İYS, 2FA policy                               |
+| F6  | 2028 lunar holidays                        | Check against the Diyanet calendar when published; the code marks them as an estimate                                                                                                        |
+| F7  | Dependabot PRs                             | Four open; not merged by rule                                                                                                                                                                |
+| F8  | P-12 patient-number migration (now `0021`) | Decision whether to build it; `PATIENTS_PER_NAME` stays off until then                                                                                                                       |
+| F9  | Switches D1–D11                            | Section D; each after its prerequisite, all off in production today                                                                                                                          |
+
+### Needs a real call
+
+| #   | Item                                                                                      | Notes                                                                                                                                                                                                                                       |
+| --- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F10 | C1–C14 real-call script                                                                   | After B2 + B3                                                                                                                                                                                                                               |
+| F11 | A18 (`flagAlreadyExisted`, FA-20)                                                         | Verified on a real call with `POST_CALL_FLAGS` on                                                                                                                                                                                           |
+| F12 | Voice evaluation stage 1, latency and model decision (ADR-003)                            | After B1                                                                                                                                                                                                                                    |
+| F13 | Prompt recovery rules ([PROMPT-RECOVERY-RULES.md](../proposals/PROMPT-RECOVERY-RULES.md)) | Sections approved **as drafts only** (2026-10-14). `VOICE_PROMPT_RECOVERY` is **not built** and stays off until a real call; retries only for read-only tools (`check_availability`, `find_appointments`). Build, then R1–R7 on a real call |
+| F14 | D7 `VOICE_TOOL_FAILSAFE`                                                                  | After C12 on a dev agent                                                                                                                                                                                                                    |
+
+### Deferred after the pilot
+
+| #   | Item                        |
+| --- | --------------------------- |
+| F15 | A19 nonce-based CSP (FA-28) |
 
 ## A. Code fixes doable now (no spend)
 
@@ -70,20 +104,22 @@ Pass bar for starting the pilot: C1–C11 pass; C13 recorded and accepted by you
 
 ## D. Switch enabling order (with verification after each)
 
-| Step | Switch                                                            | When                                             | Verify after redeploy                                                                 |
-| ---- | ----------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| D1   | `POST_CALL_FLAGS`, `VOICE_TOOL_IDEMPOTENCY`                       | Now (callers do not hear them)                   | `/api/health` ok; after C1, a `tool_requests` row and `calls.flagged_at` set          |
-| D2   | `PANEL_GO_LIVE_CHECK`, `PANEL_LIMITS_VIEW`                        | Now                                              | Pages open for an owner, 403/404 for staff                                            |
-| D3   | `AUDIT_STRICT`, `CALL_REVIEW`, `TEST_CALL_FLAG`                   | Before the first clinic                          | No `ALARM audit.critical_write_failed`; report box on a call page                     |
-| D4   | `TWO_FACTOR_RESET_EMAILS` then `PANEL_TWO_FACTOR=required-admins` | After A4                                         | Owner sent to `/iki-adim`; sign-in asks for a code; reset button only for your e-mail |
-| D5   | `PANEL_PATIENT_EDIT`                                              | **After A2**                                     | Correct a test patient's phone; export still lists the old calls                      |
-| D6   | `VOICE_SHARED_NUMBER_CHECK`                                       | **After A1 + A3**, after C1–C4                   | `booked_for_name` filled; reschedule keeps it; erasure clears it                      |
-| D7   | `VOICE_TOOL_FAILSAFE`                                             | After C12 on a dev agent                         | Log `retell.tool.unavailable` only on failures                                        |
-| D8   | `PANEL_SESSION_HOURS=12`                                          | If the clinic shares a reception PC              | New session cookie lifetime 12 h                                                      |
-| D9   | Option A, hardening, model                                        | After evaluation stage 2                         | New `spec_hash`; test call                                                            |
-| D10  | `DELETION_QUEUE_HOURLY`, `HOURLY_REMINDERS`                       | After B5 and A7, with the `vercel.json` entries  | Route answers counts; reminders hourly; jobs health includes the hourly job           |
-| D11  | `SMS_SENDING_ENABLED`                                             | After B9 (Netgsm + İYS) and A11                  | A `sent` notification row with provider `netgsm`                                      |
-| —    | `PATIENTS_PER_NAME`                                               | Defer (needs the P-12 migration (0021) decision) | —                                                                                     |
+| Step | Switch                                                            | When                                                           | Verify after redeploy                                                                 |
+| ---- | ----------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| D1   | `POST_CALL_FLAGS`, `VOICE_TOOL_IDEMPOTENCY`                       | Now (callers do not hear them)                                 | `/api/health` ok; after C1, a `tool_requests` row and `calls.flagged_at` set          |
+| D2   | `PANEL_GO_LIVE_CHECK`, `PANEL_LIMITS_VIEW`                        | Now                                                            | Pages open for an owner, 403/404 for staff                                            |
+| D3   | `AUDIT_STRICT`, `CALL_REVIEW`, `TEST_CALL_FLAG`                   | Before the first clinic                                        | No `ALARM audit.critical_write_failed`; report box on a call page                     |
+| D4   | `TWO_FACTOR_RESET_EMAILS` then `PANEL_TWO_FACTOR=required-admins` | After A4                                                       | Owner sent to `/iki-adim`; sign-in asks for a code; reset button only for your e-mail |
+| D5   | `PANEL_PATIENT_EDIT`                                              | **After A2**                                                   | Correct a test patient's phone; export still lists the old calls                      |
+| D6   | `VOICE_SHARED_NUMBER_CHECK`                                       | **After A1 + A3**, after C1–C4                                 | `booked_for_name` filled; reschedule keeps it; erasure clears it                      |
+| D7   | `VOICE_TOOL_FAILSAFE`                                             | After C12 on a dev agent                                       | Log `retell.tool.unavailable` only on failures                                        |
+| D8   | `PANEL_SESSION_HOURS=12`                                          | If the clinic shares a reception PC                            | New session cookie lifetime 12 h                                                      |
+| D9   | Option A, hardening, model                                        | After evaluation stage 2                                       | New `spec_hash`; test call                                                            |
+| D10  | `DELETION_QUEUE_HOURLY`, `HOURLY_REMINDERS`                       | After B5 and A7, with the `vercel.json` entries                | Route answers counts; reminders hourly; jobs health includes the hourly job           |
+| D11  | `SMS_SENDING_ENABLED`                                             | After B9 (Netgsm + İYS) and A11                                | A `sent` notification row with provider `netgsm`                                      |
+| D12  | `CALL_LATENCY_STORE`                                              | Your decision (off for now)                                    | New calls have `calls.latency`; no `ALARM`                                            |
+| —    | `VOICE_PROMPT_RECOVERY`                                           | Not built; after the drafts are confirmed on a real call (F13) | —                                                                                     |
+| —    | `PATIENTS_PER_NAME`                                               | Defer (needs the P-12 migration (0021) decision)               | —                                                                                     |
 
 ## E. Critical path to a supervised pilot
 

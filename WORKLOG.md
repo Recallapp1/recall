@@ -77,6 +77,15 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-14 · Ürün sahibinin kararları ve son kalan liste
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `docs/action-plan-final` (yalnızca belge; test edilebilir iddia yok)
+
+**Ne yapıldı**
+
+- Kararlar: prompt kurtarma kuralları yalnızca taslak olarak onaylandı (`VOICE_PROMPT_RECOVERY` yapılmadı, gerçek aramaya kadar kapalı; yeniden deneme yalnızca okuma tool'larında); `CALL_LATENCY_STORE` kapalı kalıyor; A16 dev provasını ürün sahibi başka bir ağdan yapacak. Karar günlüğü 139.
+- [FULL-AUDIT-ACTION-PLAN.md](docs/reviews/FULL-AUDIT-ACTION-PLAN.md) bölüm F: son kalan liste (ürün sahibini bekleyen, gerçek arama gerektiren, pilottan sonraya). Yapılabilir iş kalmadı; geliştirme gerçek arama veya karar gelene kadar durdu.
+
 ### 2026-10-14 · Arama gecikmesi kolonu, tam denetim bölüm 6.1 belge düzeltmeleri, prompt önerisi · FA-11, FA-21, FA-22
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dallar:** her biri önce başarısız test, CI yeşil, fast-forward · **Commit'ler (test → düzeltme):** gecikme `6c9d5c8`→`3da0683`, rotalar/hata kodları `afc8129`→`2f9a218`, ADR ve mimari `833e936`→`690c9ef`, ürün ve SMS dili `bec5884`→`7cd4d12`, plan ve yol haritası `a18f0f3`→`9ed3a87`, sessizlik belgesi ve öneri `db6e7b3`→`ba9679b`
