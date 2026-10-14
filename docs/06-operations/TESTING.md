@@ -42,6 +42,10 @@
 - Böylece SQL, constraint'ler ve transaction'lar Docker veya ağ olmadan test edilir. Testler lokal makinede ve CI'da aynı şekilde çalışır.
 - Her test kendi kliniğini oluşturur (`createTestClinic`); testler birbirinin verisine dayanmaz.
 
+## Kapsam (coverage)
+
+`pnpm test:coverage` (v8 sağlayıcısı, Vitest ile aynı sürüm; rapor `outputs/coverage/`, git dışı). İlk ölçüm (2026-10-14, 905 test, tüm `src/`): satır %54,4, ifade %53,8, dal %42,7, fonksiyon %41,3. Arayüz bileşenleri birim testlerinde değil E2E'de çalıştığı için bu sayıyı düşürür. Eşik henüz yok; CI'da çalışmaz (FA-26).
+
 ## CI
 
 `.github/workflows/ci.yml`: install → lint → typecheck → format:check → test (birim ve entegrasyon).
