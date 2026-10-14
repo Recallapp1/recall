@@ -45,7 +45,7 @@ Hasta asistan konuşurken söze girerse asistan durur ve dinler. Retell'de varsa
 
 ### Sessizlik
 
-- Uygulanan: 20 sn sessizlikte Retell aramayı sonlandırır (`end_call_after_silence_ms`).
+- Uygulanan: Retell varsayılanıyla 10 sn sessizlikte model bir kez konuşmaya yönlendirilir (`reminder_trigger_ms` ayarlanmamış; ne söyleyeceği prompt'ta yazmıyor); 20 sn sessizlikte Retell aramayı sonlandırır (`end_call_after_silence_ms`). Öneri: [PROMPT-RECOVERY-RULES.md](../proposals/PROMPT-RECOVERY-RULES.md).
 - Hedef (henüz yok): 6 sn sessizlikte "Orada mısınız?", ardından kibar kapanış.
 
 ### Bekleme sesleri
