@@ -6,7 +6,7 @@ import {
   processProviderDeletions,
   sweepRecordingOffCalls,
 } from "@/server/domain/provider-deletions";
-import { applyRetention } from "@/server/domain/retention";
+import { applyRetention, openCallbacksNearingDeletion } from "@/server/domain/retention";
 import { raiseAlarm } from "@/server/observability/alarm";
 import { deleteVoiceProviderCall } from "@/server/voice/sync";
 
@@ -36,6 +36,15 @@ export async function GET(request: Request) {
       providerDeletionsFailed: deletions.failed,
     };
     console.info(JSON.stringify({ msg: "cron.retention", ...result }));
+    // Unanswered callback requests about to be deleted (FA-18): ids and counts only.
+    // Never fails the run: the retention work above is already done.
+    await openCallbacksNearingDeletion(db(), now)
+      .then((clinics) => {
+        for (const { clinicId, open } of clinics) {
+          raiseAlarm("callbacks.open_near_deletion", { clinicId, open });
+        }
+      })
+      .catch((error: unknown) => raiseAlarm("callbacks.check_failed", {}, error));
     if (run) await endRun(db(), run.id, "succeeded", { ...result }, new Date());
     return Response.json(result);
   } catch (error) {

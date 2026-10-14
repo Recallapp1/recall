@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, inArray, isNotNull, lt, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull, lt, sql } from "drizzle-orm";
 
 import type { Executor } from "../db";
 import {
@@ -128,4 +128,28 @@ export async function applyRetention(exec: Executor, now: Date): Promise<Retenti
     transcriptsCleared: transcripts.length,
     callerNumbersCleared: numbers.length,
   };
+}
+
+/** Open notes this old are deleted within ten days (RETENTION_DAYS.callbackRequest). */
+export const CALLBACK_WARNING_DAYS = 80;
+
+/**
+ * Open callback notes close to their deletion, per clinic (full audit FA-18):
+ * the daily job alarms on them so an unanswered request is not lost unseen.
+ * Counts only.
+ */
+export async function openCallbacksNearingDeletion(
+  exec: Executor,
+  now: Date,
+): Promise<{ clinicId: string; open: number }[]> {
+  return exec
+    .select({ clinicId: callbackRequests.clinicId, open: count() })
+    .from(callbackRequests)
+    .where(
+      and(
+        eq(callbackRequests.status, "open"),
+        lt(callbackRequests.createdAt, new Date(now.getTime() - CALLBACK_WARNING_DAYS * DAY_MS)),
+      ),
+    )
+    .groupBy(callbackRequests.clinicId);
 }

@@ -509,7 +509,7 @@ async function sendOne(
   let phone: string;
   let body: string;
   if (isTransactional(notification.kind)) {
-    const target = await resolveTransactionalTarget(db, notification);
+    const target = await resolveTransactionalTarget(db, notification, deps.now);
     if ("skip" in target) return skip(target.skip);
     phone = target.phone;
     const when = utcToLocal(target.startsAt, clinic.timezone);
@@ -596,6 +596,7 @@ function isTransactional(kind: Notification["kind"]): kind is AppointmentMessage
 async function resolveTransactionalTarget(
   db: Database,
   notification: Notification,
+  now: Date,
 ): Promise<{ phone: string; startsAt: Date } | { skip: SkipReason }> {
   const patient = await resolvePatientPhone(db, notification);
   if ("skip" in patient) return patient;
@@ -614,6 +615,10 @@ async function resolveTransactionalTarget(
   const stillTrue =
     notification.kind === "appointment_cancellation" ? appointment.status === "cancelled" : active;
   if (!stillTrue) return { skip: "subject_changed" };
+  // Queued outside the send window: a confirmation after the start helps nobody (FA-19).
+  if (notification.kind !== "appointment_cancellation" && appointment.startsAt <= now) {
+    return { skip: "too_late" };
+  }
   return { phone: patient.phone, startsAt: appointment.startsAt };
 }
 
