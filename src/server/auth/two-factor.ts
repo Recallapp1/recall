@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 import { env, type Env } from "@/lib/env";
 import { memberRoles } from "@/lib/permissions";
@@ -73,6 +73,20 @@ export function mayResetTwoFactor(email: string, configured: string | undefined)
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
   return allowed.includes(email.trim().toLowerCase());
+}
+
+/** Recall console users (platform admins) with their two-step state, for the console. */
+export async function listConsoleUsers(exec: Executor) {
+  return exec
+    .select({
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      twoFactorEnabled: users.twoFactorEnabled,
+    })
+    .from(users)
+    .where(eq(users.role, PLATFORM_ADMIN))
+    .orderBy(asc(users.name));
 }
 
 /**

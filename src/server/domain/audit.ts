@@ -17,6 +17,7 @@ export type AuditAction =
   | "auth.two_factor_backup_codes_regenerated"
   | "auth.two_factor_backup_code_used"
   | "auth.two_factor_reset_by_recall"
+  | "auth.two_factor_reset_console_user"
   | "security.auth_endpoint_blocked"
   | "team.invitation_created"
   | "team.invitation_cancelled"
@@ -86,6 +87,7 @@ export const CRITICAL_AUDIT_ACTIONS: ReadonlySet<AuditAction> = new Set<AuditAct
   "auth.two_factor_backup_codes_regenerated",
   "auth.two_factor_backup_code_used",
   "auth.two_factor_reset_by_recall",
+  "auth.two_factor_reset_console_user",
   "patient.exported",
   "patient.anonymized",
   "call.recording_played",

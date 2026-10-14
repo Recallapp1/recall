@@ -24,6 +24,8 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   "auth.two_factor_backup_codes_regenerated": "Yedek kodları yeniledi",
   "auth.two_factor_backup_code_used": "Yedek kodla giriş yaptı",
   "auth.two_factor_reset_by_recall": "İki adımlı giriş Recall tarafından sıfırlandı",
+  "auth.two_factor_reset_console_user":
+    "Konsol kullanıcısının iki adımlı girişi sıfırlandı (Recall)",
   "security.auth_endpoint_blocked": "Kapalı bir oturum uç noktasını denedi",
   "team.invitation_created": "Davet gönderdi",
   "team.invitation_cancelled": "Daveti iptal etti",

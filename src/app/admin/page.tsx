@@ -14,9 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { env } from "@/lib/env";
 import { requirePlatformAdmin } from "@/server/auth/session";
+import { listConsoleUsers, mayResetTwoFactor } from "@/server/auth/two-factor";
 import { db } from "@/server/db";
 import { listClinicsOverview } from "@/server/platform/clinics";
+
+import { ConsoleUsers } from "./console-users";
 
 export const metadata: Metadata = { title: "Klinikler" };
 
@@ -38,8 +42,13 @@ function AgentBadge({ status }: { status: string | null }) {
 
 export default async function ConsoleHomePage() {
   await connection();
-  await requirePlatformAdmin();
+  const session = await requirePlatformAdmin();
   const clinics = await listClinicsOverview(db(), new Date());
+  // Only the Recall owner (TWO_FACTOR_RESET_EMAILS); also while the switch is
+  // off, so a locked-out owner account can be reset (TWO-FACTOR-RECOVERY.md).
+  const consoleUsers = mayResetTwoFactor(session.user.email, env().TWO_FACTOR_RESET_EMAILS)
+    ? await listConsoleUsers(db())
+    : null;
   const totals = clinics.reduce(
     (sum, clinic) => ({
       calls: sum.calls + clinic.stats.calls,
@@ -142,6 +151,17 @@ export default async function ConsoleHomePage() {
             ))}
           </TableBody>
         </Table>
+      )}
+      {consoleUsers && (
+        <section className="mt-8 flex flex-col gap-2 rounded-card border border-hairline bg-paper p-5">
+          <h2 className="text-base font-semibold text-heading">Recall konsol kullanıcıları</h2>
+          <p className="text-xs text-body">
+            Telefonunu ve yedek kodlarını kaybeden konsol kullanıcısının iki adımlı girişini
+            yalnızca Recall sahibi sıfırlar, kimliği konsol dışından doğruladıktan sonra
+            (docs/06-operations/TWO-FACTOR-RECOVERY.md).
+          </p>
+          <ConsoleUsers users={consoleUsers} selfId={session.user.id} />
+        </section>
       )}
     </>
   );

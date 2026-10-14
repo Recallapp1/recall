@@ -19,9 +19,10 @@ import type { SettingsResult } from "@/lib/contracts/settings";
 import { safeError } from "@/lib/safe-error";
 import { addClinicMember } from "@/server/auth/accounts";
 import { requirePlatformAdmin } from "@/server/auth/session";
+import { PLATFORM_ADMIN } from "@/server/auth/platform";
 import { mayResetTwoFactor, resetTwoFactor } from "@/server/auth/two-factor";
 import { db } from "@/server/db";
-import { clinics, members } from "@/server/db/schema";
+import { clinics, members, users } from "@/server/db/schema";
 import { recordAudit, withAudit, type AuditInput } from "@/server/domain/audit";
 import { DomainError } from "@/server/domain/errors";
 import { setClinicFeature, setClinicLimits } from "@/server/domain/settings";
@@ -358,5 +359,54 @@ export async function resetTwoFactorAction(input: unknown): Promise<SettingsResu
     return { ok: true, message: "Sıfırlandı; kişi bir sonraki girişte yeniden kurar." };
   } catch (error) {
     return failure("platform.two_factor_reset.failed", error);
+  }
+}
+
+const consoleResetSchema = z.object({
+  userId: z.uuid(),
+  verifiedOutOfBand: z.literal(true, {
+    error: "Önce kişinin kimliğini başka bir kanaldan doğrulayın.",
+  }),
+});
+
+/**
+ * Resets a Recall console user's two-step sign-in (owner's decision
+ * 2026-10-14, full audit FA-06). Recall owner only (TWO_FACTOR_RESET_EMAILS),
+ * after verifying the person out of band (docs/06-operations/TWO-FACTOR-RECOVERY.md);
+ * audited without a clinic. Never oneself: a signed-in owner does not need it,
+ * and a locked-out one cannot reach it (second console account or the runbook).
+ */
+export async function resetConsoleUserTwoFactorAction(input: unknown): Promise<SettingsResult> {
+  const session = await requirePlatformAdmin();
+  if (!mayResetTwoFactor(session.user.email, env().TWO_FACTOR_RESET_EMAILS)) {
+    return { ok: false, message: "Sıfırlama yalnızca Recall sahibine açık." };
+  }
+  const parsed = consoleResetSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]!.message };
+  const { userId } = parsed.data;
+  if (userId === session.user.id) {
+    return { ok: false, message: "Kendi iki adımlı girişinizi buradan sıfırlayamazsınız." };
+  }
+  const [target] = await db().select({ role: users.role }).from(users).where(eq(users.id, userId));
+  if (target?.role !== PLATFORM_ADMIN) {
+    return { ok: false, message: "Bu kişi Recall konsol kullanıcısı değil." };
+  }
+  try {
+    await withAudit(
+      db(),
+      {
+        clinicId: null,
+        actorUserId: session.user.id,
+        action: "auth.two_factor_reset_console_user",
+        targetType: "user",
+        targetId: userId,
+        metadata: { verifiedOutOfBand: true },
+      },
+      (tx) => resetTwoFactor(tx, userId),
+    );
+    revalidatePath("/admin");
+    return { ok: true, message: "Sıfırlandı; kişi bir sonraki girişte yeniden kurar." };
+  } catch (error) {
+    return failure("platform.console_two_factor_reset.failed", error);
   }
 }
