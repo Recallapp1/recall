@@ -158,6 +158,20 @@ describe("voice and analysis settings", () => {
     ).not.toBe(base);
   });
 
+  it("keeps the agent spec unchanged unless the emergency-first rule is explicitly on", () => {
+    const base = specHash(buildRetellAgentSpec(input()));
+    expect(
+      specHash(
+        buildRetellAgentSpec(input({ tuning: { promptVariant: "full", emergencyFirst: false } })),
+      ),
+    ).toBe(base);
+    const on = buildRetellAgentSpec(
+      input({ tuning: { promptVariant: "full", emergencyFirst: true } }),
+    );
+    expect(specHash(on)).not.toBe(base);
+    expect(on.llm.general_prompt?.startsWith("# Acil durum")).toBe(true);
+  });
+
   it("applies the latency tuning when configured (ADR-003 option A)", () => {
     const full = buildRetellAgentSpec(input());
     const tuned = buildRetellAgentSpec(
