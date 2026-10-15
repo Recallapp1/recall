@@ -36,6 +36,7 @@ export function retellConfig(): RetellConfig {
     tuning: {
       promptVariant: config.VOICE_PROMPT_VARIANT,
       promptHardening: config.VOICE_PROMPT_HARDENING,
+      emergencyFirst: config.VOICE_EMERGENCY_FIRST,
       responsiveness: config.RETELL_RESPONSIVENESS,
       interruptionSensitivity: config.RETELL_INTERRUPTION_SENSITIVITY,
       dynamicResponsiveness: config.RETELL_DYNAMIC_RESPONSIVENESS,

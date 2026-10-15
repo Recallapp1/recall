@@ -55,6 +55,12 @@ const envSchema = z.object({
    * numbers) (audit A9). Off everywhere until measured.
    */
   VOICE_PROMPT_HARDENING: optionalFlag,
+  /**
+   * "true": the emergency rule opens the baseline prompt, with the exact
+   * sentence in words and a longer symptom list (the hardened prompt's rule
+   * alone). Changes the agent spec; off until a real-call test (C5).
+   */
+  VOICE_EMERGENCY_FIRST: optionalFlag,
   /** Retell turn-taking, 0–1 (Retell default 1 = answers as soon as it can). Lower waits longer. */
   RETELL_RESPONSIVENESS: optionalUnit,
   /** 0–1 (Retell default 1). Lower needs more words before the caller interrupts the agent. */
