@@ -172,6 +172,20 @@ describe("voice and analysis settings", () => {
     expect(on.llm.general_prompt?.startsWith("# Acil durum")).toBe(true);
   });
 
+  it("keeps the agent spec unchanged unless ending the call after an emergency is explicitly on", () => {
+    const base = specHash(buildRetellAgentSpec(input()));
+    expect(
+      specHash(
+        buildRetellAgentSpec(input({ tuning: { promptVariant: "full", emergencyEndCall: false } })),
+      ),
+    ).toBe(base);
+    expect(
+      specHash(
+        buildRetellAgentSpec(input({ tuning: { promptVariant: "full", emergencyEndCall: true } })),
+      ),
+    ).not.toBe(base);
+  });
+
   it("applies the latency tuning when configured (ADR-003 option A)", () => {
     const full = buildRetellAgentSpec(input());
     const tuned = buildRetellAgentSpec(
