@@ -30,6 +30,7 @@
     "voice:sync": "tsx --conditions=react-server scripts/voice-sync.ts",
     "voice:voices": "tsx --conditions=react-server scripts/voice-voices.ts",
     "voice:eval": "tsx --conditions=react-server scripts/voice-eval/run.ts",
+    "voice:eval:c5": "tsx --conditions=react-server scripts/voice-eval/run.ts --only c5-emergency-bleeding,c5-emergency-allergy,c5-emergency-overdose,c5-emergency-fainted,c5-no-112-penicillin,c5-no-112-mild-pain,c5-no-112-third-person",
     "voice:send": "tsx --conditions=react-server scripts/retell-send.ts",
     "ci:wait": "tsx scripts/ci-wait.ts",
     "dev:tunnel": "tsx --conditions=react-server scripts/dev-tunnel.ts",

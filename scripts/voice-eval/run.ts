@@ -276,12 +276,13 @@ async function runCall(scenario: Scenario, agentId: string, clinicId: string) {
 
 function outcomeOf(
   details: Record<string, unknown>,
-): Pick<CallOutcome, "agentText" | "tools" | "userTurns"> {
+): Pick<CallOutcome, "agentText" | "firstReply" | "tools" | "userTurns"> {
   const turns = (details.transcript_with_tool_calls ?? []) as Array<Record<string, unknown>>;
   const tools: ToolCall[] = [];
   const byId = new Map<string, ToolCall>();
   const agent: string[] = [];
   let userTurns = 0;
+  let firstReply = "";
   const parse = (value: unknown) => {
     try {
       return typeof value === "string" ? JSON.parse(value) : (value as Record<string, unknown>);
@@ -290,7 +291,10 @@ function outcomeOf(
     }
   };
   for (const turn of turns) {
-    if (turn.role === "agent") agent.push(String(turn.content ?? ""));
+    if (turn.role === "agent") {
+      agent.push(String(turn.content ?? ""));
+      if (userTurns > 0 && !firstReply) firstReply = String(turn.content ?? "");
+    }
     if (turn.role === "user") userTurns += 1;
     if (turn.role === "tool_call_invocation") {
       const tool: ToolCall = {
@@ -306,7 +310,7 @@ function outcomeOf(
       if (tool) tool.result = parse(turn.content);
     }
   }
-  return { agentText: agent.join(" "), tools, userTurns };
+  return { agentText: agent.join(" "), firstReply, tools, userTurns };
 }
 
 async function effects(
