@@ -90,3 +90,42 @@ describe("unbacked booking claims", () => {
     );
   });
 });
+
+/*
+ * C5 (VOICE_EMERGENCY_FIRST): the prompt's emergency list now names allergic
+ * reactions, self-harm and overdose. The post-call flag must catch the
+ * caller's own words for them, so a call where the assistant missed the rule
+ * is still flagged; routine mentions of allergies or painkillers must not be.
+ */
+describe("C5 symptoms in the caller's own words", () => {
+  it.each([
+    "bir ilaca alerjim tuttu",
+    "alerjim tuttu, ne yapacağımı bilmiyorum",
+    "antibiyotik alerji yaptı, kaşıntı başladı",
+    "alerjik tepki verdim galiba",
+    "dudaklarım şişiyor",
+    "dilim şişti, konuşamıyorum",
+    "boğazım şişmeye başladı",
+    "çok fazla ağrı kesici içtim",
+    "fazla hap yuttum",
+    "bir kutu ilaç içti",
+    "oğlum kendine zarar verdi",
+    "annem için arıyorum, bayıldı",
+  ])("%s", (line) => {
+    expect(medicalFlags(caller(line))).toEqual(["emergency"]);
+  });
+});
+
+describe("C5 false alarms: routine allergy and painkiller mentions", () => {
+  it.each([
+    "penisiline alerjim var, randevu istiyorum",
+    "polen alerjim var, kontrol için arıyorum",
+    "alerji ilacı kullanıyorum, sorun olur mu",
+    "ağrı kesici aldım ama geçmedi, randevu istiyorum",
+    "dişim hafif ağrıyor",
+    "dudak dolgusu için randevu almak istiyorum",
+    "dudağımda uçuk var",
+  ])("%s", (line) => {
+    expect(medicalFlags(caller(line))).not.toContain("emergency");
+  });
+});
