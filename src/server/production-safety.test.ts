@@ -648,3 +648,51 @@ describe("silence handling is described as the agent spec sets it", () => {
     expect(design).toContain("end_call_after_silence_ms");
   });
 });
+
+describe("every alarm the code raises is in the MONITORING table, and only those", () => {
+  const files = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory()
+        ? files(join(dir, entry.name))
+        : /\.tsx?$/.test(entry.name) && !entry.name.includes(".test.")
+          ? [join(dir, entry.name)]
+          : [],
+    );
+  const code = files("src")
+    .map((f) => readFileSync(f, "utf8"))
+    .join("\n");
+  const raised = new Set(
+    [
+      ...code.matchAll(/raiseAlarm\(\s*"([a-z_.]+)"/g),
+      ...code.matchAll(/alarmOncePerDay\(\s*[^;]*?"([a-z]+\.[a-z_.]+)"/g),
+    ].map((m) => m[1]!),
+  );
+  const table = readFileSync("docs/06-operations/MONITORING.md", "utf8");
+  const documented = new Set([...table.matchAll(/`ALARM ([a-z_.*]+)`/g)].map((m) => m[1]!));
+
+  it("finds the alarms in the code", () => {
+    expect(raised.size).toBeGreaterThan(10);
+    expect(raised).toContain("audit.critical_write_failed");
+    expect(raised).toContain("voice.inbound_unknown_number");
+  });
+
+  it("documents each raised alarm by its exact name", () => {
+    for (const name of raised) expect(documented, name).toContain(name);
+  });
+
+  it("documents no alarm the code does not raise", () => {
+    for (const name of documented) expect(raised, name).toContain(name);
+  });
+});
+
+describe("every on/off switch is in the owner's switch table", () => {
+  it("lists each optionalFlag of env.ts in NEXT-STEPS-FOR-OWNER.md", () => {
+    const envSource = readFileSync("src/lib/env.ts", "utf8");
+    const switches = [...envSource.matchAll(/^ {2}([A-Z][A-Z0-9_]+): optionalFlag,/gm)].map(
+      (m) => m[1]!,
+    );
+    expect(switches.length).toBeGreaterThan(15);
+    const table = readFileSync("docs/NEXT-STEPS-FOR-OWNER.md", "utf8");
+    for (const name of switches) expect(table, name).toMatch(new RegExp(`^\\| \`${name}\` `, "m"));
+  });
+});
