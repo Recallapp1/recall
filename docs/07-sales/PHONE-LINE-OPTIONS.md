@@ -47,6 +47,8 @@ Uygulama tarafı hazır: numara konsolda kliniğe bağlanır, `call_inbound` web
 
 ## İlk görüşmede sorulacaklar (her iki sağlayıcıya)
 
+> Gönderilmeye hazır, genişletilmiş liste (e-posta metni, SMS ve İYS, cevap tablosu, karar ölçütleri): [PHONE-LINE-QUESTIONS.md](PHONE-LINE-QUESTIONS.md).
+
 1. Gelen aramaları **harici bir SIP adresine** (`sip:sip.retellai.com`, TCP veya TLS) yönlendirebiliyor musunuz? Kimlik doğrulama: IP izin listesi mi, kullanıcı/parola mı?
 2. **Arayan numara** (From / P-Asserted-Identity) Retell'e değiştirilmeden iletilir mi? Gizli numaralı aramalar nasıl görünür?
 3. **SIP REFER** (aktarma) destekleniyor mu? Desteklenmiyorsa aktarma nasıl yapılır?
