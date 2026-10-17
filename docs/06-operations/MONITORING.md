@@ -91,25 +91,37 @@ Yapılandırılmış JSON, kişisel veri yok ([SECURITY.md](../05-compliance/SEC
 
 İzleyici yalnızca **HTTP koduna** bakmalı; gövde değişebilir.
 
-## Alarmlar ve log tabanlı uyarılar (2026-10-09)
+## Alarmlar ve log tabanlı uyarılar (2026-10-09, tam liste 2026-10-17)
 
-| Olay                                      | Kaynak                           | Anlamı                                                                                                  | Önerilen uyarı                         |
-| ----------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `ALARM audit.critical_write_failed`       | `recordAudit()`                  | Kritik denetim kaydı yazılamadı, eylem durduruldu                                                       | Hemen e-posta                          |
-| `ALARM cron.*_failed`                     | cron rotaları                    | Günlük iş başarısız                                                                                     | Hemen e-posta                          |
-| `ALARM voice.daily_minutes_reached`       | `admitInboundCall()`             | Kliniğin günlük ses dakikası doldu, aramalar reddediliyor (günde bir)                                   | Hemen e-posta                          |
-| `ALARM voice.sync_failed`                 | ayar değişikliği sonrası senkron | Asistan yeni ayarları alamadı; eski saat ve hizmetlerle konuşuyor (FA-14)                               | Hemen e-posta                          |
-| `ALARM voice.inbound_unknown_number`      | gelen arama                      | Retell'e yönlenen bir numara hiçbir kliniğe bağlı değil; arayan reddediliyor (günde bir)                | Hemen e-posta                          |
-| `ALARM voice.inbound_agent_not_synced`    | gelen arama                      | Kliniğin numarası var ama asistanı senkronize değil; arayan reddediliyor (klinik başına günde bir)      | Hemen e-posta                          |
-| `ALARM callbacks.open_near_deletion`      | günlük `retention` işi           | Kliniğin 80 günden eski açık geri arama notları var; 90. günde silinecekler (klinik başına sayı, FA-18) | Hemen e-posta; kliniğe haber verin     |
-| `ALARM voice.provider_deletion_failing`   | silme kuyruğu                    | Retell kaydı 3+ denemede silinemedi (KVKK)                                                              | Hemen e-posta                          |
-| `metric: audit_write_failed`              | `recordAudit()`                  | Olağan denetim kaydı yazılamadı (eylem sürdü)                                                           | Günde > 0 ise e-posta                  |
-| `call.flagged` (warn)                     | `POST_CALL_FLAGS`                | Arama işaretlendi (acil durum, uyuşmayan sonuç)                                                         | Panel rozeti; isteğe bağlı günlük özet |
-| `auth.endpoint_blocked` (warn)            | `/api/auth/*`                    | Kapalı bir oturum uç noktası denendi                                                                    | Saatte > 20 ise e-posta                |
-| `tool.failed` (error)                     | `runTool()`                      | Bir sesli tool hata verdi; asistana dürüst `INTERNAL_ERROR` gitti                                       | Saatte > 3 ise e-posta                 |
-| `retell.tool.unavailable` (error)         | `VOICE_TOOL_FAILSAFE`            | Tool başlamadan veritabanı hatası (G-03)                                                                | Hemen e-posta                          |
-| `retell.event.erased_call_ignored` (warn) | silme sonrası olay               | Silinmiş hastanın aramasına geç gelen olay yok sayıldı (G-01)                                           | Yok (beklenen, nadir)                  |
-| `panel.patient_identity.failed` (error)   | `PANEL_PATIENT_EDIT`             | Hasta bilgisi düzeltme kaydedilemedi (G-02)                                                             | Günde > 0 ise e-posta                  |
+| Olay                                      | Kaynak                                                   | Anlamı                                                                                                  | Önerilen uyarı                         |
+| ----------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `ALARM audit.critical_write_failed`       | `recordAudit()`                                          | Kritik denetim kaydı yazılamadı, eylem durduruldu                                                       | Hemen e-posta                          |
+| `ALARM cron.retention_failed`             | `/api/cron/retention`                                    | Günlük saklama işi (döküm, kayıt, silme kuyruğu) başarısız                                              | Hemen e-posta                          |
+| `ALARM cron.notifications_failed`         | `/api/cron/notifications`                                | Günlük bildirim işi başarısız                                                                           | Hemen e-posta                          |
+| `ALARM cron.notifications_clinics_failed` | `/api/cron/notifications`                                | İş çalıştı ama bazı kliniklerde bildirim planlanamadı                                                   | Hemen e-posta                          |
+| `ALARM cron.notifications_unfinished`     | `/api/cron/notifications`                                | İş süre sınırında bitmedi; kalan bildirimler ertesi güne kaldı                                          | Günlük özet                            |
+| `ALARM cron.reminders_failed`             | `/api/cron/reminders` (`HOURLY_REMINDERS`)               | Saatlik hatırlatma işi başarısız (Vercel Pro ile zamanlanır)                                            | Hemen e-posta                          |
+| `ALARM cron.reminders_clinics_failed`     | `/api/cron/reminders`                                    | Saatlik iş çalıştı ama bazı kliniklerde başarısız                                                       | Hemen e-posta                          |
+| `ALARM cron.provider_deletions_failed`    | `/api/cron/provider-deletions` (`DELETION_QUEUE_HOURLY`) | Saatlik Retell silme işi başarısız (Vercel Pro ile zamanlanır)                                          | Hemen e-posta                          |
+| `ALARM callbacks.check_failed`            | günlük `retention` işi                                   | Silinmeye yakın açık geri arama notları kontrol edilemedi (iş yine de tamamlanır)                       | Günlük özet                            |
+| `ALARM email.console_in_production`       | `emailProvider()`                                        | Canlıda `EMAIL_PROVIDER=console`: davet ve parola e-postaları gönderilmiyor (FA-30)                     | Hemen e-posta                          |
+| `ALARM voice.daily_minutes_reached`       | `admitInboundCall()`                                     | Kliniğin günlük ses dakikası doldu, aramalar reddediliyor (günde bir)                                   | Hemen e-posta                          |
+| `ALARM voice.sync_failed`                 | ayar değişikliği sonrası senkron                         | Asistan yeni ayarları alamadı; eski saat ve hizmetlerle konuşuyor (FA-14)                               | Hemen e-posta                          |
+| `ALARM voice.inbound_unknown_number`      | gelen arama                                              | Retell'e yönlenen bir numara hiçbir kliniğe bağlı değil; arayan reddediliyor (günde bir)                | Hemen e-posta                          |
+| `ALARM voice.inbound_agent_not_synced`    | gelen arama                                              | Kliniğin numarası var ama asistanı senkronize değil; arayan reddediliyor (klinik başına günde bir)      | Hemen e-posta                          |
+| `ALARM callbacks.open_near_deletion`      | günlük `retention` işi                                   | Kliniğin 80 günden eski açık geri arama notları var; 90. günde silinecekler (klinik başına sayı, FA-18) | Hemen e-posta; kliniğe haber verin     |
+| `ALARM voice.provider_deletion_failing`   | silme kuyruğu                                            | Retell kaydı 3+ denemede silinemedi (KVKK)                                                              | Hemen e-posta                          |
+| `metric: audit_write_failed`              | `recordAudit()`                                          | Olağan denetim kaydı yazılamadı (eylem sürdü)                                                           | Günde > 0 ise e-posta                  |
+| `call.flagged` (warn)                     | `POST_CALL_FLAGS`                                        | Arama işaretlendi (acil durum, uyuşmayan sonuç)                                                         | Panel rozeti; isteğe bağlı günlük özet |
+| `auth.endpoint_blocked` (warn)            | `/api/auth/*`                                            | Kapalı bir oturum uç noktası denendi                                                                    | Saatte > 20 ise e-posta                |
+| `tool.failed` (error)                     | `runTool()`                                              | Bir sesli tool hata verdi; asistana dürüst `INTERNAL_ERROR` gitti                                       | Saatte > 3 ise e-posta                 |
+| `retell.tool.unavailable` (error)         | `VOICE_TOOL_FAILSAFE`                                    | Tool başlamadan veritabanı hatası (G-03)                                                                | Hemen e-posta                          |
+| `retell.event.erased_call_ignored` (warn) | silme sonrası olay                                       | Silinmiş hastanın aramasına geç gelen olay yok sayıldı (G-01)                                           | Yok (beklenen, nadir)                  |
+| `panel.patient_identity.failed` (error)   | `PANEL_PATIENT_EDIT`                                     | Hasta bilgisi düzeltme kaydedilemedi (G-02)                                                             | Günde > 0 ise e-posta                  |
+
+Koddaki her `ALARM` adı bu tabloda tam adıyla yer alır; `production-safety.test.ts` farkı CI'da yakalar.
+
+> **Bugün (2026-10-17) alarmlar kimseye ulaşmıyor:** `ALARM` satırları yalnızca Vercel loglarında, Hobby planında log 1 saat tutuluyor. Sentry (`SENTRY_DSN`) veya bir log uyarısı kurulana kadar bir alarm fark edilmeyebilir.
 
 Sentry açıksa `ALARM` olayları Sentry sorunu olur (etiket `alarm`); olay metinlerinde telefon, e-posta ve anahtar maskelenir (`src/lib/redact.ts`, testli).
 

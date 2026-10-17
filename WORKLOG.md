@@ -8,7 +8,7 @@
 
 ## Güncel durum
 
-> **Projenin güncel durumunun tek yetkili kaynağı bu tablodur.** Planın faz tablosu ve eski raporlar tarihli özetlerdir. _Son güncelleme: 2026-10-14._
+> **Projenin güncel durumunun tek yetkili kaynağı bu tablodur.** Planın faz tablosu ve eski raporlar tarihli özetlerdir. _Son güncelleme: 2026-10-17._
 
 | Konu                | Durum (2026-10-09)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,8 +20,8 @@
 | Takip               | V0 + V1 production'da; demo klinikte açık                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Güvenlik            | Hız sınırları (Postgres), webhook tekrar koruması, CSP, kritik denetim kaydı, bileşik kiracı FK'leri, `pnpm audit` CI'da. 2026-10-08 denetimi ([PRELAUNCH-AUDIT-2026-10-08.md](docs/reviews/PRELAUNCH-AUDIT-2026-10-08.md)) sonrası: Better Auth HTTP uç noktaları kapalı (organizasyon silme kilitlenmesi giderildi), iptal/erteleme tekrar güvenli, arama ve randevu sınırları (`limits`), KVKK silmesi tüm numaralarda, Retell silme kuyruğu                                 |
 | Gizli değerler      | **Rotasyon yapıldı (2026-10-09):** Neon production parolası yenilendi, dev dalı ayrı parolada, Retell anahtarı yenilendi ve eskisi silindi; hepsi doğrulandı. Kalan: yedek dalların silinmesi, ayrı dev Retell çalışma alanı, lokal sırlar ([SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md))                                                                                                                                                        |
-| Testler             | 938 Vitest testi (88 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da. Kapsam ölçümü `pnpm test:coverage` (bilgi amaçlı)                                                                                                                                                                                                                                                         |
-| İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı), `ALARM` logları; Sentry kodu hazır (DSN yok), uptime hesabı yok                                                                                                                                                                                                                                                                                                                                                              |
+| Testler             | 1033 Vitest testi (90 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da. Kapsam ölçümü `pnpm test:coverage` (bilgi amaçlı)                                                                                                                                                                                                                                                        |
+| İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı; `HEALTH_JOBS_TOKEN` 2026-10-15'ten beri canlıda, ayrıntılar yalnızca başlıkla), `ALARM` logları (tam liste MONITORING.md, testle eşli); Sentry kodu hazır (DSN yok), uptime hesabı yok. **Alarmlar bugün kimseye ulaşmıyor** (Hobby log 1 saat)                                                                                                                                                                               |
 | Lokal               | Neon **`dev`** dalı (ayrı parola); Retell **Recall Dev** çalışma alanı (ayrı anahtar ve kredi; production anahtarı lokalde yok); `pnpm dev` + `pnpm dev:tunnel`; E2E kendi bellek içi veritabanıyla                                                                                                                                                                                                                                                                             |
 | Karar günlüğü       | [HARDENING-2026-10.md](docs/HARDENING-2026-10.md) (Ekim 2026 sağlamlaştırma), [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                                                                                                                           |
 
@@ -76,6 +76,28 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-15 – 17 · Acil durum kuralı, arama sonrası işaret kalıpları, acil durumda görüşmeyi kapatma, avukat paketi
+
+**Agent/kişi:** Claude (Opus 5.5) · **Commit'ler (test → düzeltme):** `b7501e1`→`d3b6c25` (`VOICE_EMERGENCY_FIRST`), `8537f07`→`94278e4` (işaret kalıpları, C5 senaryoları), `946cb21`→`18b5d6f` (`VOICE_EMERGENCY_END_CALL`)
+
+**Ne yapıldı**
+
+- `VOICE_EMERGENCY_FIRST` (kapalı): güçlendirilmiş sürümün acil durum kuralı tek başına, talimatın en başında; sabit cümle "Lütfen hemen yüz on ikiyi arayın.", belirti listesine alerjik tepki, kendine zarar verme, aşırı ilaç. Kapalıyken 16 talimat birleşimi birebir aynı (parmak izi testi), spec özeti değişmez. Karar 140.
+- Arama sonrası acil işareti arayanın kendi sözlerindeki yeni belirtileri yakalıyor; olağan alerji ve ağrı kesici sözleri yakalanmıyor (testli). Karar 141.
+- `VOICE_EMERGENCY_END_CALL` (kapalı): aktarma yapılamıyorsa acil durum cümlesinden sonra görüşme kapanır; arayan konuşuyorsa kapanmaz. Karar 142.
+- Değerlendirme: `pnpm voice:eval:c5` (7 senaryo), `pnpm voice:eval:c5-close` (2 senaryo); normal koşu 26 senaryo, 1. kademe ≈ 9,65 $. Kredi yok, çalıştırılmadı.
+- Dev ajanı `VOICE_EMERGENCY_FIRST=true` ile senkronlandı (yalnızca Recall Dev); tünel provası `"db":"ok"`. `.env.local`: `VOICE_EMERGENCY_FIRST=true`, `POST_CALL_FLAGS=true`.
+- Avukat paketi depo dışında (`Masaüstü/AVUKAT-PAKETI.md`); gönderilmedi.
+
+**Doğrulama**
+
+- Her birleştirmeden sonra: deploy başarılı, health ok, jobs 200, 21 migration, canlı spec `23dfd4f92bde` (ajanlar en son 2026-10-08), canlıda `VOICE_EMERGENCY_*` ve `POST_CALL_FLAGS` tanımsız. Canlı env 14 (`HEALTH_JOBS_TOKEN` 2026-10-15'te ürün sahibinin hesabıyla eklendi).
+
+**Açık kalanlar / dikkat**
+
+- C5 Retell kredisini bekliyor; avukat paketi proje bitince gönderilecek. Önce `VOICE_EMERGENCY_FIRST`, C5 geçince ayrı turda `VOICE_EMERGENCY_END_CALL`.
+- Canlıdaki iki kliniğin devir numarası yok.
 
 ### 2026-10-14 · Ürün sahibinin kararları ve son kalan liste
 
