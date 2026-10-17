@@ -186,6 +186,18 @@ describe("voice and analysis settings", () => {
     ).not.toBe(base);
   });
 
+  it("keeps the agent spec unchanged unless the KVKK notice (A17) is explicitly on", () => {
+    const base = specHash(buildRetellAgentSpec(input()));
+    expect(
+      specHash(
+        buildRetellAgentSpec(input({ tuning: { promptVariant: "full", kvkkNotice: false } })),
+      ),
+    ).toBe(base);
+    const on = buildRetellAgentSpec(input({ tuning: { promptVariant: "full", kvkkNotice: true } }));
+    expect(specHash(on)).not.toBe(base);
+    expect(on.llm.begin_message).toContain("yapay zekâ asistanıyım");
+  });
+
   it("applies the latency tuning when configured (ADR-003 option A)", () => {
     const full = buildRetellAgentSpec(input());
     const tuned = buildRetellAgentSpec(
