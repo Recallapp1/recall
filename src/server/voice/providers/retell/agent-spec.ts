@@ -50,6 +50,8 @@ export interface VoiceTuning {
   emergencyFirst?: boolean;
   /** VOICE_EMERGENCY_END_CALL. Unset keeps the prompt unchanged. */
   emergencyEndCall?: boolean;
+  /** VOICE_KVKK_NOTICE (A17). Unset keeps the greeting and prompt unchanged. */
+  kvkkNotice?: boolean;
   /** 0–1; Retell's default is 1. */
   responsiveness?: number;
   /** 0–1; Retell's default is 1. */
@@ -115,6 +117,7 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
     hardening: tuning?.promptHardening,
     emergencyFirst: tuning?.emergencyFirst,
     emergencyEndCall: tuning?.emergencyEndCall,
+    kvkkNotice: tuning?.kvkkNotice,
     toolNames: TOOL_NAMES,
     placeholders: {
       now: `{{current_time_${tz}}}`,
@@ -172,7 +175,7 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
       model_temperature: 0,
       ...(input.llmHighPriority && { model_high_priority: true }),
       start_speaker: "agent",
-      begin_message: buildFirstMessage(clinic, settings),
+      begin_message: buildFirstMessage(clinic, settings, { kvkkNotice: tuning?.kvkkNotice }),
       general_prompt: generalPrompt,
       general_tools: [...(customTools ?? []), ...builtInTools],
       default_dynamic_variables: { ...DEFAULT_CALL_VARIABLES },

@@ -38,6 +38,7 @@ export function retellConfig(): RetellConfig {
       promptHardening: config.VOICE_PROMPT_HARDENING,
       emergencyFirst: config.VOICE_EMERGENCY_FIRST,
       emergencyEndCall: config.VOICE_EMERGENCY_END_CALL,
+      kvkkNotice: config.VOICE_KVKK_NOTICE,
       responsiveness: config.RETELL_RESPONSIVENESS,
       interruptionSensitivity: config.RETELL_INTERRUPTION_SENSITIVITY,
       dynamicResponsiveness: config.RETELL_DYNAMIC_RESPONSIVENESS,

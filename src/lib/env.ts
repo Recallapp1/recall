@@ -67,6 +67,13 @@ const envSchema = z.object({
    * still talking. Changes the agent spec; off until a real-call test.
    */
   VOICE_EMERGENCY_END_CALL: optionalFlag,
+  /**
+   * "true": A17 with the draft wording: the greeting says "yapay zekâ
+   * asistanı" and points to the privacy notice; the prompt answers "are you
+   * a person?" honestly and handles an objection to recording. Changes the
+   * agent spec; off until the lawyer approves the wording.
+   */
+  VOICE_KVKK_NOTICE: optionalFlag,
   /** Retell turn-taking, 0–1 (Retell default 1 = answers as soon as it can). Lower waits longer. */
   RETELL_RESPONSIVENESS: optionalUnit,
   /** 0–1 (Retell default 1). Lower needs more words before the caller interrupts the agent. */
