@@ -50,6 +50,7 @@ pnpm db:local       # lokal Postgres (PGlite, Docker gerekmez)
 pnpm db:up          # lokal Postgres (Docker)
 pnpm db:generate    # şemadan migration üret
 pnpm db:migrate     # migration'ları uygula
+pnpm db:status      # bu veritabanı canlıyla aynı migration'larda mı (salt okunur; dev:tunnel ve voice:eval de kontrol eder)
 pnpm db:seed        # demo klinik verisi
 pnpm db:studio      # Drizzle Studio
 pnpm ci:wait        # HEAD'in CI kontrollerini (check + e2e) bekle; geçerse 0 döner

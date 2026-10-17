@@ -16,6 +16,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { config } from "dotenv";
 
 import { db } from "@/server/db";
+import { migrationRefusal, migrationStatus } from "@/server/db/migration-status";
 import { clinics, voiceAgents } from "@/server/db/schema";
 import { retellClient, retellConfig } from "@/server/voice/providers/retell/config";
 import { syncClinicVoiceAgent } from "@/server/voice/providers/retell/sync";
@@ -80,6 +81,12 @@ async function syncAgents(appUrl: string) {
 }
 
 async function main() {
+  // A dev database behind production fails every call event (2026-10-17).
+  const refusal = migrationRefusal(await migrationStatus(db()));
+  if (refusal) {
+    console.error(refusal);
+    process.exit(1);
+  }
   if (
     !(await fetch(LOCAL_ORIGIN).then(
       () => true,

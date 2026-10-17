@@ -32,6 +32,7 @@ import Retell from "retell-sdk";
 
 import { normalizePhone } from "@/lib/phone";
 import { db } from "@/server/db";
+import { migrationRefusal, migrationStatus } from "@/server/db/migration-status";
 import {
   appointments,
   clinics,
@@ -451,6 +452,9 @@ async function main() {
   );
   const budget = Number(argValue("--budget") ?? (estimate * 1.2).toFixed(2));
   guard();
+  // Calls on a dev database behind production would fail and still cost credit.
+  const refusal = migrationRefusal(await migrationStatus(db()));
+  if (refusal) throw new Error(refusal);
   const [clinic] = await db().select().from(clinics).where(eq(clinics.slug, CLINIC_SLUG));
   if (!clinic) throw new Error(`Clinic ${CLINIC_SLUG} not found.`);
   const [agent] = await db().select().from(voiceAgents).where(eq(voiceAgents.clinicId, clinic.id));

@@ -13,6 +13,7 @@ pnpm install
 cp .env.example .env.local
 pnpm db:local      # ayrı terminalde: PGlite Postgres (port 5433); Docker varsa: pnpm db:up
 pnpm db:migrate    # tabloları oluştur
+pnpm db:status     # bu veritabanı canlıyla aynı migration'larda mı (salt okunur)
 pnpm db:seed       # demo klinik: "Gülüş Diş Kliniği"
 pnpm dev
 ```
@@ -79,3 +80,7 @@ pnpm voice:send call-ended       # arama bitti olayı
 | Retell uç noktaları 401             | İmza geçersiz: anahtar yanlış veya webhook rozetli değil; saat farkı 5 dakikadan büyük             |
 | Tool çağrısı 404 `CLINIC_NOT_FOUND` | Çağrıyı yapan ajan bizim senkronladığımız ajan değil (Retell panelinde elle oluşturulmuş olabilir) |
 | Inbound `reject: true`              | Aranan numara `phone_numbers` tablosunda yok veya kliniğin ajanı senkronize değil                  |
+
+## Dev veritabanı canlının gerisinde kalırsa
+
+Canlı her deploy'da repodaki tüm migration'ları uygular; Neon `dev` dalı ise yalnızca elle `pnpm db:migrate` çalıştırılınca güncellenir. 2026-10-17'de dev iki migration geride kalmıştı ve fark edilmemişti (A16 provası durdu; C5'teki arama olayları da yazılamazdı). Bu yüzden `pnpm dev:tunnel` ve `pnpm voice:eval` başlamadan `pnpm db:status` ile aynı kontrolü yapar ve bekleyen migration varsa durur. Uygulamak veritabanını değiştirir: önce Recall sahibine sorulur.

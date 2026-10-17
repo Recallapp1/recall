@@ -22,6 +22,7 @@
     "db:local": "tsx scripts/local-db.ts",
     "db:reset": "docker compose down -v && docker compose up -d --wait db && drizzle-kit migrate && tsx src/server/db/seed.ts",
     "db:generate": "drizzle-kit generate",
+    "db:status": "tsx --conditions=react-server scripts/db-status.ts",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/server/db/seed.ts",
     "db:studio": "drizzle-kit studio",
