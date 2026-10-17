@@ -81,6 +81,36 @@ Kliniğin mevcut numarası Recall numarasına yönlendirilir: meşgulken, cevaps
 - Her gün: Aramalar (sonuçlar, işaretler), Geri aranacaklar, asistanın aldığı randevular.
 - Haftalık kısa görüşme: yanlış anlamalar, eksik SSS, hizmet adları; ayarlar ve prompt düzeltmeleri dal akışıyla.
 
+## Prova kaydı
+
+### 2026-10-17 · Neon `dev` dalı, §2–§4 (Claude)
+
+Sentetik bir diş kliniği (`kurulum-provasi`), konsolun ve panelin kullandığı aynı form şemaları ve sunucu fonksiyonlarıyla, bu belgenin sırasıyla kuruldu; sonunda tüm satırlar silindi. Canlıya, Retell'e ve gerçek e-postaya dokunulmadı (`EMAIL_PROVIDER=console`); arama yapılmadı.
+
+| Adım                           | Sonuç                                                                                                                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §2.1 Yeni klinik (şablon: diş) | Organizasyon, 8 şablon hizmeti, varsayılan saatler tek işlemde                                                                                                                     |
+| §2.2 Sahip ekleme              | Kullanıcı ve üyelik; "parolanızı belirleyin" e-postası konsola yazıldı                                                                                                             |
+| §3 Klinik                      | Adres ve devir numarası                                                                                                                                                            |
+| §3 Çalışma saatleri            | Hafta içi 09–18, cumartesi 09–13                                                                                                                                                   |
+| §3 Tatiller                    | 2026 için 12 resmî tatil                                                                                                                                                           |
+| §3 Hekim, hizmetler            | 1 hekim (3 hizmet); bir hizmete fiyat aralığı ve eş anlamlı                                                                                                                        |
+| §3 Randevu kuralları           | 15 dk aralık, 2 saat ön süre, 30 gün, 24 saat iptal                                                                                                                                |
+| §3 Asistan                     | Ad, kayıt açık, 1 SSS, not                                                                                                                                                         |
+| §3 Ekip                        | Sekreter (rol `staff`) eklendi                                                                                                                                                     |
+| §4.1 Numara                    | Eklendi (Retell'e aktarılmadı)                                                                                                                                                     |
+| §4.2 Asistan                   | Ajan tanımı **yalnızca yerelde** kuruldu, Retell'e gönderilmedi: talimatta hekim, SSS ve kliniğin adıyla karşılama var                                                             |
+| Yayına hazırlık                | Klinik aktif, telefon hattı 1 numara, saat/hekim/hizmet tamam, SMS kapalı, konsol kullanıcısı yok, silme kuyruğu boş; **asistan "Senkronize değil"** (beklenen: ajan gönderilmedi) |
+
+**Görülenler:**
+
+- Yayına hazırlık sayfası "Telefon hattı" için yalnızca veritabanındaki numarayı sayar; numaranın gerçekten SIP üzerinden Retell'e bağlı olduğunu bilemez. Bunu ilk gerçek test araması (T2) gösterir.
+- §4.3'teki "sınır değişikliği Recall veritabanından yapılır" ifadesi `CONSOLE_LIMITS_EDIT` açıkken konsoldan da yapılabilir; bu provada sınırlar değiştirilmedi.
+
+**Denenmeyenler:** konsol ve panelin tarayıcı arayüzü (aynı fonksiyonları çağırır; E2E testleri ayrıca kapsar), Retell'e ajan oluşturma, T1–T8 (gerçek arama ve kredi gerektirir), parola e-postasındaki bağlantıyla ilk giriş, iki adımlı giriş.
+
+**Temizlik:** klinik, organizasyon, iki kullanıcı ve doğrulama kayıtları silindi. Dev'deki sayılar prova öncesiyle aynı (2 klinik, 2 organizasyon, 5 kullanıcı, 4 üyelik, 2 doğrulama kaydı, 29 denetim kaydı, 2 numara).
+
 ## 9. Pilot için anahtar kararı (ürün sahibi)
 
 | Anahtar                                                                           | Önerilen pilot değeri                                | Not                                                                                                                                     |
