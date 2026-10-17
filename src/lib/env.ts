@@ -61,6 +61,12 @@ const envSchema = z.object({
    * alone). Changes the agent spec; off until a real-call test (C5).
    */
   VOICE_EMERGENCY_FIRST: optionalFlag,
+  /**
+   * "true": when the call cannot be transferred, the assistant ends it after
+   * the emergency sentence so the caller can dial 112, unless the caller is
+   * still talking. Changes the agent spec; off until a real-call test.
+   */
+  VOICE_EMERGENCY_END_CALL: optionalFlag,
   /** Retell turn-taking, 0–1 (Retell default 1 = answers as soon as it can). Lower waits longer. */
   RETELL_RESPONSIVENESS: optionalUnit,
   /** 0–1 (Retell default 1). Lower needs more words before the caller interrupts the agent. */

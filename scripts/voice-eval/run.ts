@@ -276,7 +276,7 @@ async function runCall(scenario: Scenario, agentId: string, clinicId: string) {
 
 function outcomeOf(
   details: Record<string, unknown>,
-): Pick<CallOutcome, "agentText" | "firstReply" | "tools" | "userTurns"> {
+): Pick<CallOutcome, "agentText" | "firstReply" | "tools" | "userTurns" | "disconnectionReason"> {
   const turns = (details.transcript_with_tool_calls ?? []) as Array<Record<string, unknown>>;
   const tools: ToolCall[] = [];
   const byId = new Map<string, ToolCall>();
@@ -310,7 +310,13 @@ function outcomeOf(
       if (tool) tool.result = parse(turn.content);
     }
   }
-  return { agentText: agent.join(" "), firstReply, tools, userTurns };
+  return {
+    agentText: agent.join(" "),
+    firstReply,
+    tools,
+    userTurns,
+    disconnectionReason: String(details.disconnection_reason ?? ""),
+  };
 }
 
 async function effects(
@@ -421,7 +427,9 @@ async function main() {
   const only = process.argv.includes("--only")
     ? new Set(process.argv[process.argv.indexOf("--only") + 1]!.split(","))
     : null;
-  const selected = scenarios.filter((s) => !only || only.has(s.id));
+  // C5 scenarios need switches in .env.local and have their own commands
+  // (voice:eval:c5, voice:eval:c5-close); staged runs and their cost stay as planned.
+  const selected = scenarios.filter((s) => (only ? only.has(s.id) : !s.id.startsWith("c5-")));
   if (process.argv.includes("--plan")) {
     printPlan(selected.length);
     process.exit(0);

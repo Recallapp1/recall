@@ -54,6 +54,12 @@ export interface PromptInput {
    * which already opens with it.
    */
   emergencyFirst?: boolean | undefined;
+  /**
+   * VOICE_EMERGENCY_END_CALL: when no transfer is possible, the assistant
+   * ends the call after the emergency sentence so the caller can dial 112.
+   * Off unless explicitly set; ignored with hardening.
+   */
+  emergencyEndCall?: boolean | undefined;
 }
 
 /** Values for the call-time variables we own (the platform provides the clock). */
@@ -70,6 +76,7 @@ export function buildSystemPrompt(input: PromptInput): string {
   const canTransfer = Boolean(clinic.transferPhoneNumber);
   const hardening = input.hardening === true;
   const emergencyFirst = input.emergencyFirst === true && !hardening;
+  const emergencyEndCall = input.emergencyEndCall === true && !hardening;
   // Hardening: every clinic-written string is validated like untrusted data.
   const name = (text: string) => (hardening ? untrustedLine(text) : text);
 
@@ -84,6 +91,7 @@ export function buildSystemPrompt(input: PromptInput): string {
     canTransfer,
     humanHandoff,
     emergencyFirst,
+    emergencyEndCall,
   };
 
   const identity = `Sen ${name(clinic.name)} için çalışan telefon asistanısın. Adın ${name(assistant.name)}. Hastalarla telefonda Türkçe konuşuyorsun.
@@ -161,6 +169,7 @@ function fullRules({
   canTransfer,
   humanHandoff,
   emergencyFirst,
+  emergencyEndCall,
 }: RuleInput) {
   return [
     `# Nasıl çalışırsın
@@ -205,7 +214,7 @@ function fullRules({
 ${
   emergencyFirst
     ? ""
-    : `- Hasta durmayan kanama, nefes darlığı, hızla artan şişlik, bilinç kaybı, göğüs ağrısı gibi acil bir durum anlatırsa randevu akışını bırak ve hemen 112'yi aramasını söyle${canTransfer ? `; "${v.transferAvailable}" değeri "evet" ise ardından ${toolNames.transferCall} ile kliniğe aktar` : ""}.
+    : `- Hasta durmayan kanama, nefes darlığı, hızla artan şişlik, bilinç kaybı, göğüs ağrısı gibi acil bir durum anlatırsa randevu akışını bırak ve hemen 112'yi aramasını söyle${emergencyNext({ placeholders: v, toolNames, canTransfer, emergencyEndCall })}.
 `
 }- Klinik bilgilerinde olmayan bir şeyi uydurma. Bilmiyorsan söyle ve create_callback_request ile not bırakmayı öner.
 - Sadece arayan numaraya kayıtlı (veya yukarıdaki doğrulamayı geçen) randevular hakkında bilgi ver; başka kişilerin bilgisini paylaşma.
@@ -303,6 +312,27 @@ interface RuleInput {
   humanHandoff: string;
   /** The emergency rule opens the prompt instead of sitting under "Sınırlar". */
   emergencyFirst: boolean;
+  /** After the emergency sentence, end the call when no transfer is possible. */
+  emergencyEndCall: boolean;
+}
+
+/**
+ * What follows the emergency sentence. Without VOICE_EMERGENCY_END_CALL:
+ * a transfer when the clinic has a number, otherwise nothing (today's text).
+ * With it, a call that cannot be transferred is ended, so the caller's phone
+ * is free for 112; but never over the caller: while they talk or ask, the
+ * assistant only repeats the 112 instruction and waits.
+ */
+function emergencyNext({
+  placeholders: v,
+  toolNames,
+  canTransfer,
+  emergencyEndCall,
+}: Pick<RuleInput, "placeholders" | "toolNames" | "canTransfer" | "emergencyEndCall">): string {
+  const transfer = `"${v.transferAvailable}" değeri "evet" ise ardından ${toolNames.transferCall} ile kliniğe aktar`;
+  if (!emergencyEndCall) return canTransfer ? `; ${transfer}` : "";
+  const close = `"Hemen arayabilmeniz için görüşmeyi kapatıyorum, geçmiş olsun." de ve ${toolNames.endCall} kullan. Arayan bu sırada konuşmaya devam eder veya bir şey sorarsa kapatma: dinle, yalnızca 112'yi hemen araması gerektiğini kısaca tekrarla ve görüşmeyi ancak arayan sustuğunda veya vedalaştığında kapat`;
+  return canTransfer ? `; ${transfer}, değilse ${close}` : `; ardından ${close}`;
 }
 
 /**
@@ -310,9 +340,14 @@ interface RuleInput {
  * at the very start, so it outranks everything else. The sentence is in
  * words because the prompt forbids digits in speech (decision 30).
  */
-function emergencyRule({ placeholders: v, toolNames, canTransfer }: RuleInput): string {
+function emergencyRule({
+  placeholders: v,
+  toolNames,
+  canTransfer,
+  emergencyEndCall,
+}: RuleInput): string {
   return `# Acil durum (her şeyden önce)
-- Arayan göğüs ağrısı, nefes darlığı, durmayan kanama, bilinç kaybı, hızla artan şişlik, alerjik tepki, kendine zarar verme veya aşırı ilaç gibi acil bir durum anlatırsa başka hiçbir şey söylemeden önce tam olarak şunu söyle: "Lütfen hemen yüz on ikiyi arayın." Sonra randevu akışını bırak${canTransfer ? `; "${v.transferAvailable}" değeri "evet" ise ardından ${toolNames.transferCall} ile kliniğe aktar` : ""}.`;
+- Arayan göğüs ağrısı, nefes darlığı, durmayan kanama, bilinç kaybı, hızla artan şişlik, alerjik tepki, kendine zarar verme veya aşırı ilaç gibi acil bir durum anlatırsa başka hiçbir şey söylemeden önce tam olarak şunu söyle: "Lütfen hemen yüz on ikiyi arayın." Sonra randevu akışını bırak${emergencyNext({ placeholders: v, toolNames, canTransfer, emergencyEndCall })}.`;
 }
 
 /**
@@ -326,6 +361,7 @@ function compactRules({
   canTransfer,
   humanHandoff,
   emergencyFirst,
+  emergencyEndCall,
 }: RuleInput) {
   return [
     `# Nasıl çalışırsın
@@ -364,7 +400,7 @@ function compactRules({
 ${
   emergencyFirst
     ? ""
-    : `- Durmayan kanama, nefes darlığı, hızla artan şişlik, bilinç kaybı, göğüs ağrısı gibi acil durumda randevu akışını bırak, hemen 112'yi aramasını söyle${canTransfer ? `; "${v.transferAvailable}" değeri "evet" ise ardından ${toolNames.transferCall} ile kliniğe aktar` : ""}.
+    : `- Durmayan kanama, nefes darlığı, hızla artan şişlik, bilinç kaybı, göğüs ağrısı gibi acil durumda randevu akışını bırak, hemen 112'yi aramasını söyle${emergencyNext({ placeholders: v, toolNames, canTransfer, emergencyEndCall })}.
 `
 }- Klinik bilgilerinde olmayanı uydurma; bilmiyorsan create_callback_request ile not bırakmayı öner.
 - Yalnızca arayan numaraya kayıtlı (veya doğrulanan) randevular hakkında bilgi ver; başkalarının bilgisini paylaşma.
