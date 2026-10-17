@@ -154,6 +154,19 @@ Acil düzeltmede de aynı yol izlenir (CI yaklaşık 10 dakika); daha hızlı ge
 
 Geri almadan sonra: build READY, `/api/health`, `/api/health/jobs`, konsolda kliniklerin asistan durumu **Güncel** (`voice_agents.status = synced`) ve beklenen spec özeti.
 
+### Prova kaydı: anahtarla açılan bir talimat değişikliğini geri almak (2026-10-17, Neon `dev`, Recall Dev)
+
+Canlı build'in kullandığı komutla (`pnpm voice:sync --existing --soft`) dev kliniği `gulus-dis` üzerinde. Canlıya ve canlı ajanlara dokunulmadı; arama yapılmadı, kredi harcanmadı. `.env.local` değiştirilmedi: "anahtarı kaldırma", komutun kendi ortamında `VOICE_EMERGENCY_FIRST` boş verilerek canlandırıldı.
+
+| Adım                                     | Spec özeti                                                       | Retell'deki talimatın ilk satırı                                                         |
+| ---------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Başlangıç (`VOICE_EMERGENCY_FIRST=true`) | `ccfe00df152d`                                                   | `# Acil durum (her şeyden önce)`                                                         |
+| Anahtar kaldırıldı, senkron              | `eb577c1ad960`                                                   | `Sen Gülüş Diş Kliniği için çalışan telefon asistanısın…` (bugünkü canlı talimat biçimi) |
+| Anahtar geri açıldı, senkron             | `ccfe00df152d` (başlangıçla aynı)                                | `# Acil durum (her şeyden önce)`                                                         |
+| Aynı ayarla bir kez daha                 | değişmedi, `unchanged` diye atlandı; senkron zamanı da değişmedi | —                                                                                        |
+
+Sonuç: anahtarla açılan bir talimat değişikliği, anahtarı kaldırıp yeniden senkronlayınca (canlıda: değişkeni silip yeniden deploy etmek) birebir önceki tanıma döner. Değişmeyen tanım tekrar gönderilmez. Denenmeyen: Vercel'deki "Promote to Production" yolu (build çalıştırmadığı için ajanları zaten geri almaz, yukarıdaki tablo) ve canlı ajanlar.
+
 ## Vercel Cron
 
 `vercel.json`:
