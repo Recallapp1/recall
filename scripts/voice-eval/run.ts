@@ -50,6 +50,7 @@ import { addLocalDays, localToday, utcToLocal } from "@/server/domain/time";
 import { retellClient, retellConfig } from "@/server/voice/providers/retell/config";
 import { syncClinicVoiceAgent } from "@/server/voice/providers/retell/sync";
 
+import { DEFAULT_TURN_GAP_MS, turnGap } from "./audio";
 import { budgetAllows, cautiousCallEstimate, isCreditExhausted } from "./budget";
 import { estimatedCost, profiles, STAGES, type EvalProfile } from "./profiles";
 import { invariants, scenarios, type CallOutcome, type Scenario, type ToolCall } from "./scenarios";
@@ -164,7 +165,15 @@ function speechMarkup(line: string, pace: Scenario["pace"]): string {
 function callerAudio(scenario: Scenario): string {
   mkdirSync(WORK_DIR, { recursive: true });
   const spoken = expandLines(scenario.lines).map((line) => speechMarkup(line, scenario.pace));
-  const hash = createHash("sha1").update(spoken.join("\n")).digest("hex").slice(0, 12);
+  // Default-gap scenarios keep their cached audio; a custom gap is part of the key.
+  const gapKey =
+    scenario.turnGapMs && scenario.turnGapMs !== DEFAULT_TURN_GAP_MS
+      ? `\ngap:${scenario.turnGapMs}`
+      : "";
+  const hash = createHash("sha1")
+    .update(spoken.join("\n") + gapKey)
+    .digest("hex")
+    .slice(0, 12);
   const file = join(WORK_DIR, `${scenario.id}-${hash}.wav`);
   if (!existsSync(file)) {
     const quote = (value: string) => `'${value.replaceAll("'", "''")}'`;
@@ -176,7 +185,7 @@ function callerAudio(scenario: Scenario): string {
         "-ExecutionPolicy",
         "Bypass",
         "-Command",
-        `& ${quote(resolve("scripts/voice-eval/tts.ps1"))} -Out ${quote(file)} -Lines @(${lines})`,
+        `& ${quote(resolve("scripts/voice-eval/tts.ps1"))} -Out ${quote(file)} -Lines @(${lines}) -Gap ${quote(turnGap(scenario))}`,
       ],
       { encoding: "utf8", shell: false },
     );
