@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import {
   budgetAllows,
   cautiousCallEstimate,
   isCreditExhausted,
+  stopAfterFailure,
 } from "../../scripts/voice-eval/budget";
 import { estimatedCost, profiles, STAGES } from "../../scripts/voice-eval/profiles";
 
@@ -50,5 +53,19 @@ describe("voice evaluation spending guard (C8)", () => {
         0,
       );
     expect(cost(STAGES["1"]!)).toBeLessThan(cost(profiles.map((p) => p.id)) / 2);
+  });
+});
+
+describe("--stop-on-fail", () => {
+  it("stops after the first failed scenario only when asked", () => {
+    expect(stopAfterFailure(["no booking"], true)).toMatch(/stop-on-fail/);
+    expect(stopAfterFailure(["no booking"], false)).toBeNull();
+    expect(stopAfterFailure([], true)).toBeNull();
+  });
+
+  it("the runner reads the flag and checks it after every scenario", () => {
+    const source = readFileSync("scripts/voice-eval/run.ts", "utf8");
+    expect(source).toContain('process.argv.includes("--stop-on-fail")');
+    expect(source).toMatch(/stopAfterFailure\(failures, limits\.stopOnFail\)/);
   });
 });
