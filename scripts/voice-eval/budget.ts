@@ -21,3 +21,8 @@ export function isCreditExhausted(error: unknown): boolean {
 export function cautiousCallEstimate(averageCallUsd: number): number {
   return averageCallUsd * 1.5;
 }
+
+/** With --stop-on-fail, the reason to end the run after a failed scenario; otherwise null. */
+export function stopAfterFailure(failures: readonly string[], stopOnFail: boolean): string | null {
+  return stopOnFail && failures.length > 0 ? "first failed scenario (--stop-on-fail)" : null;
+}

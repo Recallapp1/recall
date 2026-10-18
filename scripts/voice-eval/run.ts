@@ -3,7 +3,7 @@
  *
  *   pnpm dev            # local app on the dev database
  *   pnpm dev:tunnel     # public URL for Retell, dev agent re-pointed
- *   pnpm voice:eval [--only id1,id2] [--profile <id> | --profiles a,b | --stage 1] [--budget 12]
+ *   pnpm voice:eval [--only id1,id2] [--profile <id> | --profiles a,b | --stage 1] [--budget 12] [--stop-on-fail]
  *   pnpm voice:eval --plan     # profiles, stages and estimated cost, no calls
  *
  * A run stops cleanly before the budget (default: the estimate + 20%) would
@@ -51,7 +51,7 @@ import { retellClient, retellConfig } from "@/server/voice/providers/retell/conf
 import { syncClinicVoiceAgent } from "@/server/voice/providers/retell/sync";
 
 import { DEFAULT_TURN_GAP_MS, turnGap } from "./audio";
-import { budgetAllows, cautiousCallEstimate, isCreditExhausted } from "./budget";
+import { budgetAllows, cautiousCallEstimate, isCreditExhausted, stopAfterFailure } from "./budget";
 import { estimatedCost, profiles, STAGES, type EvalProfile } from "./profiles";
 import { invariants, scenarios, type CallOutcome, type Scenario, type ToolCall } from "./scenarios";
 
@@ -494,6 +494,7 @@ async function main() {
         budgetLeft: budget - spent,
         perCall: cautiousCallEstimate(estimatedCost(profile ?? profiles[0]!, 1)),
         stopRequested: () => interrupted,
+        stopOnFail: process.argv.includes("--stop-on-fail"),
       });
       spent += outcome.spent;
       if (outcome.stopped) {
@@ -514,7 +515,12 @@ async function runScenarios(
   clinicId: string,
   agentId: string,
   profile: EvalProfile | null | undefined,
-  limits: { budgetLeft: number; perCall: number; stopRequested: () => boolean },
+  limits: {
+    budgetLeft: number;
+    perCall: number;
+    stopRequested: () => boolean;
+    stopOnFail: boolean;
+  },
 ): Promise<{ spent: number; stopped: string | null }> {
   let spent = 0;
   let stopped: string | null = null;
@@ -573,6 +579,11 @@ async function runScenarios(
     });
     save();
     console.info(failures.length === 0 ? "ok" : `FAILED: ${failures.join("; ")}`);
+    const stop = stopAfterFailure(failures, limits.stopOnFail);
+    if (stop) {
+      stopped = stop;
+      break;
+    }
   }
 
   const passed = results.filter((r) => r.passed).length;
