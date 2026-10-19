@@ -76,6 +76,20 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-20 · Eval: yanlış numarayla açılan randevu her senaryoyu düşürür
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `test/eval-stray-phone` · **Commit'ler (test → değişiklik):** `5bf9758` → bu kayıt
+
+**Ne yapıldı**
+
+- [scripts/voice-eval/run.ts](scripts/voice-eval/run.ts) arama süresince oluşan ve hasta numarası senaryonun numarası ya da iki tohum numara olmayan randevuları sayar (`strayAppointments`); [scenarios.ts](scripts/voice-eval/scenarios.ts) `invariants` bunu her aramada sıfır bekler.
+- Neden: 19 Ekim `slow-speaker` koşusunda ses tanıma numarayı böldü, asistan eksik numarayı geri okudu, betikli arayan "Evet" dedi ve randevu yanlış numarayla açıldı. `newAppointments` yalnızca senaryonun numarasına baktığı için bu randevu görünmüyordu; kademe 1 ölçümünden önce düzeltildi.
+- [VOICE-EVAL.md](docs/02-voice-agent/VOICE-EVAL.md) kontroller listesi.
+
+**Doğrulama**
+
+- Önce düşen test (`src/lib/voice-eval-checks.test.ts`), sonra geçti; yerel kapı ve CI bu dalın birleştirmesinde. Arama yapılmadı, kredi harcanmadı; yeni sorgu yalnızca eval koşusunda dev veritabanını okur.
+
 ### 2026-10-20 · Tasarım onayı: panel türetmeleri, durum rozetleri, `danger` rengi · F4.2
 
 **Agent/kişi:** Claude (Opus 5.5) + ürün sahibi · **Dal:** `docs/design-approval-2026-10-20` · **Commit'ler:** bu kayıt

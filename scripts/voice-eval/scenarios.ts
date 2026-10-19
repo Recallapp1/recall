@@ -26,6 +26,12 @@ export interface CallOutcome {
   tools: ToolCall[];
   /** Appointments created for this scenario's phone during the call. */
   newAppointments: Array<{ service: string; date: string; time: string; status: string }>;
+  /**
+   * Appointments created during the call on a number that is neither this
+   * scenario's phone nor a seeded one: a misheard number the scripted caller
+   * "confirmed" (slow-speaker, 2026-10-19). newAppointments cannot see them.
+   */
+  strayAppointments: number;
   /** Status of the seeded appointments after the call. */
   seeded: Record<string, { status: string; date: string; time: string } | null>;
   /** Retell's reason the call ended, e.g. "agent_hangup" or "user_hangup". */
@@ -79,8 +85,9 @@ const spokenPhone = (n: number) =>
 
 /**
  * Checked on every call, whatever the scenario: the assistant never claims a
- * booking, cancellation or change it did not make, and never reads a clock
- * time digit by digit ("on beş sıfır sıfır").
+ * booking, cancellation or change it did not make, never books on a number
+ * the caller did not give, and never reads a clock time digit by digit
+ * ("on beş sıfır sıfır").
  */
 export function invariants(o: CallOutcome): string[] {
   const claims = (pattern: RegExp, tool: string) =>
@@ -97,6 +104,10 @@ export function invariants(o: CallOutcome): string[] {
     ...ok(
       !claims(/randevunuz (güncellendi|taşındı|ertelendi)/i, "reschedule_appointment"),
       "claimed a change without a successful reschedule_appointment",
+    ),
+    ...ok(
+      o.strayAppointments === 0,
+      "booked under a phone number the caller did not give (misheard number?)",
     ),
     ...ok(
       !/(on|yirmi)\s?\p{L}*\s+sıfır sıfır/u.test(o.agentText),

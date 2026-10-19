@@ -27,7 +27,7 @@ import { join, resolve } from "node:path";
 
 import { chromium } from "@playwright/test";
 import { config } from "dotenv";
-import { and, eq, gte, inArray, like } from "drizzle-orm";
+import { and, eq, gte, inArray, like, notInArray } from "drizzle-orm";
 import Retell from "retell-sdk";
 
 import { normalizePhone } from "@/lib/phone";
@@ -337,7 +337,7 @@ async function effects(
   clinicId: string,
   since: Date,
   seeded: Record<string, string>,
-): Promise<Pick<CallOutcome, "newAppointments" | "seeded">> {
+): Promise<Pick<CallOutcome, "newAppointments" | "strayAppointments" | "seeded">> {
   const timezone = "Europe/Istanbul";
   const newAppointments: CallOutcome["newAppointments"] = [];
   const phone = normalizePhone(scenario.phone);
@@ -369,6 +369,20 @@ async function effects(
       });
     }
   }
+  // Any booking in this window on another number was made from a misheard one;
+  // a move of a seeded appointment keeps its seeded number.
+  const ownNumbers = [...(phone ? [phone] : []), ...Object.values(SEEDED)];
+  const stray = await db()
+    .select({ id: appointments.id })
+    .from(appointments)
+    .innerJoin(patients, eq(patients.id, appointments.patientId))
+    .where(
+      and(
+        eq(appointments.clinicId, clinicId),
+        gte(appointments.createdAt, since),
+        notInArray(patients.phone, ownNumbers),
+      ),
+    );
   const seededState: CallOutcome["seeded"] = {};
   for (const [key, id] of Object.entries(seeded)) {
     const [row] = await db()
@@ -379,7 +393,7 @@ async function effects(
     seededState[key] =
       row && local ? { status: row.status, date: local.date, time: local.time } : null;
   }
-  return { newAppointments, seeded: seededState };
+  return { newAppointments, strayAppointments: stray.length, seeded: seededState };
 }
 
 interface Latency {
