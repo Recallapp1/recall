@@ -6,11 +6,11 @@ Tekrarlanabilir ses değerlendirmesi: [scripts/voice-eval/](../../scripts/voice-
 
 - Her senaryo **gerçek bir Retell web aramasıdır**: dev kliniğinin (`gulus-dis`) asistanı, tünel üzerinden lokal uygulama ve Neon **`dev`** dalı. Production'a dokunmaz; çalıştırıcı production uç noktasını veya `recalltr.company` adresini görünce durur.
 - Arayan, senaryodaki satırları Windows Türkçe TTS ile seslendirir (`tts.ps1`); ses Playwright Chromium'a mikrofon olarak verilir. Satırlar sabit aralıklarla söylenir, bu yüzden her satır bir turda verilebilecek bilgiyi tam içerir.
-- Tarihler çalıştırma anına göre doldurulur: `{tomorrow}`, `{nextMon}` … `{nextSun}` (ör. "on dört Ekim Çarşamba"). Belirsizlik senaryoları ("haftaya Salı") bilerek belirsiz kalır.
+- Tarihler çalıştırma anına göre doldurulur: `{tomorrow}`, `{nextMon}` … `{nextSun}`, bir hafta sonrası için `{followingMon}` …; tarih kontrolleri de aynı günden hesaplanır ([dates.ts](../../scripts/voice-eval/dates.ts)) (ör. "on dört Ekim Çarşamba"). Belirsizlik senaryoları ("haftaya Salı") bilerek belirsiz kalır.
 - Kontroller: tool çağrıları ve sonuçları (Retell kaydı), asistanın söyledikleri, dev veritabanında oluşan randevular ve iki tohum randevunun durumu.
 - Her çalıştırma önce kendi test hastalarını (`0532 900 00 xx`) siler, doğrulama sınırlarını sıfırlar ve iki randevu tohumlar.
 - Gecikme Retell'in arama kaydından alınır (`latency.e2e`, `llm`, `asr`, `tts`; ms).
-- Senaryo satırlarında `{pause}` (1,5 sn) ve `{longPause}` (2,5 sn) cümle içi sessizlik ekler; `pace: "slow"` yavaş konuşmadır. Arayan turu sayısı satır sayısını aşarsa asistan araya girmiştir.
+- Senaryo satırlarında `{pause}` (1,5 sn) ve `{longPause}` (2,5 sn) cümle içi sessizlik ekler; `pace: "slow"` yavaş konuşmadır. Asistanın araya girip girmediği Retell'in kelime zamanlarından ölçülür ([turns.ts](../../scripts/voice-eval/turns.ts)): asistan arayanın duraksamasında konuşmaya başlar ve arayan aynı satıra devam ederse (13 sn'lik satır arasından kısa sürede) bir araya girme sayılır. Retell bir satırı, araya kimse girmese de birkaç arayan turuna bölebilir; arayan turu sayısı bu yüzden ölçüt değildir.
 - Web aramasında arayan numara yoktur: tüm senaryolar "gizli numara" durumudur. Arayan numara kuralları entegrasyon testleriyle korunur (`handlers.integration.test.ts`). Webhook tekrarı ve tool döngüsü de entegrasyon testlerindedir.
 
 ## Çalıştırma

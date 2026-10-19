@@ -51,6 +51,8 @@ import { retellClient, retellConfig } from "@/server/voice/providers/retell/conf
 import { syncClinicVoiceAgent } from "@/server/voice/providers/retell/sync";
 
 import { DEFAULT_TURN_GAP_MS, turnGap } from "./audio";
+import { dateTokens } from "./dates";
+import { cutIns, type TranscriptTurn } from "./turns";
 import { budgetAllows, cautiousCallEstimate, isCreditExhausted, stopAfterFailure } from "./budget";
 import { estimatedCost, profiles, STAGES, type EvalProfile } from "./profiles";
 import { invariants, scenarios, type CallOutcome, type Scenario, type ToolCall } from "./scenarios";
@@ -137,17 +139,14 @@ async function practitionerIds(clinicId: string): Promise<string[]> {
   return rows.map((row) => row.id);
 }
 
-/**
- * Fills date tokens with spoken dates from today: {tomorrow}, and {nextMon} …
- * {nextSun} for the first such weekday after today (e.g. "on dört Ekim Çarşamba").
- */
+/** Today in the dev clinic's zone: the scripted dates and the date checks share it. */
+function runDay(): string {
+  return localToday(new Date(), "Europe/Istanbul");
+}
+
+/** Fills date tokens ({tomorrow}, {nextTue}, {followingTue} …) with spoken dates (dates.ts). */
 function expandLines(lines: string[]): string[] {
-  const today = localToday(new Date(), "Europe/Istanbul");
-  const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
-  const tokens: Record<string, string> = { tomorrow: spokenDate(addLocalDays(today, 1)) };
-  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((name, day) => {
-    tokens[`next${name}`] = spokenDate(addLocalDays(today, (day - weekday + 7) % 7 || 7));
-  });
+  const tokens = dateTokens(runDay());
   return lines.map((line) =>
     line.replace(/\{(\w+)\}/g, (match, key: string) => tokens[key] ?? match),
   );
@@ -286,7 +285,10 @@ async function runCall(scenario: Scenario, agentId: string, clinicId: string) {
 
 function outcomeOf(
   details: Record<string, unknown>,
-): Pick<CallOutcome, "agentText" | "firstReply" | "tools" | "userTurns" | "disconnectionReason"> {
+): Pick<
+  CallOutcome,
+  "agentText" | "firstReply" | "tools" | "userTurns" | "cutIns" | "disconnectionReason"
+> {
   const turns = (details.transcript_with_tool_calls ?? []) as Array<Record<string, unknown>>;
   const tools: ToolCall[] = [];
   const byId = new Map<string, ToolCall>();
@@ -325,6 +327,7 @@ function outcomeOf(
     firstReply,
     tools,
     userTurns,
+    cutIns: cutIns(turns as unknown as TranscriptTurn[]),
     disconnectionReason: String(details.disconnection_reason ?? ""),
   };
 }
@@ -558,6 +561,7 @@ async function runScenarios(
     const outcome: CallOutcome = {
       ...outcomeOf(details),
       ...(await effects(scenario, clinicId, startedAt, seeded)),
+      dates: dateTokens(runDay()),
     };
     const failures = [...scenario.check(outcome), ...invariants(outcome)];
     const latency = (details.latency ?? {}) as Record<string, Latency>;

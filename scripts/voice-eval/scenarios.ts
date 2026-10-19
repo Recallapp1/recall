@@ -10,6 +10,7 @@
  */
 
 import { numberToWords } from "../../src/server/domain/speech";
+import { dayMonthPattern } from "./dates";
 
 export interface ToolCall {
   name: string;
@@ -29,8 +30,12 @@ export interface CallOutcome {
   seeded: Record<string, { status: string; date: string; time: string } | null>;
   /** Retell's reason the call ended, e.g. "agent_hangup" or "user_hangup". */
   disconnectionReason: string;
-  /** Caller turns in Retell's transcript; more than the script's lines means the agent cut in. */
+  /** Caller turns in Retell's transcript (Retell may split one line into several). */
   userTurns: number;
+  /** Times the assistant spoke in a caller's pause and the caller went on with the same line (turns.ts). */
+  cutIns: number;
+  /** Spoken dates of this run ({nextTue}, {followingTue} …), the ones the script used (dates.ts). */
+  dates: Record<string, string>;
 }
 
 export interface Scenario {
@@ -249,7 +254,13 @@ export const scenarios: Scenario[] = [
       "Teşekkürler, hoşça kalın.",
     ],
     check: (o) => [
-      ...ok(says(o, /(on üç|yirmi) Ekim/i), "says the exact date"),
+      // "Haftaya Salı" said on a Monday may mean tomorrow's week or the one after.
+      ...ok(
+        [o.dates.nextTue, o.dates.followingTue].some(
+          (date) => date !== undefined && says(o, dayMonthPattern(date)),
+        ),
+        "says the exact date",
+      ),
       ...ok(
         o.newAppointments.every((a) => new Date(a.date).getDay() === 2),
         "booked a Tuesday",
@@ -627,7 +638,7 @@ export const scenarios: Scenario[] = [
       "Teşekkürler, hoşça kalın.",
     ],
     check: (o) => [
-      ...ok(o.userTurns <= 4, "the assistant took the turn during a pause"),
+      ...ok(o.cutIns === 0, "the assistant took the turn during a pause"),
       ...ok(o.newAppointments.length === 1, "one appointment"),
       ...ok(o.newAppointments[0]?.service === "Diş Taşı Temizliği", "booked the requested service"),
       ...ok(o.newAppointments[0]?.time === "15:00", "booked at 15:00"),
@@ -645,7 +656,7 @@ export const scenarios: Scenario[] = [
       "Teşekkürler, hoşça kalın.",
     ],
     check: (o) => [
-      ...ok(o.userTurns <= 4, "the assistant took the turn during a pause"),
+      ...ok(o.cutIns === 0, "the assistant took the turn during a pause"),
       ...ok(o.newAppointments.length === 1, "one appointment"),
       ...ok(o.newAppointments[0]?.service === "Muayene / Kontrol", "booked Muayene / Kontrol"),
     ],
