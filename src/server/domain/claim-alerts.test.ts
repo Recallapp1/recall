@@ -49,13 +49,11 @@ async function clinicWithTeam() {
   await person("yonetici", "admin");
   await person("resepsiyon", "staff");
   await person("konsol", "staff", "platform_admin");
-  await db
-    .insert(users)
-    .values({
-      name: "Başka konsol",
-      email: `baska-konsol.${seq}@ornek.test`,
-      role: "platform_admin",
-    });
+  await db.insert(users).values({
+    name: "Başka konsol",
+    email: `baska-konsol.${seq}@ornek.test`,
+    role: "platform_admin",
+  });
   const [call] = await db
     .insert(calls)
     .values({

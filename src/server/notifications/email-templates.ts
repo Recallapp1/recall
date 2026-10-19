@@ -130,7 +130,7 @@ export function demoRequestNotice(input: {
 }
 
 /**
- * To a clinic's owners and admins: the assistant told a caller an appointment
+ * To a clinic's owners and admins (and Recall console users on its team): the assistant told a caller an appointment
  * was booked, cancelled or moved, but our records show no such change
  * (UNBACKED_CLAIM_EMAIL). No patient data: the call time and a panel link.
  */
@@ -150,6 +150,6 @@ export function unbackedClaimNotice(input: {
     ],
     action: { label: "Görüşmeyi aç", url: input.callUrl },
     footnote:
-      "Bu e-posta kliniğin sahip ve yöneticilerine otomatik gönderilir; hasta bilgisi içermez.",
+      "Bu e-posta kliniğin sahip ve yöneticilerine ve ekipteki Recall kullanıcılarına otomatik gönderilir; hasta bilgisi içermez.",
   });
 }

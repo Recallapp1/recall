@@ -54,7 +54,7 @@ export interface RetellHandlerDeps {
   /** CALL_LATENCY_STORE: keep the provider's per-call latency. Unset means off. */
   storeLatency?: boolean;
   /**
-   * UNBACKED_CLAIM_EMAIL: tells the clinic's owners and admins about a call
+   * UNBACKED_CLAIM_EMAIL: tells the clinic's owners and admins (and Recall console users on its team) about a call
    * flagged unbacked_claim (needs POST_CALL_FLAGS). Unset means off.
    */
   alertUnbackedClaim?: (clinicId: string, callId: string) => Promise<void>;

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { memberRoles } from "@/lib/permissions";
 import { safeError } from "@/lib/safe-error";
@@ -18,16 +18,25 @@ import { unbackedClaimNotice } from "../notifications/email-templates";
  * people who run the clinic hear about it right away.
  */
 
-/** The clinic's owners and admins; Recall console users on the team are not the clinic. */
+/**
+ * The clinic's owners and admins, and the Recall console users on its team
+ * (any team role; owner's decision, 19 Oct: until a clinic has its own
+ * admins, the console user who set it up is the one who must know). Only
+ * team members: the e-mail links to the clinic's panel, which needs one.
+ */
 export async function claimAlertRecipients(exec: Executor, clinicId: string): Promise<string[]> {
   const rows = await exec
-    .select({ email: users.email, role: members.role })
+    .select({ email: users.email, role: members.role, platformRole: users.role })
     .from(members)
     .innerJoin(clinics, eq(clinics.organizationId, members.organizationId))
     .innerJoin(users, eq(users.id, members.userId))
-    .where(and(eq(clinics.id, clinicId), ne(users.role, PLATFORM_ADMIN), eq(users.banned, false)));
+    .where(and(eq(clinics.id, clinicId), eq(users.banned, false)));
   return rows
-    .filter((row) => memberRoles(row.role).some((role) => role === "owner" || role === "admin"))
+    .filter(
+      (row) =>
+        row.platformRole === PLATFORM_ADMIN ||
+        memberRoles(row.role).some((role) => role === "owner" || role === "admin"),
+    )
     .map((row) => row.email);
 }
 

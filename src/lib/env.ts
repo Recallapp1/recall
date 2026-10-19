@@ -93,7 +93,7 @@ const envSchema = z.object({
   POST_CALL_FLAGS: optionalFlag,
   /**
    * "true": a call flagged unbacked_claim also e-mails the clinic's owners and
-   * admins right away (call time and a panel link, no patient data). Needs
+   * admins, and Recall console users on its team, right away (call time and a panel link, no patient data). Needs
    * POST_CALL_FLAGS. Off by default.
    */
   UNBACKED_CLAIM_EMAIL: optionalFlag,
