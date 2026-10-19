@@ -76,6 +76,20 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-20 · Tasarım onayı: panel türetmeleri, durum rozetleri, `danger` rengi · F4.2
+
+**Agent/kişi:** Claude (Opus 5.5) + ürün sahibi · **Dal:** `docs/design-approval-2026-10-20` · **Commit'ler:** bu kayıt
+
+**Ne yapıldı**
+
+- Ürün sahibi stil rehberini (`/dev/tasarim`, lokal) inceledi ve panel türetmelerini, durum rozetlerini ve `danger` rengini **olduğu gibi onayladı**; değişiklik istenmedi.
+- Onay işlendi: [IMPLEMENTATION-PLAN.md](docs/IMPLEMENTATION-PLAN.md) F4.2 kutusu ve faz tablosu, [DESIGN-SYSTEM.md](docs/04-panel/DESIGN-SYSTEM.md) §3, [ADR-008](docs/decisions/ADR-008-shadcn-theming.md), [ADR-007](docs/decisions/ADR-007-navy-palette-and-landing.md), stil rehberindeki açıklama satırı (yalnızca geliştirme sayfası).
+
+**Açık kalanlar / dikkat**
+
+- F4 hâlâ 🟡: logo ve hero görseli (ürün sahibi gönderecek), Lighthouse ve 375/1440 görsel kontrol (F4.4, F5.5).
+- Stil rehberinin üstündeki "%72" ve "1,4 sn" kartları yalnızca bileşen örneği (geliştirme sayfası); tanıtım sitesinde kullanılmıyor.
+
 ### 2026-10-19 · Tam proje analizi ve belge yenileme turu
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `docs/state-refresh-2026-10-19` · **Commit'ler:** bu kayıt

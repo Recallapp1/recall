@@ -66,7 +66,7 @@ Sınıf birleştirme: `cn()` ([`src/lib/cn.ts`](../../src/lib/cn.ts)); özel tok
 
 ## 3. Panel türetmeleri (F4.2 / F5)
 
-Önerilen türetmeler; **F5 başlamadan önce ürün ekibine onaylatılacak.** F4.2'de koda döküldü; canlı hâli stil rehberinin "Panel bileşenleri" bölümünde.
+Türetmeler **ürün sahibi onayladı, 2026-10-20**: stil rehberinde (`/dev/tasarim`) görüldüğü gibi, değişiklik istenmedi. F4.2'de koda döküldü; canlı hâli stil rehberinin "Panel bileşenleri" bölümünde.
 
 ### Kabuk
 
@@ -90,7 +90,7 @@ Sınıf birleştirme: `cn()` ([`src/lib/cn.ts`](../../src/lib/cn.ts)); özel tok
 | Menü / Select   | `paper`, `rounded-card-sm`, `hairline` çerçeve; odaktaki öğe `primary-soft`; yıkıcı öğe `danger`                                           |
 | Sekmeler        | Hap; liste zemini `hairline`, aktif sekme `paper`                                                                                          |
 
-### Durum rozetleri (öneri, onay bekliyor)
+### Durum rozetleri (ürün sahibi onayladı, 2026-10-20)
 
 Renk tek başına anlam taşımaz; her rozette metin vardır.
 

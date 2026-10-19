@@ -27,7 +27,7 @@ DESIGN.md v1 siyah/zinc monokrom palet ve Emerald-400 vurgu tanımlıyordu. Ür�
 
 - ✅ Tek palet tüm ürüne (tanıtım sayfası, panel, e-postalar) uygulanacak.
 - ✅ Kontrast sorunu çözüldü.
-- ⚠️ Panel türetmeleri ([DESIGN-SYSTEM.md](../04-panel/DESIGN-SYSTEM.md)) yeni palete göre güncellendi; F5 öncesi ürün ekibine onaylatılacak.
+- ⚠️ Panel türetmeleri ([DESIGN-SYSTEM.md](../04-panel/DESIGN-SYSTEM.md)) yeni palete göre güncellendi; ürün sahibi 2026-10-20'de onayladı; önceki not: F5 öncesi ürün ekibine onaylatılacak.
 - ⚠️ Demo talepleri şimdilik yalnızca veritabanına yazılıyor; ekibe bildirim (e-posta) ve görüntüleme ekranı F3/F6'da gelecek.
 - ⏳ Logo ve görsel varlıklar ürün ekibiyle birlikte üretilecek. Şimdilik geçici yazı-logo ve CSS tabanlı derinlik kullanılıyor.
 

@@ -27,4 +27,4 @@ Bu adların ikisi bizim token'larımızla çakışır:
 - ✅ Tek renk sistemi; shadcn ile DESIGN.md arasında iki paralel palet yok.
 - ✅ Yeni bileşen eklemek güvenli: lint, çevrilmemiş sınıfları gösterir.
 - ⚠️ `shadcn add` ile bir bileşeni yeniden üretmek elle yapılan temalamayı ezer. Güncelleme gerekirse fark elle birleştirilir.
-- ⏳ `danger` token'ı ve panel türetmeleri F5 öncesi ürün ekibinin onayını bekliyor.
+- ✅ `danger` token'ı ve panel türetmeleri ürün sahibi onayladı, 2026-10-20 (stil rehberindeki hâliyle).

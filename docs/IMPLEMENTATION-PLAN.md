@@ -43,7 +43,7 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 | F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8: 26 senaryo + C5 (`pnpm voice:eval`), son koşu 23/26; gecikme p50 1,69 sn, hedefin üstünde; model kararı bekliyor ([VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md)) | F0         |
 | F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                                                                                                                                       | F1         |
 | F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ✅ (testler: rol × eylem, kiracı izolasyonu, davet) · 2FA hazır, canlıda `optional`; `required-admins` sırada                                                                            | F0         |
-| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor)                                                                                                               | F0         |
+| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onaylandı 2026-10-20) · F4.3 ✅ (logo/görseller bekleniyor)                                                                                                        | F0         |
 | F5  | Klinik paneli                                               | ✅ ekranlar, sıralama, action testleri, E2E · açık: logo/görsel, 375/1440 görsel kontrol                                                                                                 | F3, F4     |
 | F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                                                                                                                                        | F3, F1     |
 | F7  | KVKK, güvenlik, veri saklama                                | 🟡 saklama, anonimleştirme, dışa aktarma, hız sınırı, CSP, denetim, güvenlik incelemesi ✅ · açık: yasal metinler, avukat, alan şifreleme değerlendirmesi                                | F5         |
@@ -251,7 +251,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 - [x] Panel bileşenleri: `Button` varyantları, `Input`, `Select`, `Textarea`, `Switch`, `Checkbox`, `Dialog`, `Sheet`, `Tabs`, `Table`, `Badge`, durum/kaynak rozetleri, `Toaster`, `Skeleton`, `EmptyState`, `Avatar`, `DropdownMenu`, `Tooltip`, `Popover` + `Calendar` (tarih seçici), `FormField`, `ScheduleGrid` (gün/hafta, hekim kolonları, çakışma şeritleri; düzen fonksiyonu testli)
 - [x] `Table` sıralama ve sayfalama: veri katmanıyla birlikte F5'te (sunucu tarafı, URL parametreleri) — Randevular ve Hastalar sütun sıralaması, URL'de, JS'siz (2026-10-08)
 - [x] Yaşayan stil rehberi: `/dev/tasarim` → "Panel bileşenleri" bölümü (yalnızca development)
-- [ ] **Ürün ekibi onayı:** panel türetmeleri, durum rozetleri ve `danger` token'ı (F5 öncesi)
+- [x] **Ürün ekibi onayı:** panel türetmeleri, durum rozetleri ve `danger` token'ı; stil rehberinde (`/dev/tasarim`) olduğu gibi onaylandı (2026-10-20)
 
 ### F4.3 Tanıtım sitesi (DESIGN.md bölümleri)
 

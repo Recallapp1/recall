@@ -127,7 +127,7 @@ export default async function DesignSystemPage() {
         <Eyebrow className="text-primary">Panel bileşenleri · F4.2</Eyebrow>
         <p className="mt-2 mb-8 max-w-2xl text-sm text-body">
           shadcn/ui (Radix) tabanlı, DESIGN.md token&apos;larıyla yeniden temalandı. Türetmeler
-          docs/04-panel/DESIGN-SYSTEM.md §3&apos;te; F5 öncesi ürün ekibinin onayını bekliyor.
+          docs/04-panel/DESIGN-SYSTEM.md §3&apos;te; Ürün sahibi onayladı (2026-10-20).
         </p>
         <PanelShowcase />
       </SectionShell>
