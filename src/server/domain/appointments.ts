@@ -28,6 +28,7 @@ export interface AppointmentSummary {
   patientId: string;
   date: LocalDate;
   time: LocalTime;
+  serviceId: string;
   serviceName: string;
   practitionerName: string;
   patientName: string;
@@ -709,6 +710,7 @@ function summaryQuery(db: Database) {
       id: appointments.id,
       patientId: appointments.patientId,
       startsAt: appointments.startsAt,
+      serviceId: appointments.serviceId,
       serviceName: services.name,
       practitionerName: practitioners.name,
       practitionerTitle: practitioners.title,
@@ -733,6 +735,7 @@ function toSummary(row: SummaryRow, timeZone: string): AppointmentSummary {
     patientId: row.patientId,
     date: local.date,
     time: local.time,
+    serviceId: row.serviceId,
     serviceName: row.serviceName,
     practitionerName: practitionerDisplayName({
       name: row.practitionerName,

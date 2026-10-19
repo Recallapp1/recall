@@ -126,6 +126,12 @@ const envSchema = z.object({
    */
   VOICE_TOOL_ERROR_HINT: optionalFlag,
   /**
+   * "true": once find_appointments has verified name, date and time, each
+   * appointment also carries its serviceId, so a move can check availability
+   * without asking the caller for the service. Tool text only.
+   */
+  VOICE_VERIFIED_SERVICE: optionalFlag,
+  /**
    * "true": book, cancel, reschedule and callback requests are keyed by call
    * and tool call; a repeat returns the stored first result (audit A3). Off by default.
    */

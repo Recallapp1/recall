@@ -46,6 +46,8 @@ export interface RetellHandlerDeps {
   verifyHint?: boolean;
   /** VOICE_TOOL_ERROR_HINT. Unset means off. */
   toolErrorHint?: boolean;
+  /** VOICE_VERIFIED_SERVICE. Unset means off. */
+  verifiedService?: boolean;
   /** VOICE_TOOL_IDEMPOTENCY: mutating tools run once per request key. Unset means off. */
   toolIdempotency?: boolean;
   /**
@@ -250,6 +252,7 @@ async function runFunctionCall(
       sharedNumberCheck: deps.sharedNumberCheck,
       verifyHint: deps.verifyHint,
       toolErrorHint: deps.toolErrorHint,
+      verifiedService: deps.verifiedService,
     });
   if (!deps.toolIdempotency || !MUTATING_TOOLS.has(name)) return Response.json(await run());
 

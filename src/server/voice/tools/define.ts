@@ -34,6 +34,8 @@ export interface ToolContext {
   verifyHint?: boolean;
   /** VOICE_TOOL_ERROR_HINT: a failed booking, move or cancellation says it did not happen. Unset means off. */
   toolErrorHint?: boolean;
+  /** VOICE_VERIFIED_SERVICE: a verified appointment carries its service id. Unset means off. */
+  verifiedService?: boolean;
 }
 
 export type ToolErrorCode =

@@ -123,8 +123,12 @@ export const findAppointments = defineTool({
         spokenDate: spokenDate(a.date),
         time: a.time,
         spokenTime: spokenTime(a.time),
+        // VOICE_VERIFIED_SERVICE: an id, not words; a move needs it for check_availability.
+        ...(ctx.verifiedService && { serviceId: a.serviceId }),
       })),
-      hint: "Doğrulama tamam. İptal veya erteleme için aynı phone ve verification bilgilerini gönder.",
+      hint: ctx.verifiedService
+        ? "Doğrulama tamam. Erteleme için check_availability'yi bu randevunun serviceId'siyle çağır; hastaya hizmeti sorma. İptal veya erteleme için aynı phone ve verification bilgilerini gönder."
+        : "Doğrulama tamam. İptal veya erteleme için aynı phone ve verification bilgilerini gönder.",
     };
   },
 });
