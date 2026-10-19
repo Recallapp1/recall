@@ -4,7 +4,7 @@
 > **Her agent ve geliştirici işe başlamadan önce bu belgeyi ve [WORKLOG.md](../WORKLOG.md) dosyasını okur.**
 > Görev kimlikleri (ör. `F1.4`) commit mesajlarında, dal adlarında ve WORKLOG kayıtlarında kullanılır.
 
-Son güncelleme: 2026-10-08 · Sahip: Ürün + Mühendislik. **Güncel durumun tek kaynağı:** [WORKLOG.md → Güncel durum](../WORKLOG.md#güncel-durum); aşağıdaki faz tablosu tarihli bir özettir.
+Son güncelleme: 2026-10-19 · Sahip: Ürün + Mühendislik. **Güncel durumun tek kaynağı:** [WORKLOG.md → Güncel durum](../WORKLOG.md#güncel-durum); aşağıdaki faz tablosu tarihli bir özettir.
 
 ---
 
@@ -35,21 +35,21 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 
 ---
 
-## Faz durum özeti (2026-10-08)
+## Faz durum özeti (2026-10-19)
 
-| Faz | Başlık                                                      | Durum                                                                                                                                                     | Bağımlılık |
-| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                                                                                                             | —          |
-| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8: 24 senaryoluk ses değerlendirmesi depoda (`pnpm voice:eval`), gecikme ölçüldü ([VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md))     | F0         |
-| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                                                                                                        | F1         |
-| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ✅ (testler: rol × eylem, kiracı izolasyonu, davet)                                                                                                       | F0         |
-| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor)                                                                                | F0         |
-| F5  | Klinik paneli                                               | ✅ ekranlar, sıralama, action testleri, E2E · açık: logo/görsel, 375/1440 görsel kontrol                                                                  | F3, F4     |
-| F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                                                                                                         | F3, F1     |
-| F7  | KVKK, güvenlik, veri saklama                                | 🟡 saklama, anonimleştirme, dışa aktarma, hız sınırı, CSP, denetim, güvenlik incelemesi ✅ · açık: yasal metinler, avukat, alan şifreleme değerlendirmesi | F5         |
-| F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı, CI yeşil, iş kalp atışı · `main` korumalı · açık: Sentry/uptime hesapları, Pro/ücretli Neon                                                     | F1, F3     |
-| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                                                                                                        | F1–F8      |
-| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                                                                                                        | F9         |
+| Faz | Başlık                                                      | Durum                                                                                                                                                                                    | Bağımlılık |
+| --- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| F0  | Temel (belgeler, iskelet, domain, testler)                  | ✅ Tamamlandı                                                                                                                                                                            | —          |
+| F1  | Retell geçişi ve sesli asistan çekirdeği                    | 🟡 F1.1–F1.7 ✅ · F1.8: 26 senaryo + C5 (`pnpm voice:eval`), son koşu 23/26; gecikme p50 1,69 sn, hedefin üstünde; model kararı bekliyor ([VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md)) | F0         |
+| F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                                                                                                                                       | F1         |
+| F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ✅ (testler: rol × eylem, kiracı izolasyonu, davet) · 2FA hazır, canlıda `optional`; `required-admins` sırada                                                                            | F0         |
+| F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onay bekliyor) · F4.3 ✅ (logo/görseller bekleniyor)                                                                                                               | F0         |
+| F5  | Klinik paneli                                               | ✅ ekranlar, sıralama, action testleri, E2E · açık: logo/görsel, 375/1440 görsel kontrol                                                                                                 | F3, F4     |
+| F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                                                                                                                                        | F3, F1     |
+| F7  | KVKK, güvenlik, veri saklama                                | 🟡 saklama, anonimleştirme, dışa aktarma, hız sınırı, CSP, denetim, güvenlik incelemesi ✅ · açık: yasal metinler, avukat, alan şifreleme değerlendirmesi                                | F5         |
+| F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı, CI yeşil, iş kalp atışı · `main` korumalı · Sentry ve UptimeRobot açık (2026-10-19) · açık: Vercel Pro, Neon Launch ve geri yükleme provası                                    | F1, F3     |
+| F9  | Pilot (3 klinik) ve eval                                    | ⏳                                                                                                                                                                                       | F1–F8      |
+| F10 | V1 ve sonrası (faturalandırma, self-servis, entegrasyonlar) | ⏳                                                                                                                                                                                       | F9         |
 
 **Önerilen sıra (2026-10-04 güncel):** F1 → F4 (tasarım temeli) → F3 (hesaplar) → F5 ve F6 (panel, konsol) → F7 → F8 (production) → **F2 (Netgsm: ürün ekibiyle birlikte, en son)** → F9. F1.8 ürün ekibinin Retell anahtarını girmesiyle paralel yürür.
 
@@ -133,7 +133,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 ### F1.8 Uçtan uca POC
 
 - [x] Tünel (cloudflared) ile lokal → Retell'de demo klinik ajanı senkronize edildi (2026-10-04; ilk denemede başarılı, idempotent, imzalı tool çağrısı canlı doğrulandı)
-- [x] ~~Retell **web call** ile 20 senaryodan en az 10'u elle denenir~~ — 2026-10-09: yerine otomatik 26 senaryoluk ses değerlendirmesi (`pnpm voice:eval`, [VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md)); ilk koşu 12/24
+- [x] ~~Retell **web call** ile 20 senaryodan en az 10'u elle denenir~~ — 2026-10-09: yerine otomatik 26 senaryoluk ses değerlendirmesi (`pnpm voice:eval`, [VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md)); ilk koşu 12/24, 2026-10-19 tam koşu 23/26
 - [ ] Model karşılaştırması — 2026-10-09: profillerle (`baseline`, `option-a`, `option-hardening`, `option-c-gemini`, `option-c-gpt`) aynı senaryolar; kredi yüklenince kademeli plan ([VOICE-EVAL.md](02-voice-agent/VOICE-EVAL.md)), sonuç [ADR-003](decisions/ADR-003-llm-model.md)'e
 - [ ] ~~ASR ve TTS karşılaştırması (Deepgram, Azure, Soniox × ElevenLabs, Cartesia)~~ — 2026-10-09: Retell'in sunduklarıyla sınırlı; ADR-003 seçenek D (standart sesler) olarak ele alınır, ayrı iş değil
 - [ ] Custom function gecikmesi (Retell → Vercel `fra1`) ölçülür
@@ -372,7 +372,7 @@ Tasarım ve karar günlüğü: [proposals/TAKIP.md](proposals/TAKIP.md).
 - [x] Production env değişkenleri (gizliler sensitive). Preview: ⏳ (bilerek boş, bkz. DEPLOYMENT.md)
 - [x] Production ajanları `recalltr.company`'ye bağlı (konsoldan oluşturulan demo klinik; gerçek arama → randevu → DB doğrulandı). Inbound URL numara gelince (F2). Preview test ajanları: ⏳
 - [x] Alan adı `recalltr.company` (+ `www` yönlendirme), Resend alanı doğrulandı (eu-west-1), güvenlik başlıkları, robots/sitemap/OG
-- [ ] Sentry, uptime izleme (`/api/health`), Vercel Cron — Vercel Cron ve kod hazır (Sentry, `/api/health/jobs`); hesaplar ürün ekibinde ([MONITORING.md](06-operations/MONITORING.md))
+- [x] Sentry, uptime izleme (`/api/health`), Vercel Cron — Sentry canlıda açık; UptimeRobot üç monitörle (site, `/api/health`, `/api/health/jobs`) 5 dakikada bir, e-posta bildirimi denendi (2026-10-19) ([MONITORING.md](06-operations/MONITORING.md))
 - [x] CI: entegrasyon testleri (PGlite) ve build; `main` koruması — CI yeşil (testler, build, E2E); `main` korumalı (2026-10-08'den beri `check` ve `e2e` zorunlu)
 
 ---
@@ -410,7 +410,7 @@ Faturalandırma (iyzico veya Stripe), self-servis kayıt, haftalık rapor e-post
 
 Bu sorular cevaplandıkça ilgili göreve işlenir ve buradan kaldırılır.
 
-1. **Kayıt dinleme:** Paneldeki ses kayıtlarını hangi roller dinleyebilir? (F3.2 önerisi: `owner`, `admin`)
+1. **Kayıt dinleme:** Paneldeki ses kayıtlarını hangi roller dinleyebilir? Uygulanan (F3.2 önerisi): `owner`, `admin` (`calls.listen_recording`, `src/lib/permissions.ts`); sekreter ve hekim dinleyemez. Ürün sahibinin teyidi bekleniyor
 
 ## Alınan kararlar
 

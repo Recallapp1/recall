@@ -26,12 +26,12 @@
 
 ## Araçlar
 
-| Araç                                       | Faz   | Kullanım                          |
-| ------------------------------------------ | ----- | --------------------------------- |
-| Vercel Observability ve Logs               | MVP   | İstek süreleri, hatalar           |
-| Uptime izleme (Better Stack / UptimeRobot) | MVP   | `/api/health` 1 dk aralıkla       |
-| Sentry                                     | Faz 2 | Hata izleme, release takibi       |
-| Retell Dashboard                           | MVP   | Arama kayıtları, gecikme, maliyet |
+| Araç                         | Faz | Kullanım                          |
+| ---------------------------- | --- | --------------------------------- |
+| Vercel Observability ve Logs | MVP | İstek süreleri, hatalar           |
+| Uptime izleme (UptimeRobot)  | MVP | Üç monitör, 5 dk aralıkla         |
+| Sentry                       | MVP | Hata izleme (canlıda açık)        |
+| Retell Dashboard             | MVP | Arama kayıtları, gecikme, maliyet |
 
 ## Log biçimi
 
@@ -54,17 +54,17 @@ Yapılandırılmış JSON, kişisel veri yok ([SECURITY.md](../05-compliance/SEC
 - Mesai saatlerinde (08:00–20:00) alarmlar ekibe bildirim olarak gider.
 - Pilot klinikler için doğrudan WhatsApp destek hattı.
 
-## Kurulu izleme (2026-10-07)
+## Kurulu izleme (2026-10-07, hesaplar 2026-10-19)
 
 | Ne                | Nasıl                                                                                                                                                                                                                                              | Durum                                 |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| Hata takibi       | Sentry, yalnızca sunucu (`src/instrumentation.ts`, `src/server/observability/sentry.ts`). `SENTRY_DSN` yoksa kapalı. Olaylardan istek gövdesi, sorgu, çerez, başlık, kullanıcı ve breadcrumb silinir (testli)                                      | Kod hazır, hesap bekleniyor           |
+| Hata takibi       | Sentry, yalnızca sunucu (`src/instrumentation.ts`, `src/server/observability/sentry.ts`). `SENTRY_DSN` yoksa kapalı. Olaylardan istek gövdesi, sorgu, çerez, başlık, kullanıcı ve breadcrumb silinir (testli)                                      | **Canlıda açık** (2026-10-19)         |
 | Alarmlar          | `raiseAlarm()` → `{"msg":"ALARM", ...}` logu + Sentry sorunu (etiket `alarm`). Kaynaklar: kritik denetim kaydı yazılamadı, cron başarısız, klinik işi başarısız, iş bitirilemedi                                                                   | Hazır                                 |
 | Uygulama sağlığı  | `GET /api/health` → 200 / 503 (veritabanı)                                                                                                                                                                                                         | Hazır                                 |
 | Zamanlanmış işler | `GET /api/health/jobs` → 200 / 503: bir işin son başarılı çalışması 26 saatten eskiyse (`HOURLY_REMINDERS` açıkken saatlik `reminders` işi için 2,5 saat), son çalışma başarısızsa veya 10 dk'dır kalp atışı yoksa. Yalnızca iş adı, durum ve saat | Hazır (ilk kayıtlar 8 Ekim'de oluşur) |
 | İş kayıtları      | `job_runs` (gün başına bir satır) ve `job_run_clinics` (klinik bazında ilerleme); 90 gün saklanır                                                                                                                                                  | Hazır                                 |
 
-### Ürün ekibinin yapacakları
+### Kurulum adımları (2026-10-19'da yapıldı; yeniden kurulum veya alan adı taşıma için)
 
 **1. Sentry (ücretsiz Developer planı yeterli)**
 
@@ -121,7 +121,7 @@ Yapılandırılmış JSON, kişisel veri yok ([SECURITY.md](../05-compliance/SEC
 
 Koddaki her `ALARM` adı bu tabloda tam adıyla yer alır; `production-safety.test.ts` farkı CI'da yakalar.
 
-> **Bugün (2026-10-17) alarmlar kimseye ulaşmıyor:** `ALARM` satırları yalnızca Vercel loglarında, Hobby planında log 1 saat tutuluyor. Sentry (`SENTRY_DSN`) veya bir log uyarısı kurulana kadar bir alarm fark edilmeyebilir.
+> **2026-10-19'dan beri:** Sentry açık, `ALARM` satırları Sentry sorunu olarak gelir (bildirimi Sentry'deki uyarı kuralı belirler). UptimeRobot üç monitörle 5 dakikada bir bakar: `https://recalltr.company`, `/api/health`, `/api/health/jobs`; e-posta bildirimi denendi. Vercel Hobby'de runtime logu yaklaşık 1 saat tutulur; log tabanlı uyarılar (aşağıdaki `metric:` ve `warn` satırları) için ayrı bir log uyarısı henüz kurulmadı.
 
 Sentry açıksa `ALARM` olayları Sentry sorunu olur (etiket `alarm`); olay metinlerinde telefon, e-posta ve anahtar maskelenir (`src/lib/redact.ts`, testli).
 

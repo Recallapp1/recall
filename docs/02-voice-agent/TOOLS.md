@@ -13,6 +13,16 @@ Kaynak: [`src/server/voice/tools/`](../../src/server/voice/tools/). Her tool bir
 - Tarihler `YYYY-MM-DD`, saatler `HH:mm` biçimindedir ve **kliniğin yerel saatini** ifade eder. UTC dönüşümü sunucudadır.
 - Tool'lar **idempotent olmaya çalışır**: aynı hasta, aynı slot ve aynı hizmet için ikinci `book_appointment` çağrısı yeni kayıt açmaz, mevcut randevuyu döner.
 
+## Anahtarlı araç ipuçları (canlıda açık, 2026-10-19)
+
+Bu üçü yalnızca araç sonucunun metnini değiştirir; ajan tanımı (spec özeti) değişmez. Kapalıyken sonuç birebir eskisi gibidir.
+
+| Anahtar                  | Ne ekler                                                                                                                                                                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `VOICE_TOOL_ERROR_HINT`  | `book_appointment`, `reschedule_appointment` veya `cancel_appointment` `ok: false` dönerse `hint`: işlem yapılmadı, hastaya açıkça söyle, "oluşturuldu" deme, bilgiyi yeniden iste. `INVALID_PHONE` için ayrıca: sıfırla başlayan on bir hane, yeniden iste, geri oku, onay al |
+| `VOICE_VERIFY_HINT`      | `find_appointments` doğrulama isterken: arayanın zaten söylediği ad, tarih ve saati kullan, yalnızca eksik olanı sor. Doğrulama gevşemez                                                                                                                                       |
+| `VOICE_VERIFIED_SERVICE` | Doğrulamayı geçen randevuda `serviceId` da döner; ertelemede hizmet sorulmadan `check_availability` bu kimlikle çağrılır. Doğrulamadan önce hiçbir şey eklenmez                                                                                                                |
+
 ## `check_availability`
 
 Uygun randevu saatlerini döner.

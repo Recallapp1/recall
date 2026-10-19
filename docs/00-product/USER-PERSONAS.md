@@ -40,9 +40,9 @@
 
 ## Panel rol eşlemesi
 
-| Persona           | Panel rolü                    | Yetki                                         |
-| ----------------- | ----------------------------- | --------------------------------------------- |
-| Klinik sahibi     | `owner`                       | Her şey, faturalandırma ve üye yönetimi dahil |
-| Klinik yöneticisi | `admin`                       | Ayarlar, personel, hizmetler, tüm randevular  |
-| Sekreter          | `member`                      | Randevular, aramalar, hastalar                |
-| Hekim             | `member` (+ `practitionerId`) | Kendi takvimi (V1'de kısıtlama)               |
+| Persona           | Panel rolü                     | Yetki                                            |
+| ----------------- | ------------------------------ | ------------------------------------------------ |
+| Klinik sahibi     | `owner`                        | Her şey, faturalandırma ve üye yönetimi dahil    |
+| Klinik yöneticisi | `admin`                        | Ayarlar, personel, hizmetler, tüm randevular     |
+| Sekreter          | `staff`                        | Randevular, aramalar, hastalar, geri aramalar    |
+| Hekim             | `practitioner` (+ hekim kaydı) | Yalnızca kendi takvimi; aramalar ve kayıtlar yok |

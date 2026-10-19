@@ -1,6 +1,6 @@
 # Yol Haritası
 
-Ürün seviyesinde özet (durumlar 2026-10-14, plandaki faz tablosuyla aynı; 🟡 = kısmen). **Görev düzeyindeki ayrıntılar, kabul kriterleri ve sıralama [IMPLEMENTATION-PLAN.md](../IMPLEMENTATION-PLAN.md) belgesindedir.** İlerleme kaydı: [WORKLOG.md](../../WORKLOG.md).
+Ürün seviyesinde özet (durumlar 2026-10-19, plandaki faz tablosuyla aynı; 🟡 = kısmen). **Görev düzeyindeki ayrıntılar, kabul kriterleri ve sıralama [IMPLEMENTATION-PLAN.md](../IMPLEMENTATION-PLAN.md) belgesindedir.** İlerleme kaydı: [WORKLOG.md](../../WORKLOG.md).
 
 | Faz | Ürün çıktısı                                                                         | Durum |
 | --- | ------------------------------------------------------------------------------------ | ----- |

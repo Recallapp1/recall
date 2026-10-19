@@ -55,5 +55,5 @@ Bkz. [ADR-004](../decisions/ADR-004-retell-voice-platform.md), [ADR-003](../deci
 | **Zod**               | Env, webhook ve tool argümanı doğrulaması; tool JSON şemaları Zod'dan üretilir |
 | **Vitest**            | Hızlı, ESM ve TS yerel desteği                                                 |
 | **ESLint + Prettier** | Tutarlı kod                                                                    |
-| **Sentry (Faz 2)**    | Hata izleme                                                                    |
+| **Sentry**            | Hata izleme (yalnızca sunucu, maskeli; canlıda açık)                           |
 | **Vercel Cron**       | Hatırlatma SMS'leri ve veri saklama temizliği                                  |

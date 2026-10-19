@@ -14,10 +14,13 @@
 
 **Davranış:**
 
-1. Randevu akışı derhal durur.
-2. Asistan: _"Anlattığınız durum acil müdahale gerektirebilir. Lütfen hemen 112'yi arayın."_
-3. Devir numarası tanımlıysa ek olarak: _"Sizi şimdi klinikteki arkadaşıma da aktarıyorum."_ → `transferCall`.
-4. Arama `outcome=transferred` veya `other` olarak işaretlenir; panelde **acil** etiketiyle görünür (Faz 2).
+1. Asistan başka hiçbir şeyden önce tam olarak şunu söyler: _"Lütfen hemen yüz on ikiyi arayın."_ (`VOICE_EMERGENCY_FIRST`, canlıda açık 2026-10-18). Belirti listesi yukarıdakilere ek olarak alerjik tepki, kendine zarar verme ve aşırı ilaç alımını da kapsar.
+2. Randevu akışı derhal durur.
+3. Aktarma mümkünse (`{{transfer_available}}` "evet") kliniğe aktarır → `transfer_call`.
+4. Aktarma mümkün değilse: _"Hemen arayabilmeniz için görüşmeyi kapatıyorum, geçmiş olsun."_ der ve görüşmeyi kapatır, arayanın hattı 112 için boşalır (`VOICE_EMERGENCY_END_CALL`, canlıda açık 2026-10-18). Arayan konuşmaya devam ederse kapatmaz, yalnızca 112'yi tekrarlar.
+5. Arama sonrası işaret (`POST_CALL_FLAGS`, canlıda açık) arayanın sözlerindeki acil belirtileri yakalar; panelde arama **acil** rozetiyle görünür.
+
+Sınama: `pnpm voice:eval:c5` (7/7) ve `pnpm voice:eval:c5-close` (2/2), 2026-10-18 – 19, Recall Dev. Gerçek telefon hattıyla henüz denenmedi (C5, [FULL-AUDIT-ACTION-PLAN.md](../reviews/FULL-AUDIT-ACTION-PLAN.md) §C).
 
 > Asistan acil olup olmadığına karar veren bir tıbbi otorite değildir. Şüphede kalırsa 112'ye yönlendirir.
 

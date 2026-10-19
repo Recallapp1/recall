@@ -6,12 +6,12 @@ Hasta kliniği aradığında karşısında, kliniğe özel yapılandırılmış 
 
 ## Hızlı başlangıç (lokal)
 
-Gereksinimler: Node 24, pnpm 12, Docker.
+Gereksinimler: Node 24, pnpm 12. Günlük geliştirme Neon `dev` dalında yapılır; internetsiz çalışmak için PGlite (`pnpm db:local`) veya Docker (`pnpm db:up`).
 
 ```bash
 pnpm install
 cp .env.example .env.local     # değerleri doldur
-pnpm db:up                     # lokal Postgres (Docker yoksa: pnpm db:local)
+pnpm db:local                  # lokal Postgres, Docker'sız (Docker varsa: pnpm db:up; Neon dev dalı için bu adımı atla)
 pnpm db:migrate
 pnpm db:seed                   # demo klinik
 pnpm dev

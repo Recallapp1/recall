@@ -14,7 +14,18 @@ Inbound webhook çalışmayan aramalarda (Retell panelindeki test, web call) biz
 
 Aşağıdaki şablon gösterim amaçlıdır; birebir metin koddadır.
 
-**Varyantlar (2026-10-09):** `VOICE_PROMPT_VARIANT` (`full` varsayılan, `compact` ADR-003 seçenek A) ve `VOICE_PROMPT_HARDENING` (A9: önce değişmez güvenlik kuralları, kliniğin yazdığı her şey güvenilmeyen veri bloğunda, kayıt itirazı ve sistem hatası kuralları, örnek ad/numara yok). İkisi de varsayılan olarak kapalı; bugünkü prompt bu belgedeki gibidir.
+**Varyantlar (2026-10-09):** `VOICE_PROMPT_VARIANT` (`full` varsayılan, `compact` ADR-003 seçenek A) ve `VOICE_PROMPT_HARDENING` (A9: önce değişmez güvenlik kuralları, kliniğin yazdığı her şey güvenilmeyen veri bloğunda, kayıt itirazı ve sistem hatası kuralları, örnek ad/numara yok). İkisi de varsayılan olarak kapalı ve canlıda tanımsız.
+
+**Canlıda açık talimat anahtarları (2026-10-19, spec `5fa3d19371d3`).** Aşağıdaki şablon anahtarların hepsi kapalıyken üretilen temel talimattır. Canlıdaki talimat bundan dört yerde ayrılır (birebir metin `src/server/voice/prompt.ts` içinde; anahtarlar kapalıyken temel talimat parmak iziyle sabit):
+
+| Anahtar                    | Talimatta ne değişir                                                                                                                                                                                                                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `VOICE_EMERGENCY_FIRST`    | Talimat "Acil durum (her şeyden önce)" bölümüyle başlar: göğüs ağrısı, nefes darlığı, durmayan kanama, bilinç kaybı, hızla artan şişlik, alerjik tepki, kendine zarar verme veya aşırı ilaç anlatılırsa başka hiçbir şeyden önce tam olarak "Lütfen hemen yüz on ikiyi arayın." denir, randevu akışı bırakılır. "Sınırlar"daki eski acil durum satırı kalkar |
+| `VOICE_EMERGENCY_END_CALL` | Aktarma mümkünse aktarılır; değilse "Hemen arayabilmeniz için görüşmeyi kapatıyorum, geçmiş olsun." denir ve görüşme kapanır. Arayan konuşmaya devam ederse kapatılmaz, yalnızca 112 tekrarlanır                                                                                                                                                             |
+| `VOICE_BOOKING_RULES`      | Randevu akışına iki satır: net duyulmayan gün adı tahmin edilmez, sorulur; yeni randevuda telefon numarası gruplar hâlinde geri okunup onaylanmadan `book_appointment` çağrılmaz (arayan numara varsa ve başka numara söylenmediyse gerekmez)                                                                                                                |
+| `VOICE_NO_NAME_ADDRESS`    | "Hitap" bölümü değişir: hastaya adıyla hitap edilmez, "Bey" veya "Hanım" kullanılmaz, ad yalnızca teyit için bir kez geri okunur                                                                                                                                                                                                                             |
+
+Talimata dokunmayan ama asistanın davranışını değiştiren araç anahtarları da açık: `VOICE_TOOL_ERROR_HINT`, `VOICE_VERIFY_HINT`, `VOICE_VERIFIED_SERVICE` ([TOOLS.md](TOOLS.md), [NEXT-STEPS-FOR-OWNER.md → Switches](../NEXT-STEPS-FOR-OWNER.md#switches)). `VOICE_PROMPT_HARDENING` açılırsa bu dört talimat anahtarı etkisiz kalır (o sürümün kendi kuralları var).
 
 ## Yapı
 

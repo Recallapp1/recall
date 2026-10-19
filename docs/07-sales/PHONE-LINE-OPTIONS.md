@@ -41,6 +41,8 @@ Uygulama tarafı hazır: numara konsolda kliniğe bağlanır, `call_inbound` web
 
 ## Öneri
 
+> **Karar (2026-10-19, ürün sahibi):** SIP ve SMS için **Netgsm** yönünde karar verildi; başvuru, şirket kurulduktan sonra en son aşamada yapılacak. Aşağıdaki ilk öneri (Verimor ile başlamak) karşılaştırma için duruyor; Netgsm SIP trunk'ı Retell'e vermezse Verimor yedek seçenektir. Soru listesi: [PHONE-LINE-QUESTIONS.md](PHONE-LINE-QUESTIONS.md).
+
 1. **İlk görüşme Verimor ile:** dış sisteme SIP trunk ürünü yayınlanmış, fiyatı belli, eşzamanlı çağrı sınırsız. Tek bir hesapta birden çok klinik numarası ve Retell'e TCP/TLS ile bağlanma sorulur.
 2. **İkinci görüşme Netgsm ile:** SMS için zaten planlanan sağlayıcı; tek sağlayıcıda toplamak işletmeyi kolaylaştırır. Netsipp'in Retell'e SIP trunk verip vermediği ve dakika fiyatları sorulur.
 3. Karar ölçütleri: Retell'e bağlantının çalışması (test araması), arayan numaranın iletilmesi, SIP REFER, klinik başına maliyet, destek.

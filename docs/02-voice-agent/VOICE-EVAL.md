@@ -70,6 +70,27 @@ Bu mesajla yapılacak: `pnpm dev` + `pnpm dev:tunnel`, ardından `pnpm voice:eva
 | Dayanıklılık              | Bey/Hanım hitabı, sessiz/yanlış arama                                     |
 | Sıra alma (2026-10-08)    | yavaş konuşan (1,5 sn duraksama), tereddütlü arayan (2,5 sn duraksama)    |
 
+Ayrıca acil durum (C5) senaryoları normal koşunun dışında, ayrı komutlarla: `pnpm voice:eval:c5` (7 senaryo) ve `pnpm voice:eval:c5-close` (2 senaryo, acil durumda görüşmeyi kapatma; arayan konuşmaya devam ederse kapatılmaz).
+
+## Sonuçlar: 2026-10-18 – 19 (Haiku + Flash, dev anahtarları açık)
+
+Dev ajanında `.env.local` anahtarları açıktı: `VOICE_EMERGENCY_FIRST`, `VOICE_EMERGENCY_END_CALL`, `POST_CALL_FLAGS`, `VOICE_VERIFY_HINT`, `VOICE_BOOKING_RULES`, `VOICE_NO_NAME_ADDRESS`, `VOICE_TOOL_ERROR_HINT`, `VOICE_VERIFIED_SERVICE`. Ayrıntı: [WORKLOG.md](../../WORKLOG.md) 2026-10-18 – 19 kaydı.
+
+| Koşu                                           | Sonuç     | Maliyet | Not                                                                     |
+| ---------------------------------------------- | --------- | ------- | ----------------------------------------------------------------------- |
+| `pnpm voice:eval:c5`                           | 7/7       | 0,63 $  | İlk söz "Lütfen hemen yüz on ikiyi arayın."                             |
+| `pnpm voice:eval:c5-close`                     | 2/2       | 0,16 $  | Kapatan asistan (`agent_hangup`); konuşmaya devam eden arayan kesilmedi |
+| `book-stated-time` (yeni randevu kurallarıyla) | 5/5       | —       | Randevu oluşmadan "oluşturuldu" deme hatası tekrarlanmadı               |
+| Tam koşu (26 senaryo)                          | **23/26** | 4,55 $  | Düşenler aşağıda                                                        |
+
+Düşenler:
+
+- `book-clear`: ses tanıma numaraya fazladan 0 ekledi; tekrarda geçti.
+- `verified-reschedule`: akış uzadı; `VOICE_VERIFIED_SERVICE` ile geçti.
+- `slow-speaker`: **açık.** Asistan yavaş arayanın duraksamasında araya giriyor. Ses tanıma "yirmi yedi"yi "20" ve "7" diye böldü, asistan eksik numarayı geri okudu ve randevu geçerli ama yanlış numarayla açıldı; senaryonun sabit "Evet"i bunu yakalayamaz. Retell sıra alma ayarları (`RETELL_RESPONSIVENESS` vb.) ölçülmedi.
+
+Gecikme (tam koşu, 99 tur): uçtan uca p50 **1,69 sn**, p95 **3,77 sn**; model (Haiku) p50 0,67 sn. Hedef (p50 < 1,0, p95 < 1,8) tutmuyor. Model karşılaştırması (kademe 1) henüz koşulmadı.
+
 ## Sonuçlar: 2026-10-08, ilk koşu (Haiku + Flash)
 
 Retell kredisi 13. senaryoda bittiği için 24'ün 12'si koştu (maliyet 2,31 $). Ham veri `.voice-eval/recovered-run1.json`. Gecikme ve model önerisi: [ADR-003](../decisions/ADR-003-llm-model.md).

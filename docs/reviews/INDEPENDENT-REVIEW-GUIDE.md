@@ -40,7 +40,7 @@ Recall answers phone calls for clinics (dental, health, beauty) with a Turkish v
 
 - **In:** caller number (caller ID or spoken), name, chosen service and time (health-related), transcript and summary, optional recording (stays on Retell, we store a marker), callback notes (free text).
 - **At rest:** Neon (Frankfurt). Retention job: recordings 30 days, transcripts 90, caller number 730, callback notes 90, notification log 365 (`retention.ts`). No period yet for summaries, demo requests and audit events (open risk 12).
-- **Out:** Retell and its sub-processors (USA), Resend (staff e-mail only), Sentry (off; events masked), Netgsm (off).
+- **Out:** Retell and its sub-processors (USA), Resend (staff e-mail only), Sentry (on since 2026-10-19; events masked), Netgsm (off).
 - **KVKK:** export (`exportPatientData`), erasure (`anonymizePatient`, with a Retell deletion queue), correction (`updatePatientIdentity`, switch `PANEL_PATIENT_EDIT`), SMS opt-out. Logs carry no names, numbers or transcripts (`safeError`, tests in `kvkk-end-to-end.integration.test.ts`, `fallbacks.test.ts`).
 
 ## 5. Where to look first

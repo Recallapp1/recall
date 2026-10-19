@@ -4,7 +4,7 @@
 | -------------- | ----------- |
 | Durum          | Taslak v0.1 |
 | Sahip          | Ürün        |
-| Son güncelleme | 2026-10-04  |
+| Son güncelleme | 2026-10-19  |
 
 ## 1. Problem
 
@@ -77,7 +77,7 @@ Detay: [USER-PERSONAS.md](USER-PERSONAS.md)
 
 ## 7. Açık sorular
 
-- [ ] Hangi Türk operatörü (Netgsm, Verimor, diğer) SIP trunk sağlayacak? POC gerekli.
-- [ ] Ses kaydı varsayılan olarak açık mı olacak, kliniğin seçimine mi bırakılacak?
-- [ ] Fiyat bilgisi asistan tarafından söylenebilir mi? (Klinik bazlı ayar olarak planlandı.)
+- [ ] Hangi Türk operatörü SIP trunk sağlayacak? Karar Netgsm yönünde (2026-10-19); başvuru ve bağlantı testi (POC) yapılmadı.
+- [x] Ses kaydı: kliniğin seçimi (`settings.assistant.recordCalls`, varsayılan açık); kayıt kapalıysa arama analizden sonra Retell'den silinir.
+- [x] Fiyat bilgisi: klinik bazlı ayar (`settings.assistant.speakPrices`, varsayılan kapalı); yalnızca aralık söylenir.
 - [ ] Hasta kimliği için sadece telefon numarası yeterli mi, doğum yılı teyidi istenecek mi?

@@ -454,4 +454,4 @@ pending ──(iş sahiplenir)──> sending ──> sent
 - **Doğrulama:**
   - 326 test;
   - dev veritabanıyla tarayıcıda: örnek ekleme, kural düzenleme ve önizleme, randevudan takibe alma, "otomatik sayıldı" ve "Gelmedi" düzeltmesi, randevusuz ziyaret, liste, ön doldurmalı randevu.
-- **Production'a çıkmadı:** ürün ekibinin onayını bekliyor.
+- **Production'da (2026-10-07'den beri):** demo klinikte konsoldan açık. V1.1 ve V2 bekliyor ([IMPLEMENTATION-PLAN.md → Takip](../IMPLEMENTATION-PLAN.md#takip-hasta-takip-ve-hatırlatma)).

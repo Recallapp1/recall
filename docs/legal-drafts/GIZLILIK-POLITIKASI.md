@@ -24,7 +24,7 @@ Panel yalnızca **zorunlu oturum çerezleri** kullanır. Reklam veya analiz çer
 
 ## Aktarım ve alt işleyenler
 
-Barındırma (Vercel, Almanya bölgesi; şirket ABD), veritabanı (Neon, Almanya), e-posta (Resend, İrlanda), hata takibi (Sentry, AB; açıldığında). Ayrıntı: [DATA-FLOW.md](DATA-FLOW.md).
+Barındırma (Vercel, Almanya bölgesi; şirket ABD), veritabanı (Neon, Almanya), e-posta (Resend, İrlanda), hata takibi (Sentry, AB; maskelenmiş olaylar). Ayrıntı: [DATA-FLOW.md](DATA-FLOW.md).
 
 ## Saklama
 

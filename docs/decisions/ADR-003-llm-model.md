@@ -3,7 +3,7 @@
 |       |                                                                                                                                                                                                                                                   |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Durum | **Geçerli: `claude-4.5-haiku` + ElevenLabs `eleven_flash_v2_5`** (production). **Seçenek A onaylandı (2026-10-08)**: ayarlar hazır ama kapalı; ölçüm Retell kredisi yüklenince. C için test profilleri hazır; model değişikliği ayrıca onay ister |
-| Tarih | 2026-10-04 · güncelleme 2026-10-08                                                                                                                                                                                                                |
+| Tarih | 2026-10-04 · güncelleme 2026-10-19                                                                                                                                                                                                                |
 
 ## Bağlam
 
@@ -130,3 +130,15 @@ Her koşu 26 senaryo, ~4,5–5 $ (toplam ~19 $). Profil yalnızca dev kliniğini
 - Yeni değerlendirme profili `option-hardening`: Haiku + tam prompt + `VOICE_PROMPT_HARDENING` (A9: önce değişmez güvenlik kuralları, klinik metni güvenilmeyen veri, kayıt itirazı ve sistem hatası kuralları, örnek ad/numara yok). Hiçbir yerde açık değil; bugünkü prompt bayt bayt aynı kaldı (canlı ajanın özeti değişmedi).
 - Ölçüm sırası ve maliyeti: [VOICE-EVAL.md → Kademeli plan](../02-voice-agent/VOICE-EVAL.md). Önce `baseline` ve `option-c-gemini`, sonra kalan profiller. Her koşu Recall Dev çalışma alanının kredisini kullanır.
 - Değişmeyenler: production modeli `claude-4.5-haiku`, ses `eleven_flash_v2_5`; seçenek A ayarları ve güçlendirme kapalı. Model değişikliği ürün ekibinin onayını bekler.
+
+## Ölçüm 2026-10-19: tam koşu (Haiku + Flash, dev anahtarları açık)
+
+Kaynak: [VOICE-EVAL.md](../02-voice-agent/VOICE-EVAL.md), 26 senaryo, 23/26 geçti, 99 tur. Dev ajanında yeni talimat ve araç anahtarları açıktı (acil durum, randevu kuralları, hitap, araç ipuçları); model ve ses production ile aynı.
+
+| Ölçü              | Değer   |
+| ----------------- | ------- |
+| Uçtan uca tur p50 | 1,69 sn |
+| Uçtan uca tur p95 | 3,77 sn |
+| LLM (Haiku) p50   | 0,67 sn |
+
+Hedef (p50 < 1,0, p95 < 1,8) yine **tutmuyor**; 8 Ekim'deki p50 ≈ 1,55 sn'den biraz yüksek (talimat uzadı, senaryolar farklı). Seçenek A ve C hâlâ ölçülmedi: sıradaki adım kademe 1 (baseline, seçenek A, Gemini Flash) ve `slow-speaker` için Retell sıra alma ayarları, aynı koşuda (~20 $ Recall Dev kredisi). Model, ayar ve pilot için kabul edilecek gecikme eşiği ürün sahibinin kararıdır.

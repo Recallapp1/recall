@@ -4,6 +4,8 @@ Bu dosya [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) biçimini, sü
 
 ## [Unreleased]
 
+> Bu dosya yalnızca 2026-10-04'teki ilk sürümü anlatır ve o günden beri güncellenmedi. Değişikliklerin güncel ve ayrıntılı kaydı [WORKLOG.md](WORKLOG.md), kararlar [docs/DECISIONS-TO-REVIEW.md](docs/DECISIONS-TO-REVIEW.md) ve [docs/decisions/](docs/decisions/README.md).
+
 ### Added
 
 - Next.js 16 proje iskeleti, araç zinciri (ESLint, Prettier, Vitest, Drizzle).

@@ -20,9 +20,9 @@ Kısaltmalar: **A** = Asistan, **H** = Hasta.
 > **A:** Teyit ediyorum: Ayşe Yılmaz adına, 8 Ekim Perşembe saat iki buçukta Dt. Can Demir ile diş taşı temizliği. Onaylıyor musunuz?
 > **H:** Evet.
 > _→ book_appointment(...) → ok: true_
-> **A:** Randevunuz oluşturuldu, bilgileri SMS olarak gönderdim. Başka bir konuda yardımcı olabilir miyim?
+> **A:** Randevunuz oluşturuldu. Başka bir konuda yardımcı olabilir miyim?
 
-**Beklenen:** 1 randevu, `source=voice`, SMS kuyruğa alındı, arama `outcome=booked`.
+**Beklenen:** 1 randevu, `source=voice`, SMS kaydı açıldı (gönderim kapalıyken `skipped`), arama `outcome=booked`. Asistan SMS'ten yalnızca SMS gerçekten gönderilecekse söz eder (sonuç iddiası kuralı).
 
 ## S02: İstenen gün dolu
 

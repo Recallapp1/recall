@@ -71,7 +71,7 @@ Veri sorumlusu olarak kliniğin VERBİS kaydı kendi yükümlülüğüdür. Reca
 ## Yapılacaklar
 
 - [ ] Avukat incelemesi: hukuki dayanak, açık rıza, yurt dışı aktarım
-- [ ] DPA şablonu
-- [ ] Aydınlatma metni şablonu (klinik web sitesi için)
+- [ ] DPA şablonu (madde iskeleti taslak olarak hazır: [DPA-OUTLINE.md](../legal-drafts/DPA-OUTLINE.md); avukat bekliyor)
+- [ ] Aydınlatma metni şablonu (klinik web sitesi için; taslak hazır: [KVKK-AYDINLATMA-METNI.md](../legal-drafts/KVKK-AYDINLATMA-METNI.md); avukat bekliyor)
 - [ ] Alt işleyenler listesi ve her biri için veri saklama/eğitim ayarları
 - [x] Panelde anonimleştirme ve dışa aktarma (anonimleştirme Retell'deki sesi de siler; bkz. [DATA-RETENTION.md](DATA-RETENTION.md#uygulama-2026-10-06))
