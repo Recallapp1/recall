@@ -440,6 +440,34 @@ describe("caller identity (abuse cases)", () => {
     expect(await victimStatus()).toBe("scheduled");
   });
 
+  describe("hint when verification is needed (VOICE_VERIFY_HINT)", () => {
+    const hidden = (callId: string, overrides: Partial<RetellHandlerDeps> = {}) =>
+      tool(
+        "find_appointments",
+        { phone: VICTIM_SPOKEN },
+        { from_number: null, call_id: callId, call_type: "web_call" },
+        overrides,
+      );
+
+    it("unset: today's hint, word for word", async () => {
+      const result = await hidden("web_hint_off");
+      expect(result.body.hint).toBe(
+        "Arayan numara görünmüyor; henüz hiçbir randevu bulunmadı. Randevu olup olmadığını söyleme. Hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini iste; sonra find_appointments'ı phone ve verification ile tekrar çağır. O çağrının sonucu gelmeden randevuyu bulduğunu söyleme.",
+      );
+    });
+
+    it("on: details the caller already gave are used at once, not asked again", async () => {
+      const result = await hidden("web_hint_on", { verifyHint: true });
+      expect(result.body).toMatchObject({ ok: true, verificationRequired: true });
+      const hint = String(result.body.hint);
+      expect(hint).toMatch(/zaten söylediyse tekrar sorma/);
+      expect(hint).toMatch(/hemen .*find_appointments/);
+      // The protection stays: nothing revealed before the verified call.
+      expect(hint).toMatch(/Randevu olup olmadığını söyleme/);
+      expect(hint).toMatch(/sonucu gelmeden randevuyu bulduğunu söyleme/);
+    });
+  });
+
   it("reveals nothing about appointments found only through a spoken number", async () => {
     const result = await tool(
       "find_appointments",
