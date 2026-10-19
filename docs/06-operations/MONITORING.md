@@ -121,7 +121,7 @@ Yapılandırılmış JSON, kişisel veri yok ([SECURITY.md](../05-compliance/SEC
 
 Koddaki her `ALARM` adı bu tabloda tam adıyla yer alır; `production-safety.test.ts` farkı CI'da yakalar.
 
-> **2026-10-19'dan beri:** Sentry açık, `ALARM` satırları Sentry sorunu olarak gelir (bildirimi Sentry'deki uyarı kuralı belirler). UptimeRobot üç monitörle 5 dakikada bir bakar: `https://recalltr.company`, `/api/health`, `/api/health/jobs`; e-posta bildirimi denendi. Vercel Hobby'de runtime logu yaklaşık 1 saat tutulur; log tabanlı uyarılar (aşağıdaki `metric:` ve `warn` satırları) için ayrı bir log uyarısı henüz kurulmadı.
+> **2026-10-19'dan beri:** Sentry açık (proje AB bölgesinde; ürün sahibi teyit etti), `ALARM` satırları Sentry sorunu olarak gelir (bildirimi Sentry'deki uyarı kuralı belirler). UptimeRobot üç monitörle 5 dakikada bir bakar: `https://recalltr.company`, `/api/health`, `/api/health/jobs`; e-posta bildirimi denendi. Vercel Hobby'de runtime logu yaklaşık 1 saat tutulur; log tabanlı uyarılar (aşağıdaki `metric:` ve `warn` satırları) için ayrı bir log uyarısı henüz kurulmadı.
 
 Sentry açıksa `ALARM` olayları Sentry sorunu olur (etiket `alarm`); olay metinlerinde telefon, e-posta ve anahtar maskelenir (`src/lib/redact.ts`, testli).
 
