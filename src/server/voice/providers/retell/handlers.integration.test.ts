@@ -1034,6 +1034,67 @@ describe("post-call flags (POST_CALL_FLAGS)", () => {
     );
     expect((await flagsOf("flags_clean"))?.flags).toEqual([]);
   });
+
+  describe("e-mail to the clinic (UNBACKED_CLAIM_EMAIL)", () => {
+    const claim = "User: Evet, onaylıyorum.\nAgent: Randevunuz oluşturuldu.";
+
+    function alertSpy() {
+      const alerts: Array<[string, string]> = [];
+      const alertUnbackedClaim = async (clinicId: string, callId: string) => {
+        alerts.push([clinicId, callId]);
+      };
+      return { alerts, alertUnbackedClaim };
+    }
+
+    it("alerts the clinic once for an unbacked claim, after the response", async () => {
+      const { alerts, alertUnbackedClaim } = alertSpy();
+      const on = deps({ postCallFlags: true, alertUnbackedClaim });
+      await handleCallEvent(await analyzed("claim_alert", claim), on);
+      expect(alerts).toEqual([]);
+      await Promise.all(deferred.map((task) => task()));
+      const row = await flagsOf("claim_alert");
+      expect(alerts).toEqual([[clinic.ctx.clinic.id, row!.id]]);
+
+      // Retell repeats a webhook it thinks failed: the call is already checked.
+      await handleCallEvent(await analyzed("claim_alert", claim), on);
+      await Promise.all(deferred.map((task) => task()));
+      expect(alerts).toHaveLength(1);
+    });
+
+    it("does not alert for other flags", async () => {
+      const { alerts, alertUnbackedClaim } = alertSpy();
+      await handleCallEvent(
+        await analyzed(
+          "claim_emergency_only",
+          "User: Nefes alamıyorum.\nAgent: Yüz on ikiyi arayın.",
+        ),
+        deps({ postCallFlags: true, alertUnbackedClaim }),
+      );
+      await Promise.all(deferred.map((task) => task()));
+      expect(alerts).toEqual([]);
+    });
+
+    it("does not alert without POST_CALL_FLAGS (nothing is checked)", async () => {
+      const { alerts, alertUnbackedClaim } = alertSpy();
+      await handleCallEvent(await analyzed("claim_flags_off", claim), deps({ alertUnbackedClaim }));
+      await Promise.all(deferred.map((task) => task()));
+      expect(alerts).toEqual([]);
+    });
+
+    it("a failed alert does not fail the webhook", async () => {
+      const response = await handleCallEvent(
+        await analyzed("claim_alert_fails", claim),
+        deps({
+          postCallFlags: true,
+          alertUnbackedClaim: async () => {
+            throw new Error("provider down");
+          },
+        }),
+      );
+      expect(response.status).toBe(200);
+      await expect(Promise.all(deferred.map((task) => task()))).resolves.toBeDefined();
+    });
+  });
 });
 
 describe("shared numbers (VOICE_SHARED_NUMBER_CHECK)", () => {
