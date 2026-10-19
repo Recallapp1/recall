@@ -119,6 +119,13 @@ const envSchema = z.object({
    */
   VOICE_VERIFY_HINT: optionalFlag,
   /**
+   * "true": when book_appointment, reschedule_appointment or
+   * cancel_appointment fails, the result says the appointment was not
+   * made/changed/cancelled and to ask again (INVALID_PHONE: eleven digits,
+   * read back, confirm). Tool text only; the agent spec does not change.
+   */
+  VOICE_TOOL_ERROR_HINT: optionalFlag,
+  /**
    * "true": book, cancel, reschedule and callback requests are keyed by call
    * and tool call; a repeat returns the stored first result (audit A3). Off by default.
    */

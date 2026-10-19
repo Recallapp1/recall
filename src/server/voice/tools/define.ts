@@ -32,13 +32,16 @@ export interface ToolContext {
   sharedNumberCheck?: boolean;
   /** VOICE_VERIFY_HINT: the verification hint uses details the caller already gave. Unset means off. */
   verifyHint?: boolean;
+  /** VOICE_TOOL_ERROR_HINT: a failed booking, move or cancellation says it did not happen. Unset means off. */
+  toolErrorHint?: boolean;
 }
 
 export type ToolErrorCode =
   DomainErrorCode | "INVALID_ARGUMENTS" | "UNKNOWN_TOOL" | "INTERNAL_ERROR" | "DUPLICATE_REQUEST";
 
 export type ToolResult =
-  ({ ok: true } & Record<string, unknown>) | { ok: false; error: ToolErrorCode; message: string };
+  | ({ ok: true } & Record<string, unknown>)
+  | { ok: false; error: ToolErrorCode; message: string; hint?: string };
 
 export interface ToolDefinition<Input extends z.ZodType = z.ZodType> {
   name: string;

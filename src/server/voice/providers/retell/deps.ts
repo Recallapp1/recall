@@ -39,6 +39,7 @@ export function withRetell(handler: Handler) {
       postCallFlags: env().POST_CALL_FLAGS === true,
       sharedNumberCheck: env().VOICE_SHARED_NUMBER_CHECK === true,
       verifyHint: env().VOICE_VERIFY_HINT === true,
+      toolErrorHint: env().VOICE_TOOL_ERROR_HINT === true,
       toolIdempotency: env().VOICE_TOOL_IDEMPOTENCY === true,
       toolFailsafe: env().VOICE_TOOL_FAILSAFE === true,
       storeLatency: env().CALL_LATENCY_STORE === true,
