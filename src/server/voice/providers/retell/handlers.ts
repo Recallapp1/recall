@@ -42,6 +42,8 @@ export interface RetellHandlerDeps {
   postCallFlags?: boolean;
   /** VOICE_SHARED_NUMBER_CHECK. Unset means off. */
   sharedNumberCheck?: boolean;
+  /** VOICE_VERIFY_HINT. Unset means off. */
+  verifyHint?: boolean;
   /** VOICE_TOOL_IDEMPOTENCY: mutating tools run once per request key. Unset means off. */
   toolIdempotency?: boolean;
   /**
@@ -244,6 +246,7 @@ async function runFunctionCall(
       smsDelivers: deps.smsDelivers,
       sendQueuedMessages: () => deps.defer(() => deps.dispatchClinic(ctx.clinic.id)),
       sharedNumberCheck: deps.sharedNumberCheck,
+      verifyHint: deps.verifyHint,
     });
   if (!deps.toolIdempotency || !MUTATING_TOOLS.has(name)) return Response.json(await run());
 

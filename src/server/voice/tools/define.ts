@@ -30,6 +30,8 @@ export interface ToolContext {
   sendQueuedMessages: () => void;
   /** VOICE_SHARED_NUMBER_CHECK: shared numbers need name, date and time. Unset means off. */
   sharedNumberCheck?: boolean;
+  /** VOICE_VERIFY_HINT: the verification hint uses details the caller already gave. Unset means off. */
+  verifyHint?: boolean;
 }
 
 export type ToolErrorCode =

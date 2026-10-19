@@ -100,6 +100,13 @@ const envSchema = z.object({
    */
   VOICE_SHARED_NUMBER_CHECK: optionalFlag,
   /**
+   * "true": when find_appointments needs name, date and time, its hint tells
+   * the assistant to use what the caller already said instead of asking
+   * again (19 Oct eval, verified-cancel). Tool text only; the agent spec
+   * does not change. Off by default.
+   */
+  VOICE_VERIFY_HINT: optionalFlag,
+  /**
    * "true": book, cancel, reschedule and callback requests are keyed by call
    * and tool call; a repeat returns the stored first result (audit A3). Off by default.
    */

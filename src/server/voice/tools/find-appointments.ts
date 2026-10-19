@@ -12,6 +12,14 @@ import { needsOwnershipCheck, ownershipCheck, resolveCaller, withOwnershipCheck 
 import { defineTool } from "./define";
 import { phone } from "./schemas";
 
+/**
+ * VOICE_VERIFY_HINT: in the 19 Oct eval the caller gave name, date and time
+ * in one breath; the assistant called with the phone only, then asked for
+ * them twice and never called again.
+ */
+const ASK_ONLY_MISSING = (with_: string) =>
+  `Hasta randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini bu görüşmede zaten söylediyse tekrar sorma: hemen find_appointments'ı ${with_} tekrar çağır. Bunlardan eksik olan varsa yalnızca eksiği sor, sonra çağır.`;
+
 export const findAppointments = defineTool({
   name: "find_appointments",
   description:
@@ -64,7 +72,9 @@ export const findAppointments = defineTool({
         return {
           ok: true,
           verificationRequired: true,
-          hint: "Bu numaraya birden fazla kişi adına randevu kayıtlı olabilir. Randevu olup olmadığını veya kimin adına olduğunu söyleme. Hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini iste; sonra find_appointments'ı verification ile tekrar çağır.",
+          hint: ctx.verifyHint
+            ? `Bu numaraya birden fazla kişi adına randevu kayıtlı olabilir. Randevu olup olmadığını veya kimin adına olduğunu söyleme. ${ASK_ONLY_MISSING("verification ile")}`
+            : "Bu numaraya birden fazla kişi adına randevu kayıtlı olabilir. Randevu olup olmadığını veya kimin adına olduğunu söyleme. Hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini iste; sonra find_appointments'ı verification ile tekrar çağır.",
         };
       }
       if (!input.phone?.trim()) {
@@ -76,7 +86,9 @@ export const findAppointments = defineTool({
       return {
         ok: true,
         verificationRequired: true,
-        hint: "Arayan numara görünmüyor; henüz hiçbir randevu bulunmadı. Randevu olup olmadığını söyleme. Hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini iste; sonra find_appointments'ı phone ve verification ile tekrar çağır. O çağrının sonucu gelmeden randevuyu bulduğunu söyleme.",
+        hint: ctx.verifyHint
+          ? `Arayan numara görünmüyor; henüz hiçbir randevu bulunmadı. Randevu olup olmadığını söyleme. ${ASK_ONLY_MISSING("phone ve verification ile")} O çağrının sonucu gelmeden randevuyu bulduğunu söyleme.`
+          : "Arayan numara görünmüyor; henüz hiçbir randevu bulunmadı. Randevu olup olmadığını söyleme. Hastadan randevunun kayıtlı olduğu ad soyadı, randevu tarihini ve saatini iste; sonra find_appointments'ı phone ve verification ile tekrar çağır. O çağrının sonucu gelmeden randevuyu bulduğunu söyleme.",
       };
     }
 
