@@ -23,7 +23,10 @@ afterAll(async () => {
 
 let seq = 0;
 
-/** A clinic whose team has an owner, an admin, a receptionist and a Recall console user. */
+/**
+ * A clinic whose team has an owner, an admin, a receptionist and a Recall
+ * console user (on the team as staff); another console user is not on it.
+ */
 async function clinicWithTeam() {
   seq += 1;
   const clinic = await createTestClinic(db);
@@ -45,7 +48,14 @@ async function clinicWithTeam() {
   await person("sahip", "owner");
   await person("yonetici", "admin");
   await person("resepsiyon", "staff");
-  await person("konsol", "admin", "platform_admin");
+  await person("konsol", "staff", "platform_admin");
+  await db
+    .insert(users)
+    .values({
+      name: "Başka konsol",
+      email: `baska-konsol.${seq}@ornek.test`,
+      role: "platform_admin",
+    });
   const [call] = await db
     .insert(calls)
     .values({
@@ -60,10 +70,14 @@ async function clinicWithTeam() {
 }
 
 describe("claimAlertRecipients", () => {
-  it("is the clinic's owners and admins, not staff or Recall console users", async () => {
+  it("is the clinic's owners and admins and the Recall console users on its team", async () => {
     const { clinicId } = await clinicWithTeam();
     const recipients = await claimAlertRecipients(db, clinicId);
-    expect(recipients.sort()).toEqual([`sahip.${seq}@ornek.test`, `yonetici.${seq}@ornek.test`]);
+    expect(recipients.sort()).toEqual([
+      `konsol.${seq}@ornek.test`,
+      `sahip.${seq}@ornek.test`,
+      `yonetici.${seq}@ornek.test`,
+    ]);
   });
 
   it("is empty for a clinic without a team", async () => {
@@ -85,8 +99,9 @@ describe("alertUnbackedClaim", () => {
       },
     });
 
-    expect(result).toEqual({ sent: 2, failed: 0 });
+    expect(result).toEqual({ sent: 3, failed: 0 });
     expect(sent.map((m) => m.to).sort()).toEqual([
+      `konsol.${seq}@ornek.test`,
       `sahip.${seq}@ornek.test`,
       `yonetici.${seq}@ornek.test`,
     ]);
@@ -113,8 +128,8 @@ describe("alertUnbackedClaim", () => {
         if (attempts === 1) throw new Error("provider down");
       },
     });
-    expect(attempts).toBe(2);
-    expect(result).toEqual({ sent: 1, failed: 1 });
+    expect(attempts).toBe(3);
+    expect(result).toEqual({ sent: 2, failed: 1 });
   });
 
   it("sends nothing for a call of another clinic", async () => {
