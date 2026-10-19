@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { dateTokens } from "../../scripts/voice-eval/dates";
-import { scenarios, type CallOutcome } from "../../scripts/voice-eval/scenarios";
+import { invariants, scenarios, type CallOutcome } from "../../scripts/voice-eval/scenarios";
 import { cutIns, type TranscriptTurn } from "../../scripts/voice-eval/turns";
 
 const TODAY = "2026-10-19"; // a Monday
@@ -12,6 +12,7 @@ function outcome(overrides: Partial<CallOutcome> = {}): CallOutcome {
     firstReply: "",
     tools: [],
     newAppointments: [],
+    strayAppointments: 0,
     seeded: {},
     disconnectionReason: "agent_hangup",
     userTurns: 0,
@@ -144,5 +145,18 @@ describe("turn-taking scenarios alarm only when the agent cut in", () => {
       outcome({ userTurns: 4, cutIns: 2, newAppointments: booked("Diş Taşı Temizliği") }),
     );
     expect(failures).toContain("the assistant took the turn during a pause");
+  });
+});
+
+describe("a booking under a number the caller did not give fails every scenario", () => {
+  const STRAY = "booked under a phone number the caller did not give (misheard number?)";
+
+  it("flags an appointment made for another number during the call", () => {
+    // slow-speaker, 2026-10-19: "yirmi yedi" heard as "20" and "7", booked on the wrong number.
+    expect(invariants(outcome({ strayAppointments: 1 }))).toContain(STRAY);
+  });
+
+  it("stays quiet when every new appointment is on the caller's or a seeded number", () => {
+    expect(invariants(outcome({ strayAppointments: 0 }))).not.toContain(STRAY);
   });
 });
