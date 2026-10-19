@@ -1048,15 +1048,15 @@ describe("post-call flags (POST_CALL_FLAGS)", () => {
 
     it("alerts the clinic once for an unbacked claim, after the response", async () => {
       const { alerts, alertUnbackedClaim } = alertSpy();
-      const on = deps({ postCallFlags: true, alertUnbackedClaim });
-      await handleCallEvent(await analyzed("claim_alert", claim), on);
+      const on = () => deps({ postCallFlags: true, alertUnbackedClaim });
+      await handleCallEvent(await analyzed("claim_alert", claim), on());
       expect(alerts).toEqual([]);
       await Promise.all(deferred.map((task) => task()));
       const row = await flagsOf("claim_alert");
       expect(alerts).toEqual([[clinic.ctx.clinic.id, row!.id]]);
 
       // Retell repeats a webhook it thinks failed: the call is already checked.
-      await handleCallEvent(await analyzed("claim_alert", claim), on);
+      await handleCallEvent(await analyzed("claim_alert", claim), on());
       await Promise.all(deferred.map((task) => task()));
       expect(alerts).toHaveLength(1);
     });

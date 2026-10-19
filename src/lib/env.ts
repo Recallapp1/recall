@@ -85,6 +85,12 @@ const envSchema = z.object({
    * medical-risk mentions for the panel (audit F-03, F-04). Off by default.
    */
   POST_CALL_FLAGS: optionalFlag,
+  /**
+   * "true": a call flagged unbacked_claim also e-mails the clinic's owners and
+   * admins right away (call time and a panel link, no patient data). Needs
+   * POST_CALL_FLAGS. Off by default.
+   */
+  UNBACKED_CLAIM_EMAIL: optionalFlag,
   /** "true": store the provider's per-call latency (p50/p90/max per component). Off by default. */
   CALL_LATENCY_STORE: optionalFlag,
   /**

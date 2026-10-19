@@ -51,6 +51,11 @@ export interface RetellHandlerDeps {
   toolFailsafe?: boolean;
   /** CALL_LATENCY_STORE: keep the provider's per-call latency. Unset means off. */
   storeLatency?: boolean;
+  /**
+   * UNBACKED_CLAIM_EMAIL: tells the clinic's owners and admins about a call
+   * flagged unbacked_claim (needs POST_CALL_FLAGS). Unset means off.
+   */
+  alertUnbackedClaim?: (clinicId: string, callId: string) => Promise<void>;
   /** Dispatches one clinic's queued messages (locks, opt-out, window, caps). */
   dispatchClinic: (clinicId: string) => Promise<void>;
   /** Removes the call (audio included) from the provider. */
@@ -342,6 +347,20 @@ export async function handleCallEvent(request: Request, deps: RetellHandlerDeps)
   if (event === "call_analyzed" && deps.postCallFlags) {
     const flags = await flagCall(deps.db, ctx.clinic.id, callRow.id, deps.now());
     if (flags.length > 0) log("warn", "call.flagged", { clinicId: ctx.clinic.id, flags });
+    // Once per call: a repeated analysis webhook finds the call already checked.
+    const alert = deps.alertUnbackedClaim;
+    if (alert && callRow.flaggedAt === null && flags.includes("unbacked_claim")) {
+      deps.defer(async () => {
+        try {
+          await alert(ctx.clinic.id, callRow.id);
+        } catch (error) {
+          log("error", "call.claim_alert_failed", {
+            clinicId: ctx.clinic.id,
+            error: String(error),
+          });
+        }
+      });
+    }
   }
 
   // Recording off: Retell has no audio-only switch, and storing nothing also

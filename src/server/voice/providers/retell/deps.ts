@@ -7,7 +7,9 @@ import { env } from "@/lib/env";
 import { safeError } from "@/lib/safe-error";
 
 import { db } from "../../../db";
+import { alertUnbackedClaim } from "../../../domain/claim-alerts";
 import { dispatchClinicNotifications } from "../../../domain/notifications";
+import { sendEmail } from "../../../notifications/email";
 import { smsProvider } from "../../../notifications/sms";
 import { deleteProviderCall } from "./recordings";
 import type { RetellHandlerDeps } from "./handlers";
@@ -39,6 +41,18 @@ export function withRetell(handler: Handler) {
       toolIdempotency: env().VOICE_TOOL_IDEMPOTENCY === true,
       toolFailsafe: env().VOICE_TOOL_FAILSAFE === true,
       storeLatency: env().CALL_LATENCY_STORE === true,
+      alertUnbackedClaim:
+        env().UNBACKED_CLAIM_EMAIL === true
+          ? async (clinicId, callId) => {
+              const config = env();
+              await alertUnbackedClaim(db(), {
+                clinicId,
+                callId,
+                origin: new URL(config.BETTER_AUTH_URL ?? config.APP_URL).origin,
+                send: sendEmail,
+              });
+            }
+          : undefined,
       dispatchClinic: async (clinicId) => {
         const config = env();
         try {

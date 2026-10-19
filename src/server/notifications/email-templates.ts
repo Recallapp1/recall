@@ -128,3 +128,28 @@ export function demoRequestNotice(input: {
     footnote: "Bu e-posta DEMO_REQUEST_NOTIFY_EMAIL adresine gönderilir.",
   });
 }
+
+/**
+ * To a clinic's owners and admins: the assistant told a caller an appointment
+ * was booked, cancelled or moved, but our records show no such change
+ * (UNBACKED_CLAIM_EMAIL). No patient data: the call time and a panel link.
+ */
+export function unbackedClaimNotice(input: {
+  to: string;
+  clinicName: string;
+  calledAt: string;
+  callUrl: string;
+}): EmailMessage {
+  return render({
+    to: input.to,
+    subject: `Kontrol edin: ${input.clinicName} hattında kayıtla uyuşmayan bir randevu sonucu`,
+    heading: "Bir görüşme kontrol bekliyor",
+    paragraphs: [
+      `${input.calledAt} tarihli bir görüşmede asistan, arayana randevusunun oluşturulduğunu, iptal edildiğini veya değiştirildiğini söyledi; ancak kayıtlarda bu görüşmeden böyle bir değişiklik yok.`,
+      "Arayan, işleminin yapıldığını düşünüyor olabilir. Görüşmeyi panelde açın ve gerekirse hastayı arayın.",
+    ],
+    action: { label: "Görüşmeyi aç", url: input.callUrl },
+    footnote:
+      "Bu e-posta kliniğin sahip ve yöneticilerine otomatik gönderilir; hasta bilgisi içermez.",
+  });
+}
