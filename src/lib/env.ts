@@ -74,6 +74,12 @@ const envSchema = z.object({
    * agent spec; off until the lawyer approves the wording.
    */
   VOICE_KVKK_NOTICE: optionalFlag,
+  /**
+   * "true": two booking rules from the 19 Oct eval: a weekday not heard
+   * clearly is asked, not guessed; a booking waits until the phone number is
+   * read back and confirmed. Changes the agent spec; off until measured.
+   */
+  VOICE_BOOKING_RULES: optionalFlag,
   /** Retell turn-taking, 0–1 (Retell default 1 = answers as soon as it can). Lower waits longer. */
   RETELL_RESPONSIVENESS: optionalUnit,
   /** 0–1 (Retell default 1). Lower needs more words before the caller interrupts the agent. */

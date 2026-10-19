@@ -66,6 +66,12 @@ export interface PromptInput {
    * hardening, which has its own objection rule.
    */
   kvkkNotice?: boolean | undefined;
+  /**
+   * VOICE_BOOKING_RULES: ask for a weekday not heard clearly; read the phone
+   * number back and get a yes before booking. Off unless explicitly set;
+   * ignored with hardening.
+   */
+  bookingRules?: boolean | undefined;
 }
 
 /** Values for the call-time variables we own (the platform provides the clock). */
@@ -84,6 +90,7 @@ export function buildSystemPrompt(input: PromptInput): string {
   const emergencyFirst = input.emergencyFirst === true && !hardening;
   const emergencyEndCall = input.emergencyEndCall === true && !hardening;
   const kvkkNotice = input.kvkkNotice === true && !hardening;
+  const bookingRules = input.bookingRules === true && !hardening;
   // Hardening: every clinic-written string is validated like untrusted data.
   const name = (text: string) => (hardening ? untrustedLine(text) : text);
 
@@ -100,6 +107,7 @@ export function buildSystemPrompt(input: PromptInput): string {
     emergencyFirst,
     emergencyEndCall,
     kvkkNotice,
+    bookingRules,
   };
 
   const identity = `Sen ${name(clinic.name)} için çalışan telefon asistanısın. Adın ${name(assistant.name)}. Hastalarla telefonda Türkçe konuşuyorsun.
@@ -179,6 +187,7 @@ function fullRules({
   emergencyFirst,
   emergencyEndCall,
   kvkkNotice,
+  bookingRules,
 }: RuleInput) {
   return [
     `# Nasıl çalışırsın
@@ -187,7 +196,7 @@ function fullRules({
 - Bir görüşmede, hasta açıkça birden fazla hizmet istemedikçe yalnızca bir randevu oluştur. check_availability ve book_appointment'ı yalnızca hastanın seçtiği hizmet için çağır. Aynı saate iki randevu asla oluşturma; hasta iki hizmet isterse ayrı saatler bul.
 - check_availability sonucu gelmeden asla belirli bir saat önerme veya söyleme. Hastaya yalnızca tool'un döndürdüğü saatleri sun; hasta bir saat isterse önce check_availability ile kontrol et.
 - Hastanın zaten söylediği bilgiyi (hizmet, hekim, gün, saat, ad, telefon) tekrar sorma. Hasta belirli bir saat istediyse check_availability'e time olarak gönder. Sonuçta requestedTime.available true ise seçenek sunma; requestedTime.spokenTime ile o saati söyleyip onay iste. Dolu ise bunu söyle ve slots içindeki en yakın saatleri sun. Hastanın söylediği saati kendin rakamdan okuma; her zaman tool'un spokenTime alanını kullan. Hasta "en erken", "ilk uygun saat" veya "fark etmez" derse check_availability'nin döndürdüğü ilk saati seç, liste okuma; o saati söyleyip onay iste.
-- Hasta bilgileri onayladığında ("evet", "doğru", "onaylıyorum") bekletmeden book_appointment çağır.
+${bookingRuleLines(bookingRules, "full")}- Hasta bilgileri onayladığında ("evet", "doğru", "onaylıyorum") bekletmeden book_appointment çağır.
 - Hasta vedalaşırsa ısrar etme: işlem tamamlanmadıysa bunu tek cümleyle söyle, vedalaş ve görüşmeyi bitir.
 - Hasta hizmeti belirtmezse veya şikâyet anlatırsa muayene/kontrol hizmetini öner; hasta onaylamadan bu hizmetle randevu oluşturma.
 - Arayan numara: "${v.callerPhone}".
@@ -325,6 +334,25 @@ interface RuleInput {
   emergencyEndCall: boolean;
   /** A17: AI disclosure and the recording-objection rule. */
   kvkkNotice: boolean;
+  /** VOICE_BOOKING_RULES: unclear weekday asked, phone read back before booking. */
+  bookingRules: boolean;
+}
+
+/**
+ * VOICE_BOOKING_RULES, from the 19 Oct eval: the speech recogniser heard
+ * "asılı" for "Salı" and the assistant booked a Monday; another call booked
+ * straight after hearing the number, never reading it back. Each line ends
+ * with a newline so the rule list keeps its shape; off adds nothing.
+ */
+function bookingRuleLines(on: boolean, variant: PromptVariant): string {
+  if (!on) return "";
+  return variant === "compact"
+    ? `- Gün adını net duymadıysan veya kelime bir gün adına yalnızca benziyorsa (ör. "asılı" ile "Salı") tahmin etme, check_availability'yi çağırma; hangi günü kastettiğini sor.
+- Yeni randevuda telefon numarasını geri okuyup onayını almadan book_appointment çağırma; numara randevu bilgileriyle birlikte söylendiyse önce numarayı geri oku ve onay bekle. Arayan numara doluysa ve hasta başka numara söylemediyse bu adım gerekmez.
+`
+    : `- Hastanın söylediği gün adını net duymadıysan veya duyduğun kelime bir gün adına yalnızca benziyorsa (ör. "asılı" ile "Salı"), günü tahmin etme ve check_availability'yi çağırma; hastaya hangi günü kastettiğini sor.
+- Yeni randevuda telefon numarasını gruplar hâlinde geri okuyup hastanın onayını almadan book_appointment çağırma. Hasta numarayı adıyla veya randevu bilgileriyle aynı anda söylediyse önce numarayı geri oku ve onayını bekle. Arayan numara doluysa ve hasta başka bir numara söylemediyse bu adım gerekmez.
+`;
 }
 
 /**
@@ -387,6 +415,7 @@ function compactRules({
   emergencyFirst,
   emergencyEndCall,
   kvkkNotice,
+  bookingRules,
 }: RuleInput) {
   return [
     `# Nasıl çalışırsın
@@ -395,7 +424,7 @@ function compactRules({
 - Hasta açıkça birden fazla istemedikçe yalnızca bir randevu oluştur; tool'ları yalnızca seçilen hizmet için çağır. Aynı saate iki randevu asla oluşturma.
 - check_availability sonucu gelmeden asla belirli bir saat önerme; yalnızca tool'un döndürdüğü saatleri sun.
 - Söylenmiş bilgiyi tekrar sorma. Hasta saat istediyse check_availability'e time olarak gönder: requestedTime.available true ise o saati requestedTime.spokenTime ile söyleyip onay iste; değilse dolu olduğunu söyle ve slots'tan en yakınları sun. Hastanın söylediği saati kendin rakamdan okuma. Hasta "en erken", "ilk uygun saat" veya "fark etmez" derse ilk saati söyleyip onay iste.
-- Onay gelince ("evet", "doğru") bekletmeden book_appointment çağır.
+${bookingRuleLines(bookingRules, "compact")}- Onay gelince ("evet", "doğru") bekletmeden book_appointment çağır.
 - Hizmet belirtilmezse veya şikâyet anlatılırsa muayene/kontrol öner; onaysız oluşturma.
 - Hasta vedalaşırsa ısrar etme; işlem bitmediyse bunu tek cümleyle söyle ve vedalaş.
 - Arayan numara: "${v.callerPhone}".

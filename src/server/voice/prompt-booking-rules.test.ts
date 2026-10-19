@@ -130,7 +130,9 @@ describe.each(["full", "compact"] as const)("VOICE_BOOKING_RULES on (%s)", (vari
 
   it("reads the phone number back and waits for a yes before booking", () => {
     const section = howTo(on());
-    const rule = section.split("\n").find((line) => line.includes("geri okuyup"))!;
+    const rule = section
+      .split("\n")
+      .find((line) => line.includes("telefon numarasını") && line.includes("geri okuyup"))!;
     expect(rule).toMatch(/onayını almadan book_appointment çağırma/);
     // Caller ID with no other number spoken: nothing to read back.
     expect(rule).toMatch(/Arayan numara doluysa/);
