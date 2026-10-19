@@ -8,19 +8,19 @@
 
 ## Güncel durum
 
-> **Projenin güncel durumunun tek yetkili kaynağı bu tablodur.** Planın faz tablosu ve eski raporlar tarihli özetlerdir. _Son güncelleme: 2026-10-17._
+> **Projenin güncel durumunun tek yetkili kaynağı bu tablodur.** Planın faz tablosu ve eski raporlar tarihli özetlerdir. _Son güncelleme: 2026-10-19._
 
-| Konu                | Durum (2026-10-09)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Konu                | Durum (2026-10-19)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Aşama               | Geliştirme. Hiçbir klinik kullanmıyor; production'da yalnızca demo klinik ve test verisi                                                                                                                                                                                                                                                                                                                                                                                        |
 | Production          | https://recalltr.company (Vercel Hobby, `fra1`), Neon **`production`** dalı (`sslmode=verify-full`), 21 migration (`0000`–`0020`; `0014`'ten beri ekleyici ve geriye dönük uyumlu, `0002` bir kolon kaldırır ve `0013` yeni kolonu doldurup NOT NULL yapar; `0019` iki adımlı giriş, `0020` arama gecikmesi kolonu). GitHub reposu **özel**; `main` korumalı (CI `check` + `e2e` zorunlu); iş dalı → `pnpm ci:wait` → `main`'e fast-forward = deploy; build ajanları senkronlar |
-| Sesli asistan       | Retell, `claude-4.5-haiku` + `eleven_flash_v2_5`. Arayan kimliği kuralları ([ADR-011](docs/decisions/ADR-011-caller-identity.md)), istenen saat sözlü (`requestedTime`), sonuç iddiası kuralı. **Retell kredisi bitti (2026-10-08): yüklenene kadar production asistanı arama alamaz**                                                                                                                                                                                          |
-| Ses değerlendirmesi | `pnpm voice:eval`, 26 senaryo, profiller (`baseline`, `option-a`, `option-hardening`, `option-c-gemini`, `option-c-gpt`), kademeli plan (`--stage 1` ≈ 9,65 $) ve bütçe durdurması; ilk koşu 12/24 (kredi bitti). Gecikme hedefin üstünde; A onaylandı (env arkasında, kapalı), ölçüm ve model kararı kredi yüklenince ([ADR-003](docs/decisions/ADR-003-llm-model.md), [VOICE-EVAL.md](docs/02-voice-agent/VOICE-EVAL.md))                                                     |
+| Sesli asistan       | Retell, `claude-4.5-haiku` + `eleven_flash_v2_5`. Canlı ajan (demo klinik) spec `5fa3d19371d3` (2026-10-19): acil durum kuralı önce ve acilde kapatma, randevu kuralları, adıyla hitap yok; araç ipuçları ve kayıtsız iddia e-postası açık (anahtarlar ve geri alma: 2026-10-18 – 19 kaydı). Retell bakiyesi düşük (2,49 $, 2026-10-19); otomatik şarj açılmalı                                                                                                                 |
+| Ses değerlendirmesi | `pnpm voice:eval`, 26 senaryo; C5 (`voice:eval:c5`, `voice:eval:c5-close`) ayrı komutlarla; `--stop-on-fail`. Son tam koşu (2026-10-19, dev anahtarları açık): 23/26, 4,55 $; açık sorun `slow-speaker` (yavaş arayanın duraksamasında araya girme, Retell sıra alma ayarı ölçülmedi) ([VOICE-EVAL.md](docs/02-voice-agent/VOICE-EVAL.md))                                                                                                                                      |
 | SMS                 | Gönderim her ortamda kapalı (`SMS_SENDING_ENABLED` yok, Netgsm yok). Tüm SMS'ler bildirim kaydından geçer (tek yol, testli)                                                                                                                                                                                                                                                                                                                                                     |
 | Takip               | V0 + V1 production'da; demo klinikte açık                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Güvenlik            | Hız sınırları (Postgres), webhook tekrar koruması, CSP, kritik denetim kaydı, bileşik kiracı FK'leri, `pnpm audit` CI'da. 2026-10-08 denetimi ([PRELAUNCH-AUDIT-2026-10-08.md](docs/reviews/PRELAUNCH-AUDIT-2026-10-08.md)) sonrası: Better Auth HTTP uç noktaları kapalı (organizasyon silme kilitlenmesi giderildi), iptal/erteleme tekrar güvenli, arama ve randevu sınırları (`limits`), KVKK silmesi tüm numaralarda, Retell silme kuyruğu                                 |
 | Gizli değerler      | **Rotasyon yapıldı (2026-10-09):** Neon production parolası yenilendi, dev dalı ayrı parolada, Retell anahtarı yenilendi ve eskisi silindi; hepsi doğrulandı. Kalan: yedek dalların silinmesi, ayrı dev Retell çalışma alanı, lokal sırlar ([SECRET-ROTATION-2026-10.md](docs/06-operations/SECRET-ROTATION-2026-10.md))                                                                                                                                                        |
-| Testler             | 1033 Vitest testi (90 dosya) + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da. Kapsam ölçümü `pnpm test:coverage` (bilgi amaçlı)                                                                                                                                                                                                                                                        |
+| Testler             | 1181 Vitest testi + Playwright E2E (panel, erişilebilirlik, telefon genişliği). CI yeşil (check + E2E), Actions commit'e sabit, gizli değer taraması CI'da. Kapsam ölçümü `pnpm test:coverage` (bilgi amaçlı)                                                                                                                                                                                                                                                                   |
 | İzleme              | `/api/health`, `/api/health/jobs` (iş kalp atışı; `HEALTH_JOBS_TOKEN` 2026-10-15'ten beri canlıda, ayrıntılar yalnızca başlıkla), `ALARM` logları (tam liste MONITORING.md, testle eşli); Sentry kodu hazır (DSN yok), uptime hesabı yok. **Alarmlar bugün kimseye ulaşmıyor** (Hobby log 1 saat)                                                                                                                                                                               |
 | Lokal               | Neon **`dev`** dalı (ayrı parola); Retell **Recall Dev** çalışma alanı (ayrı anahtar ve kredi; production anahtarı lokalde yok); `pnpm dev` + `pnpm dev:tunnel`; E2E kendi bellek içi veritabanıyla                                                                                                                                                                                                                                                                             |
 | Karar günlüğü       | [HARDENING-2026-10.md](docs/HARDENING-2026-10.md) (Ekim 2026 sağlamlaştırma), [IMPLEMENTATION-PLAN.md → Alınan kararlar](docs/IMPLEMENTATION-PLAN.md#alınan-kararlar)                                                                                                                                                                                                                                                                                                           |
@@ -76,6 +76,55 @@ Kurallar:
 ---
 
 ## Kayıtlar
+
+### 2026-10-18 – 19 · C5 gerçek arama testi, eval düzeltmeleri, yedi anahtar canlıda (acil durum, kayıtsız iddia e-postası, araç ipuçları, randevu ve hitap kuralları)
+
+**Agent/kişi:** Claude (Opus 5.5) + ürün sahibi (canlı anahtarlar) · **Commit'ler (test → değişiklik):** `660ca69`→`d3b4335` (C5 kapanış senaryosunda kısa sessizlik), `7b6527e`→`990ba83` (`--stop-on-fail`), `6271051`→`aa21115` (`UNBACKED_CLAIM_EMAIL`), `032fc70`→`580a60d` (eval tarih ve araya girme kontrolleri), `12ba925`→`88c1f23` (`VOICE_VERIFY_HINT`), `6b88ffe`→`e21a5b0` (`VOICE_BOOKING_RULES`), `4351e06`→`30eae1f` (uyarı alıcılarına konsol kullanıcıları), `56a44ed`→`f63b0b1` (`VOICE_NO_NAME_ADDRESS`), `aa0f4c7`→`cbd95f7` (`VOICE_TOOL_ERROR_HINT`), `d2abcde`→`85bd7d5` (`VOICE_VERIFIED_SERVICE`)
+
+**Ne yapıldı**
+
+- Yeni anahtarlar, hepsi varsayılan kapalı: `UNBACKED_CLAIM_EMAIL` (kayıtla uyuşmayan sonuçta kliniğe e-posta), `VOICE_VERIFY_HINT` (doğrulama ipucu arayanın söylediğini kullanır), `VOICE_BOOKING_RULES` (belirsiz gün sorulur, telefon geri okunup onaylanmadan randevu açılmaz), `VOICE_NO_NAME_ADDRESS` (adıyla hitap yok, Bey/Hanım yok), `VOICE_TOOL_ERROR_HINT` (başarısız randevu, erteleme veya iptal sonucunda "yapılmadı" talimatı; `INVALID_PHONE` için on bir hane, geri oku, onay al), `VOICE_VERIFIED_SERVICE` (doğrulanan randevuda `serviceId`). Kapalıyken talimat ve araç çıktısı birebir aynı (testli). Kararlar 147–154.
+- Eval: `ambiguous-weekday` tarih kontrolü çalıştırma gününden hesaplanıyor ([dates.ts](scripts/voice-eval/dates.ts)); araya girme kontrolü tur sayısı yerine Retell kelime zamanlarına bakıyor ([turns.ts](scripts/voice-eval/turns.ts)); `c5-close-caller-continues` 4 sn sessizlikle; `--stop-on-fail`.
+- Dört dal sırayla `main`'e birleştirildi; karar satırı numarası çakışması yeniden taşımada çözüldü (ilk denemede satırlar iki kez girdi, taşıma baştan yapıldı).
+
+**Eval sonuçları (Recall Dev)**
+
+- C5: `pnpm voice:eval:c5` 7/7 (0,63 $), `pnpm voice:eval:c5-close` 2/2 (0,16 $). Transkriptlerde ilk söz "Lütfen hemen yüz on ikiyi arayın.", kapatan asistan (`agent_hangup`), konuşmaya devam eden arayan kesilmedi.
+- `book-stated-time`: yeni kurallarla 5/5 geçti. En tehlikeli hata buydu: randevu oluşmadan "oluşturuldu" demek.
+- Tam koşu (26 senaryo, tüm dev anahtarları açık): 23/26, 4,55 $. Düşenler: `book-clear` (ses tanıma numaraya fazladan 0 ekledi; tekrarda geçti), `verified-reschedule` (akış uzadı; `VOICE_VERIFIED_SERVICE` ile geçti, `serviceId` döndü ve hizmet sorulmadan uygunluğa bakıldı), `slow-speaker` (araya girme, Retell ayarı).
+- `no-gendered-titles` `VOICE_NO_NAME_ADDRESS` ile geçti.
+- `slow-speaker` bulgusu: ses tanıma "yirmi yedi"yi "20" ve "7" diye böldü, asistan numarayı eksik geri okudu ve randevu geçerli ama yanlış numarayla açıldı; eval'in sabit "Evet"i bunu yakalayamaz, gerçek arayan düzeltirdi. Daha önceki bir koşuda aynı senaryoda `book_appointment` `INVALID_PHONE` döndürdüğü hâlde asistan "oluşturuldu" dedi (`unbacked_claim`); `VOICE_TOOL_ERROR_HINT` bunun için.
+- `VOICE_TOOL_ERROR_HINT` canlı davranışta sınanmadı (eval'de araç hata döndürmedi); yalnızca entegrasyon testleriyle doğrulandı.
+
+**Canlıda açılış sırası** (her biri ürün sahibi tarafından Vercel Production + Redeploy; ardından doğrulama: deploy Ready, health ok, jobs 200, ajan `synced`, spec, env sayısı)
+
+- `VOICE_EMERGENCY_FIRST` + `VOICE_EMERGENCY_END_CALL` (12:17, env 26): ajan updated, spec `23dfd4f92bde` → `8018db480ff4`.
+- `UNBACKED_CLAIM_EMAIL` (~15:55, env 27): ajana dokunmaz. Alıcılar: kliniğin sahip ve yöneticileri + ekibe katılmış Recall konsol kullanıcıları (bugün demo klinikte yalnızca konsol hesabı). Başarısız gönderim logu: `call.claim_alert_failed`.
+- `VOICE_TOOL_ERROR_HINT` (18:10, env 28): yalnızca araç sonucu.
+- `VOICE_VERIFIED_SERVICE` (18:17, env 29): yalnızca araç sonucu.
+- `VOICE_VERIFY_HINT` (19:24, env 30): yalnızca araç sonucu. Değeri Vercel'den okunamadı; `true` olduğu doğrulanmadı.
+- `VOICE_BOOKING_RULES` (19:31, env 31): ajan updated, spec `8018db480ff4` → `5e2bb13615c8`.
+- `VOICE_NO_NAME_ADDRESS` (19:45, env 32): ajan updated, spec `5e2bb13615c8` → `5fa3d19371d3`.
+- Canlı ajan talimatında Hitap, telefon geri okuma ve acil durum kuralları ürün sahibi tarafından ekran görüntüsü / yapıştırma ile görsel olarak teyit edildi (canlı Retell anahtarı lokalde yok).
+
+**Geri alma**
+
+- Her anahtar için: Vercel'de değişkeni sil, Redeploy (Promote değil). Talimat değiştiren anahtarlarda ajan bir önceki spec'e döner: `VOICE_NO_NAME_ADDRESS` → `5e2bb13615c8`, `VOICE_BOOKING_RULES` → `8018db480ff4`, iki acil durum anahtarı → `23dfd4f92bde`. Sonrasında canlı veritabanında `synced` ve spec'i doğrula.
+
+**Doğrulama**
+
+- Her birleştirmede yerel kapı (lint, tokens, typecheck, format, secrets, test) ve CI `check` + `e2e`; son durumda 1181 test. Her deploy'dan sonra canlı: Ready, health ok, jobs 200, build'de ajan `unchanged` (anahtarlar kapalıyken), canlı veritabanında spec değişmedi, 21 migration.
+- Dev ajanı (`gulus-dis`): Retell'deki talimat güncel kod + `.env.local` ile karakteri karakterine aynı (salt okunur betik, `outputs/audit-probe/`, git dışı).
+
+**Açık kalanlar / dikkat** (gerçek klinik açılmadan önce)
+
+- `slow-speaker`: Retell sıra alma ayarı ölçümü (`RETELL_RESPONSIVENESS` vb., profil koşusu ~4–5 $).
+- Retell bakiyesi 2,49 $ (ürün sahibi bildirdi); otomatik şarjı aç.
+- Yavaş konuşan arayanlarda numaranın yanlış duyulma riski: birkaç gerçek test araması yap.
+- `VOICE_VERIFY_HINT` değerini Vercel'de teyit et.
+- Dev `.env.local`'de `VOICE_NO_NAME_ADDRESS=true` satırının sonunda boşluk var (dev'de zararsız); canlıya boşluksuz yazıldı.
+- Asistanı olan tek canlı klinikte (`recall-demo-dis-klinigi`) uyarı e-postasının tek alıcısı konsol hesabı.
+- Bekleyenler: 2FA (`PANEL_TWO_FACTOR=required-admins`, önce ikinci konsol hesabı), ikinci klinik (`yusuf-kalkan-beauty`) ajanı, saklama süresi altyapısı, A16 canlı kullanımı, Dependabot ana sürüm güncellemeleri, dev'deki A16 `clinic.purged` kaydı.
 
 ### 2026-10-15 – 17 · Acil durum kuralı, arama sonrası işaret kalıpları, acil durumda görüşmeyi kapatma, avukat paketi
 
