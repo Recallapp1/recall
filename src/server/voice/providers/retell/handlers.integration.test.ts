@@ -545,6 +545,73 @@ describe("caller identity (abuse cases)", () => {
     expect(locked.body).toMatchObject({ ok: false, error: "TOO_MANY_ATTEMPTS" });
   });
 
+  describe("service of a verified appointment (VOICE_VERIFIED_SERVICE)", () => {
+    const verification = {
+      patientName: "Zeynep Şahin",
+      appointmentDate: "2026-10-07",
+      appointmentTime: "10:00",
+    };
+    const web = (callId: string) => ({ from_number: null, call_id: callId, call_type: "web_call" });
+
+    it("unset: today's verified result, word for word", async () => {
+      const found = await tool(
+        "find_appointments",
+        { phone: VICTIM_SPOKEN, verification },
+        web("web_service_off"),
+      );
+      expect(Object.keys(found.body.appointments[0]).sort()).toEqual([
+        "appointmentId",
+        "date",
+        "spokenDate",
+        "spokenTime",
+        "time",
+      ]);
+      expect(found.body.hint).toBe(
+        "Doğrulama tamam. İptal veya erteleme için aynı phone ve verification bilgilerini gönder.",
+      );
+    });
+
+    it("on: a verified appointment carries its service id, so a move can check availability", async () => {
+      const found = await tool(
+        "find_appointments",
+        { phone: VICTIM_SPOKEN, verification },
+        web("web_service_on"),
+        { verifiedService: true },
+      );
+      expect(found.body.appointments[0]).toMatchObject({
+        appointmentId: victimAppointmentId,
+        serviceId: clinic.serviceId,
+      });
+      expect(String(found.body.hint)).toMatch(/serviceId/);
+      expect(String(found.body.hint)).toMatch(/hizmeti sorma/);
+      // Still nothing the caller did not say: no service name, practitioner or patient.
+      expect(found.body.appointments[0].service).toBeUndefined();
+      expect(found.body.appointments[0].practitioner).toBeUndefined();
+      expect(found.body.appointments[0].patient).toBeUndefined();
+    });
+
+    it("on: nothing before the verification succeeds", async () => {
+      const on = { verifiedService: true };
+      const asked = await tool(
+        "find_appointments",
+        { phone: VICTIM_SPOKEN },
+        web("web_service_unverified"),
+        on,
+      );
+      expect(asked.body).toMatchObject({ ok: true, verificationRequired: true });
+      expect(JSON.stringify(asked.body)).not.toContain(clinic.serviceId);
+
+      const wrong = await tool(
+        "find_appointments",
+        { phone: VICTIM_SPOKEN, verification: { ...verification, appointmentTime: "11:00" } },
+        web("web_service_wrong"),
+        on,
+      );
+      expect(wrong.body).toMatchObject({ ok: false, error: "VERIFICATION_FAILED" });
+      expect(JSON.stringify(wrong.body)).not.toContain(clinic.serviceId);
+    });
+  });
+
   it("lets the real patient manage the appointment after name, date and time match", async () => {
     const web = { from_number: null, call_id: "web_owner_1", call_type: "web_call" };
     const verification = {
