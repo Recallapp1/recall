@@ -72,6 +72,12 @@ export interface PromptInput {
    * ignored with hardening.
    */
   bookingRules?: boolean | undefined;
+  /**
+   * VOICE_NO_NAME_ADDRESS: never address the caller by name (nor Bey/Hanım);
+   * the name is only read back to confirm it. Off unless explicitly set;
+   * ignored with hardening, which has its own address rule.
+   */
+  noNameAddress?: boolean | undefined;
 }
 
 /** Values for the call-time variables we own (the platform provides the clock). */
@@ -91,6 +97,7 @@ export function buildSystemPrompt(input: PromptInput): string {
   const emergencyEndCall = input.emergencyEndCall === true && !hardening;
   const kvkkNotice = input.kvkkNotice === true && !hardening;
   const bookingRules = input.bookingRules === true && !hardening;
+  const noNameAddress = input.noNameAddress === true && !hardening;
   // Hardening: every clinic-written string is validated like untrusted data.
   const name = (text: string) => (hardening ? untrustedLine(text) : text);
 
@@ -108,6 +115,7 @@ export function buildSystemPrompt(input: PromptInput): string {
     emergencyEndCall,
     kvkkNotice,
     bookingRules,
+    noNameAddress,
   };
 
   const identity = `Sen ${name(clinic.name)} için çalışan telefon asistanısın. Adın ${name(assistant.name)}. Hastalarla telefonda Türkçe konuşuyorsun.
@@ -188,6 +196,7 @@ function fullRules({
   emergencyEndCall,
   kvkkNotice,
   bookingRules,
+  noNameAddress,
 }: RuleInput) {
   return [
     `# Nasıl çalışırsın
@@ -222,7 +231,9 @@ ${bookingRuleLines(bookingRules, "full")}- Hasta bilgileri onayladığında ("ev
 - Telefon numarasını geri okurken gruplar hâlinde kelimeyle söyle. Örnek: 0532 123 45 67 → "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi". Tool'lara numarayı hastanın söylediği gruplarla rakamla gönder (ör. "0532 123 45 67") ve göndermeden önce on bir hane olduğunu say.
 - Kısaltmaları açık söyle; asla harf harf okuma. "Dt." veya "DT" → "diş hekimi" (hekim adlarında da: "Diş Hekimi Elif Kaya"), "Dr." → "doktor", "Uzm." → "uzman". Hasta "dt" ya da "de te" derse diş hekimini kastediyordur.`,
 
-    `# Hitap
+    noNameAddress
+      ? NO_NAME_ADDRESS.full
+      : `# Hitap
 - İsimden cinsiyet tahmin etme; "Bey" veya "Hanım" kullanma.
 - Yanlış: "Randevunuz oluşturuldu, <ad> Bey." Doğru: "Randevunuz oluşturuldu." veya hastanın kendi söylediği ad ve soyadıyla. Örneklerdeki adları asla hastaya söyleme.
 - Hasta kendisi bir hitap isterse onu kullan.`,
@@ -336,7 +347,25 @@ interface RuleInput {
   kvkkNotice: boolean;
   /** VOICE_BOOKING_RULES: unclear weekday asked, phone read back before booking. */
   bookingRules: boolean;
+  /** VOICE_NO_NAME_ADDRESS: no address by name; the name only read back to confirm. */
+  noNameAddress: boolean;
 }
+
+/**
+ * VOICE_NO_NAME_ADDRESS, from the 19 Oct eval (no-gendered-titles): the
+ * baseline example allowed the caller's own name, and in Turkish a first
+ * name invites "Bey"/"Hanım" ("Mükemmel, Mehmet Bey."). With no address by
+ * name there is nothing to attach a title to.
+ */
+const NO_NAME_ADDRESS = {
+  full: `# Hitap
+- Hastaya adıyla hitap etme; "Bey" veya "Hanım" kullanma. İsimden cinsiyet tahmin etme.
+- Hastanın adını yalnızca doğru anladığını teyit ederken bir kez geri oku; sonra cümlelerinde adını kullanma.
+- Yanlış: "Mükemmel, <ad> Bey." veya "Hoşça kalın, <ad>." Doğru: "Mükemmel." veya "Hoşça kalın." Örneklerdeki adları asla hastaya söyleme.
+- Hasta kendisi bir hitap isterse onu kullan.`,
+  compact: `# Hitap
+- Hastaya adıyla hitap etme; "Bey" veya "Hanım" kullanma. İsimden cinsiyet tahmin etme. Adı yalnızca teyit için bir kez geri oku. Hasta kendisi bir hitap isterse onu kullan. Örneklerdeki adları asla hastaya söyleme.`,
+} as const;
 
 /**
  * VOICE_BOOKING_RULES, from the 19 Oct eval: the speech recogniser heard
@@ -416,6 +445,7 @@ function compactRules({
   emergencyEndCall,
   kvkkNotice,
   bookingRules,
+  noNameAddress,
 }: RuleInput) {
   return [
     `# Nasıl çalışırsın
@@ -446,7 +476,9 @@ ${bookingRuleLines(bookingRules, "compact")}- Onay gelince ("evet", "doğru") be
 - Numarayı gruplar hâlinde kelimeyle geri oku: 0532 123 45 67 → "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi". Tool'lara hastanın gruplarıyla rakamla gönder ve on bir hane olduğunu say.
 - Kısaltmaları açık söyle, harf harf okuma: "Dt." → "diş hekimi", "Dr." → "doktor", "Uzm." → "uzman". "de te" diş hekimi demektir.`,
 
-    `# Hitap
+    noNameAddress
+      ? NO_NAME_ADDRESS.compact
+      : `# Hitap
 - İsimden cinsiyet tahmin etme; "Bey" veya "Hanım" kullanma, hasta kendisi istemedikçe. Örneklerdeki adları asla hastaya söyleme.`,
 
     `# Sınırlar

@@ -80,6 +80,12 @@ const envSchema = z.object({
    * read back and confirmed. Changes the agent spec; off until measured.
    */
   VOICE_BOOKING_RULES: optionalFlag,
+  /**
+   * "true": the assistant never addresses the caller by name (nor Bey/Hanım)
+   * and only reads the name back to confirm it (19 Oct eval,
+   * no-gendered-titles). Changes the agent spec; off until measured.
+   */
+  VOICE_NO_NAME_ADDRESS: optionalFlag,
   /** Retell turn-taking, 0–1 (Retell default 1 = answers as soon as it can). Lower waits longer. */
   RETELL_RESPONSIVENESS: optionalUnit,
   /** 0–1 (Retell default 1). Lower needs more words before the caller interrupts the agent. */

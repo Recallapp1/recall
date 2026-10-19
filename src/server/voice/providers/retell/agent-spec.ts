@@ -54,6 +54,8 @@ export interface VoiceTuning {
   kvkkNotice?: boolean;
   /** VOICE_BOOKING_RULES. Unset keeps the prompt unchanged. */
   bookingRules?: boolean;
+  /** VOICE_NO_NAME_ADDRESS. Unset keeps the prompt unchanged. */
+  noNameAddress?: boolean;
   /** 0–1; Retell's default is 1. */
   responsiveness?: number;
   /** 0–1; Retell's default is 1. */
@@ -121,6 +123,7 @@ export function buildRetellAgentSpec(input: AgentSpecInput): RetellAgentSpec {
     emergencyEndCall: tuning?.emergencyEndCall,
     kvkkNotice: tuning?.kvkkNotice,
     bookingRules: tuning?.bookingRules,
+    noNameAddress: tuning?.noNameAddress,
     toolNames: TOOL_NAMES,
     placeholders: {
       now: `{{current_time_${tz}}}`,

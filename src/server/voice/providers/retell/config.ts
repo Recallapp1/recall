@@ -40,6 +40,7 @@ export function retellConfig(): RetellConfig {
       emergencyEndCall: config.VOICE_EMERGENCY_END_CALL,
       kvkkNotice: config.VOICE_KVKK_NOTICE,
       bookingRules: config.VOICE_BOOKING_RULES,
+      noNameAddress: config.VOICE_NO_NAME_ADDRESS,
       responsiveness: config.RETELL_RESPONSIVENESS,
       interruptionSensitivity: config.RETELL_INTERRUPTION_SENSITIVITY,
       dynamicResponsiveness: config.RETELL_DYNAMIC_RESPONSIVENESS,
