@@ -1383,3 +1383,66 @@ describe("every Retell route (A10)", () => {
     expect(mismatched.status).toBe(404);
   });
 });
+
+describe("failed changes say what did not happen (VOICE_TOOL_ERROR_HINT)", () => {
+  const on = { toolErrorHint: true };
+  const MISSING = "00000000-0000-4000-8000-000000000000";
+  const badPhoneBooking = (callId: string, overrides: Partial<RetellHandlerDeps> = {}) =>
+    tool(
+      "book_appointment",
+      {
+        serviceId: clinic.serviceId,
+        practitionerId: clinic.practitionerId,
+        date: "2026-10-05",
+        time: "10:00",
+        patientName: "Selin Arı",
+        patientPhone: "0532 900 000 11",
+      },
+      { from_number: null, call_id: callId, call_type: "web_call" },
+      overrides,
+    );
+
+  it("unset: today's error result, nothing added", async () => {
+    const result = await badPhoneBooking("err_hint_off");
+    expect(Object.keys(result.body).sort()).toEqual(["error", "message", "ok"]);
+    expect(result.body).toMatchObject({ ok: false, error: "INVALID_PHONE" });
+  });
+
+  it("a failed booking says no appointment was made and how to ask for the number", async () => {
+    const result = await badPhoneBooking("err_hint_phone", on);
+    expect(result.body).toMatchObject({ ok: false, error: "INVALID_PHONE" });
+    const hint = String(result.body.hint);
+    expect(hint).toMatch(/Randevu OLUŞMADI/);
+    expect(hint).toMatch(/"oluşturuldu" deme/);
+    expect(hint).toMatch(/on bir hane/);
+    expect(hint).toMatch(/geri oku.*onay/);
+  });
+
+  it("a failed move or cancellation says the appointment did not change", async () => {
+    const caller = { from_number: "+905320000099", call_id: "err_hint_change" };
+    const moved = await tool(
+      "reschedule_appointment",
+      { appointmentId: MISSING, date: "2026-10-06", time: "10:00" },
+      caller,
+      on,
+    );
+    expect(moved.body).toMatchObject({ ok: false });
+    expect(String(moved.body.hint)).toMatch(/Randevu DEĞİŞMEDİ/);
+    expect(String(moved.body.hint)).not.toMatch(/on bir hane/);
+
+    const cancelled = await tool("cancel_appointment", { appointmentId: MISSING }, caller, on);
+    expect(cancelled.body).toMatchObject({ ok: false });
+    expect(String(cancelled.body.hint)).toMatch(/Randevu İPTAL EDİLMEDİ/);
+  });
+
+  it("other tools' errors are left as they are", async () => {
+    const result = await tool(
+      "find_appointments",
+      {},
+      { from_number: null, call_id: "err_hint_find", call_type: "web_call" },
+      on,
+    );
+    expect(result.body).toMatchObject({ ok: false, error: "PHONE_REQUIRED" });
+    expect(result.body).not.toHaveProperty("hint");
+  });
+});
