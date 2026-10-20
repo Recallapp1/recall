@@ -44,7 +44,7 @@ Bu ilkeler her fazda geçerlidir. Bir görev bunlardan birini ihlal ediyorsa gö
 | F2  | Telefon (SIP) ve SMS: Netgsm ve alternatiflerin testi       | ⏳                                                                                                                                                                                       | F1         |
 | F3  | Hesaplar, kimlik doğrulama, roller, klinik yönetimi         | ✅ (testler: rol × eylem, kiracı izolasyonu, davet) · 2FA hazır, canlıda `optional`; `required-admins` sırada                                                                            | F0         |
 | F4  | Tasarım sistemi (DESIGN.md) uygulaması                      | 🟡 F4.1 ✅ · F4.2 ✅ (onaylandı 2026-10-20) · F4.3 ✅ (logo/görseller bekleniyor)                                                                                                        | F0         |
-| F5  | Klinik paneli                                               | ✅ ekranlar, sıralama, action testleri, E2E · açık: logo/görsel, 375/1440 görsel kontrol                                                                                                 | F3, F4     |
+| F5  | Klinik paneli                                               | ✅ ekranlar, sıralama, action testleri, E2E, 375/1440 görsel kontrol (2026-10-20) · açık: logo/görsel, B1–B6                                                                             | F3, F4     |
 | F6  | Recall yönetim konsolu (platform admin)                     | 🟡 Konsol ✅ (ADR-010); numara içe aktarma F2 ile                                                                                                                                        | F3, F1     |
 | F7  | KVKK, güvenlik, veri saklama                                | 🟡 saklama, anonimleştirme, dışa aktarma, hız sınırı, CSP, denetim, güvenlik incelemesi ✅ · açık: yasal metinler, avukat, alan şifreleme değerlendirmesi                                | F5         |
 | F8  | Production: Vercel, Neon, izleme                            | 🟡 canlı, CI yeşil, iş kalp atışı · `main` korumalı · Sentry ve UptimeRobot açık (2026-10-19) · açık: Vercel Pro, Neon Launch ve geri yükleme provası                                    | F1, F3     |
@@ -266,7 +266,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 ### F4.4 Kontroller
 
-- [ ] Lighthouse (performans ve erişilebilirlik ≥ 90), mobil 375 px, klavye ile gezinme, `prefers-reduced-motion`
+- [ ] Lighthouse (performans ve erişilebilirlik ≥ 90), mobil 375 px, klavye ile gezinme, `prefers-reduced-motion` — 2026-10-20 ölçüldü ([VISUAL-CHECK-2026-10-20.md](reviews/VISUAL-CHECK-2026-10-20.md)): erişilebilirlik 100, masaüstü performans 99–100, mobil 375 px'te yatay kaydırma yok, klavyede odak görünür. Açık: mobil performans canlı ana sayfada 86 (< 90), içeriğe atlama bağlantısı yok (B1)
 
 **F4 çıkış kriterleri:** Tüm token'lar tek yerde; stil rehberi sayfası eksiksiz; tanıtım sitesi DESIGN.md'deki 4 bölümü uyguluyor; kod içinde sabit hex veya px renk yok (lint kuralı veya grep kontrolü).
 
@@ -316,7 +316,7 @@ Tamamlananlar ([WORKLOG.md](../WORKLOG.md) içinde ayrıntılı):
 
 - [x] Server Action entegrasyon testleri (PGlite): yetki, doğrulama, kiracı izolasyonu — 2026-10-08
 - [x] Playwright: giriş → takvimde randevu oluştur → iptal; ayar değiştir → senkron tetiklendi; yetkisiz rol menüyü görmüyor — `e2e/` (9 akış + 13 sayfada erişilebilirlik, CI'da), 2026-10-08
-- [ ] Görsel kontrol: her ekran 375 px ve 1440 px
+- [x] Görsel kontrol: her ekran 375 px ve 1440 px — 2026-10-20, 39 ekran; bulgular B2–B6 (hepsi düşük önem) [VISUAL-CHECK-2026-10-20.md](reviews/VISUAL-CHECK-2026-10-20.md)
 
 **F5 çıkış kriterleri:** Bir sekreter, panelden bir günü baştan sona yönetebiliyor; ayar değişiklikleri asistana yansıyor; iki farklı klinik farklı ayarlarla aynı anda sorunsuz çalışıyor.
 

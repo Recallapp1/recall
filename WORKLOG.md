@@ -76,6 +76,21 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-20 · Görsel kontrol (375 ve 1440), Lighthouse ve klavye gezinmesi · F4.4, F5.5
+
+**Agent/kişi:** Claude (Opus 5.5) · **Dal:** `docs/visual-check-2026-10-20` · **Commit'ler:** bu kayıt
+
+**Ne yapıldı**
+
+- E2E'nin bellek içi veritabanı ve production build'iyle 39 ekran 375 ve 1440 pikselde çekildi (sahip, sekreter, hekim, konsol; anahtarla açılan üç ekran canlıdaki gibi anahtarlar açıkken); yatay taşma ve konsol hatası ölçüldü; dört sayfada Tab sırası ve odak görünürlüğü; yerelde 10, canlıda 2 Lighthouse ölçümü. Betikler ve görüntüler git dışında (`outputs/visual-check/`); sonuç ve bulgular [VISUAL-CHECK-2026-10-20.md](docs/reviews/VISUAL-CHECK-2026-10-20.md).
+- Sonuç: yatay kaydırma hiçbir ekranda yok; erişilebilirlik 100; masaüstü performans 99–100; canlı mobil ana sayfa 86, giriş 95. Dokuz bulgu (B1 içeriğe atlama bağlantısı orta, diğerleri düşük veya bilgi); kod değişmedi.
+- Plan: F5.5 görsel kontrol işaretlendi; F4.4'e sonuç notu (mobil performans ve B1 açık).
+
+**Açık kalanlar / dikkat**
+
+- B1–B6 düzeltmeleri ürün sahibinin kararını bekliyor; B8 (11 piksel yazı) tasarım kararı.
+- Randevu ayrıntısı ve takip planı ayrıntısı test verisinde örnek olmadığı için çekilmedi.
+
 ### 2026-10-20 · Eval: yanlış numarayla açılan randevu her senaryoyu düşürür
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `test/eval-stray-phone` · **Commit'ler (test → değişiklik):** `5bf9758` → bu kayıt
