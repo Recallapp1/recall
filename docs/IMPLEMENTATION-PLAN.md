@@ -366,7 +366,7 @@ Tasarım ve karar günlüğü: [proposals/TAKIP.md](proposals/TAKIP.md).
 
 ## F8: Production (Vercel, Neon, izleme)
 
-- [x] GitHub reposu ve push (`recallapp0/recall`)
+- [x] GitHub reposu ve push (`recallapp0/recall`; 2026-10-20'den beri `Recallapp1/recall`)
 - [x] Vercel projesi (**RECALL** takımı, `recall25`, proje `recall`), bölge `fra1`, Git bağlantısı; `main` push = production deploy (2026-10-06)
 - [x] Neon Frankfurt, `production` dalı (Marketplace yerine mevcut proje; ücretsiz plan, canlıdan önce ücretli). Preview için Neon dalları: ⏳
 - [x] Production env değişkenleri (gizliler sensitive). Preview: ⏳ (bilerek boş, bkz. DEPLOYMENT.md)
@@ -414,17 +414,18 @@ Bu sorular cevaplandıkça ilgili göreve işlenir ve buradan kaldırılır.
 
 ## Alınan kararlar
 
-| Tarih      | Karar                                                                                                                          | Etkilenen görevler                                            |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| 2026-10-04 | Ses altyapısı Retell AI; Vapi kullanılmayacak; Netgsm ve alternatifler test edilecek                                           | F1, F2, [ADR-004](decisions/ADR-004-retell-voice-platform.md) |
-| 2026-10-04 | DESIGN.md tek tasarım kaynağı                                                                                                  | F4, F5, [ADR-005](decisions/ADR-005-design-system.md)         |
-| 2026-10-04 | Klinikleri Recall ekibi açar (konsol); self-servis kayıt V1'e kaldı                                                            | F3.1, F6, F10                                                 |
-| 2026-10-04 | Giriş: e-posta + parola; herkese açık kayıt kapalı, yalnızca davet                                                             | F3.1                                                          |
-| 2026-10-04 | Panel özelleştirme: rol ve yetkiler, modül görünürlüğü, kişisel tercihler. Logo ve renk özelleştirmesi yok                     | F3.2, F3.5, F5                                                |
-| 2026-10-04 | Retell hesabı hazır; API anahtarını ürün ekibi `.env.local` dosyasına kendisi girer (sohbete yazılmaz)                         | F1.3                                                          |
-| 2026-10-04 | GitHub reposu: `recallapp0/recall`                                                                                             | F8                                                            |
-| 2026-10-04 | Panel yalnızca Türkçe; i18n altyapısı kurulmayacak (metinler doğrudan Türkçe)                                                  | F4, F5                                                        |
-| 2026-10-04 | Netgsm hesabı en son aşamada birlikte açılacak                                                                                 | F2 (F5–F7'den sonra)                                          |
-| 2026-10-04 | Recall logosu ve hero görseli henüz yok; F4.3'te birlikte üretilecek                                                           | F4.3                                                          |
-| 2026-10-04 | E-posta: Resend, adaptör arkasında; e-postalar hasta verisi içermez                                                            | F3, [ADR-006](decisions/ADR-006-email-provider.md)            |
-| 2026-10-04 | DESIGN.md v2: koyu lacivert + beyaz palet; tanıtım sayfası 13 bölüm, sticky header; başlık "Kliniğinizin yeni nesil sekreteri" | F4, [ADR-007](decisions/ADR-007-navy-palette-and-landing.md)  |
+| Tarih      | Karar                                                                                                                                                                       | Etkilenen görevler                                            |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 2026-10-04 | Ses altyapısı Retell AI; Vapi kullanılmayacak; Netgsm ve alternatifler test edilecek                                                                                        | F1, F2, [ADR-004](decisions/ADR-004-retell-voice-platform.md) |
+| 2026-10-04 | DESIGN.md tek tasarım kaynağı                                                                                                                                               | F4, F5, [ADR-005](decisions/ADR-005-design-system.md)         |
+| 2026-10-04 | Klinikleri Recall ekibi açar (konsol); self-servis kayıt V1'e kaldı                                                                                                         | F3.1, F6, F10                                                 |
+| 2026-10-04 | Giriş: e-posta + parola; herkese açık kayıt kapalı, yalnızca davet                                                                                                          | F3.1                                                          |
+| 2026-10-04 | Panel özelleştirme: rol ve yetkiler, modül görünürlüğü, kişisel tercihler. Logo ve renk özelleştirmesi yok                                                                  | F3.2, F3.5, F5                                                |
+| 2026-10-04 | Retell hesabı hazır; API anahtarını ürün ekibi `.env.local` dosyasına kendisi girer (sohbete yazılmaz)                                                                      | F1.3                                                          |
+| 2026-10-04 | GitHub reposu: `recallapp0/recall`                                                                                                                                          | F8                                                            |
+| 2026-10-04 | Panel yalnızca Türkçe; i18n altyapısı kurulmayacak (metinler doğrudan Türkçe)                                                                                               | F4, F5                                                        |
+| 2026-10-04 | Netgsm hesabı en son aşamada birlikte açılacak                                                                                                                              | F2 (F5–F7'den sonra)                                          |
+| 2026-10-04 | Recall logosu ve hero görseli henüz yok; F4.3'te birlikte üretilecek                                                                                                        | F4.3                                                          |
+| 2026-10-04 | E-posta: Resend, adaptör arkasında; e-postalar hasta verisi içermez                                                                                                         | F3, [ADR-006](decisions/ADR-006-email-provider.md)            |
+| 2026-10-20 | GitHub deposu `Recallapp1/recall`'a devredildi (recallapp0'ın Actions harcama sınırı doldu; dakikalar deponun sahibinden düşer). Vercel Git bağlantısı yeni depoya çevrildi | F8                                                            |
+| 2026-10-04 | DESIGN.md v2: koyu lacivert + beyaz palet; tanıtım sayfası 13 bölüm, sticky header; başlık "Kliniğinizin yeni nesil sekreteri"                                              | F4, [ADR-007](decisions/ADR-007-navy-palette-and-landing.md)  |

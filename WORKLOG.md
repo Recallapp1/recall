@@ -76,6 +76,26 @@ Kurallar:
 
 ## Kayıtlar
 
+### 2026-10-20 · GitHub deposu Recallapp1'e taşındı (Actions dakika sınırı) · F8
+
+**Agent/kişi:** Claude (Opus 5.5) + ürün sahibi · **Dal:** `docs/visual-check-2026-10-20` · **Commit'ler:** bu kayıt
+
+**Ne oldu**
+
+- Görsel kontrol dalında CI iki kez `check` aşamasında düştü; ürün sahibi nedenin `recallapp0` hesabının GitHub Actions harcama sınırı olduğunu tespit etti. Actions dakikaları ortak çalışandan değil deponun **sahibinden** düştüğü için depo, ürün sahibi tarafından GitHub'ın "Transfer ownership" işlemiyle `Recallapp1/recall`'a devredildi (kabul Recallapp1 hesabıyla). Dallar, `main` koruması ve ayarlar depoyla taşındı; eski adres yönlenir.
+- Yerel `origin` `https://github.com/Recallapp1/recall.git` oldu; bu bilgisayarın `recallapp0` kimliği okuma ve yazmada çalışıyor; `pnpm ci:wait` adresi `origin`'den okuduğu için değişiklik gerekmedi.
+- Ürün sahibi Vercel `recall` projesinin Git bağlantısını yeni depoya çevirdi. Vercel API'si bağlantıyı hâlâ `recallapp0/recall` (aynı depo kimliği) olarak gösteriyordu; asıl sınama bu birleştirmenin deploy tetiklemesi.
+- [DEPLOYMENT.md](docs/06-operations/DEPLOYMENT.md) Git satırı, plan F8 ve karar tablosu, [OPEN-RISKS-BEFORE-PILOT.md](docs/OPEN-RISKS-BEFORE-PILOT.md) 26 (Actions dakikaları).
+
+**Doğrulama**
+
+- Yeni depoda CI: `check` + `e2e` yeşil (`ae0b45c`, ilk koşu). Birleştirme ve deploy doğrulaması bu dalın birleşmesinde.
+
+**Açık kalanlar / dikkat**
+
+- Ücretsiz planda ayda yaklaşık 2.000 dakika; her push yaklaşık 10 dakika. Bugünkü hızla Recallapp1'in dakikaları da birkaç haftada dolabilir: pilot öncesi dakika satın alma veya yalnızca belge değişen push'larda CI'ı kısaltma kararı gerekli.
+- Eski `recallapp0` hesabındaki Dependabot ve diğer entegrasyonlar yeni sahipte ayrıca kontrol edilmeli.
+
 ### 2026-10-20 · Görsel kontrol (375 ve 1440), Lighthouse ve klavye gezinmesi · F4.4, F5.5
 
 **Agent/kişi:** Claude (Opus 5.5) · **Dal:** `docs/visual-check-2026-10-20` · **Commit'ler:** bu kayıt
